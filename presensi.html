@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Buat Presensi</title>
+  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1590df">
+  <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- HEADER (selaras dengan index) -->
+    <header class="app-header">
+      <div class="header-bar">
+        <div class="header-left">
+          <a class="icon-back" href="index.html" aria-label="Kembali" title="Kembali">
+            <!-- chevron left -->
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path fill="currentColor" d="M15.5 19a1 1 0 0 1-.7-.29l-6-6a1 1 0 0 1 0-1.42l6-6a1 1 0 1 1 1.4 1.42L11.62 12l4.58 4.58A1 1 0 0 1 15.5 19z"/>
+            </svg>
+          </a>
+
+          <div class="header-text">
+            <div class="app-name">Buat Presensi</div>
+            <div class="app-subtitle">Isi detail sesi & peserta</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main">
+
+      <!-- CARD: Detail Sesi -->
+      <section class="section-card" style="margin-top:0;">
+        <div class="section-title">Detail Sesi</div>
+
+        <label class="field-label" for="activity">Kegiatan</label>
+        <select id="activity" class="field"></select>
+
+        <label class="field-label" for="date">Tanggal</label>
+        <input id="date" type="date" class="field" />
+
+        <label class="field-label" for="timePreset">Waktu</label>
+        <select id="timePreset" class="field">
+          <option value="">-- pilih preset --</option>
+          <option value="09:00-15:00">09:00 - 15:00</option>
+          <option value="19:00-22:00">19:00 - 22:00</option>
+        </select>
+
+        <div class="row-2">
+          <div>
+            <div class="mini-label">Mulai</div>
+            <input id="timeStart" type="time" class="field" />
+          </div>
+          <div>
+            <div class="mini-label">Selesai</div>
+            <input id="timeEnd" type="time" class="field" />
+          </div>
+        </div>
+
+        <label class="field-label" for="locationPreset">Tempat</label>
+        <select id="locationPreset" class="field">
+          <option value="Wisma Arienta (Pulo, Brosot, Galur)">Wisma Arienta (Pulo, Brosot, Galur)</option>
+          <option value="">Lainnya (ketik manual)</option>
+        </select>
+        <input id="locationCustom" type="text" class="field" placeholder="Tulis tempat jika lainnya" />
+
+        <label class="field-label" for="note">Catatan (opsional)</label>
+        <textarea id="note" rows="3" class="field" style="min-height:88px;"></textarea>
+      </section>
+
+      <!-- CARD: Peserta -->
+      <section class="section-card">
+        <div class="row-between">
+          <div class="section-title" style="margin:0;">Peserta</div>
+          <button class="btn-secondary" id="addMemberBtn" type="button">Tambah</button>
+        </div>
+
+        <div id="participants" style="margin-top:10px;"></div>
+      </section>
+
+      <!-- CARD: Foto -->
+      <section class="section-card">
+        <div class="section-title">Lampiran Foto</div>
+        <div class="hint">Maksimal 4 foto, otomatis dikompres.</div>
+
+        <input id="photos" type="file" accept="image/*" multiple class="field" />
+
+        <div id="photoPreview" class="photo-preview"></div>
+      </section>
+
+      <!-- CARD: Simpan -->
+      <section class="section-card">
+        <button id="saveBtn" class="btn-primary btn-full" type="button">Simpan Presensi</button>
+        <p id="msg" class="tool-msg" style="margin-top:10px;"></p>
+
+        <div id="after" style="display:none; margin-top:10px;">
+          <a id="pdfLink" class="btn-secondary btn-full" target="_blank">Cetak PDF</a>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- SCRIPTS: LOGIKA TETAP SAMA (jangan diubah) -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/api.js"></script>
+
+  <script>
+    requireLogin();
+
+    const activitySel = document.getElementById("activity");
+    const dateEl = document.getElementById("date");
+    const timePreset = document.getElementById("timePreset");
+    const timeStart = document.getElementById("timeStart");
+    const timeEnd = document.getElementById("timeEnd");
+    const locationPreset = document.getElementById("locationPreset");
+    const locationCustom = document.getElementById("locationCustom");
+    const noteEl = document.getElementById("note");
+    const participantsEl = document.getElementById("participants");
+    const photosInput = document.getElementById("photos");
+    const photoPreview = document.getElementById("photoPreview");
+    const msgEl = document.getElementById("msg");
+    const afterEl = document.getElementById("after");
+    const pdfLink = document.getElementById("pdfLink");
+
+    let membersCache = [];
+    let participants = [];
+    let photoB64 = [];
+
+    function escapeHtml(s){
+      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    async function loadActivities(){
+      const acts = await apiGet("listActivities");
+      activitySel.innerHTML = `<option value="">-- pilih --</option>` +
+        acts.map(a=>`<option value="${escapeHtml(a.activity_id)}">${escapeHtml(a.activity_name)}</option>`).join("");
+    }
+
+    async function loadMembers(){
+      membersCache = await apiGet("listMembers");
+    }
+
+    function renderParticipants(){
+      if (!participants.length){
+        participantsEl.innerHTML = "<p class='muted'>Belum ada peserta.</p>";
+        return;
+      }
+      participantsEl.innerHTML = participants.map((p,i)=>`
+        <div class="p-card">
+          <div class="p-head">
+            <div class="p-name">${escapeHtml(p.name)}</div>
+            <div class="p-role">${escapeHtml(p.role)}</div>
+          </div>
+
+          <div class="p-actions">
+            <select class="field" onchange="setPresence(${i}, this.value)">
+              ${["Hadir","Izin","Sakit","Alpa"].map(s=>`<option ${p.presence===s?"selected":""}>${s}</option>`).join("")}
+            </select>
+            <button class="btn-danger" type="button" onclick="removeParticipant(${i})">Hapus</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    window.setPresence = (i, val) => { participants[i].presence = val; };
+    window.removeParticipant = (i) => { participants.splice(i,1); renderParticipants(); };
+
+    document.getElementById("addMemberBtn").addEventListener("click", ()=>{
+      const q = prompt("Cari nama:");
+      if (!q) return;
+      const found = membersCache.find(m=>m.name.toLowerCase().includes(q.toLowerCase()));
+      if (!found) return alert("Tidak ditemukan");
+      if (participants.find(p=>p.member_id===found.member_id)) return alert("Sudah ditambahkan");
+      participants.push({
+        member_id: found.member_id,
+        name: found.name,
+        role: found.role,
+        presence: "Hadir"
+      });
+      renderParticipants();
+    });
+
+    timePreset.addEventListener("change", ()=>{
+      if (!timePreset.value) return;
+      const [s,e] = timePreset.value.split("-");
+      timeStart.value = s;
+      timeEnd.value = e;
+    });
+
+    photosInput.addEventListener("change", async ()=>{
+      photoB64 = [];
+      photoPreview.innerHTML = "";
+      const files = Array.from(photosInput.files).slice(0,4);
+      for (const f of files){
+        const b64 = await compressImage(f, 1280, 0.7);
+        photoB64.push(b64);
+        const img = document.createElement("img");
+        img.src = b64;
+        img.className = "preview-img";
+        photoPreview.appendChild(img);
+      }
+    });
+
+    function compressImage(file, maxW, quality){
+      return new Promise((res)=>{
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = ()=>{ img.src = reader.result; };
+        img.onload = ()=>{
+          const scale = Math.min(1, maxW/img.width);
+          const c = document.createElement("canvas");
+          c.width = img.width*scale;
+          c.height = img.height*scale;
+          const ctx = c.getContext("2d");
+          ctx.drawImage(img,0,0,c.width,c.height);
+          res(c.toDataURL("image/jpeg", quality));
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    document.getElementById("saveBtn").addEventListener("click", async ()=>{
+      msgEl.textContent = "";
+      const actId = activitySel.value;
+      const actName = activitySel.options[activitySel.selectedIndex]?.text || "";
+      if (!actId) return msgEl.textContent="Kegiatan wajib dipilih";
+      if (!dateEl.value) return msgEl.textContent="Tanggal wajib diisi";
+      if (!participants.length) return msgEl.textContent="Peserta kosong";
+
+      const location = locationPreset.value || locationCustom.value;
+      const header = {
+        activity_id: actId,
+        activity_name: actName,
+        date: dateEl.value,
+        time_start: timeStart.value,
+        time_end: timeEnd.value,
+        location: location,
+        note: noteEl.value
+      };
+
+      try{
+        msgEl.textContent="Menyimpan...";
+        const res = await apiPost("createAttendanceSession", {
+          header,
+          participants,
+          photos: photoB64
+        });
+        msgEl.textContent="Berhasil disimpan.";
+        afterEl.style.display="block";
+        pdfLink.href = `https://drive.google.com/file/d/${res.pdf_fileId}/view`;
+      }catch(e){
+        msgEl.textContent="Gagal: "+e.message;
+      }
+    });
+
+    (async function init(){
+      await loadActivities();
+      await loadMembers();
+      dateEl.value = new Date().toISOString().slice(0,10);
+    })();
+  </script>
+
+  <!-- CSS lokal khusus presensi (tampilan saja) -->
+  <style>
+    .header-bar{
+      width: 100%;
+      max-width: var(--max);
+      margin: 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .header-left{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+    .icon-back{
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.35);
+      background: rgba(255,255,255,.14);
+      color: #fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      flex: 0 0 auto;
+    }
+    .icon-back:active{ transform: translateY(1px); }
+    .header-text{ min-width: 0; }
+    .app-name{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .app-subtitle{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .field{
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      outline: none;
+    }
+    .field:focus{
+      border-color: rgba(30,136,229,.45);
+      box-shadow: 0 0 0 4px rgba(30,136,229,.12);
+    }
+
+    .field-label{
+      display:block;
+      margin-top: 12px;
+      margin-bottom: 6px;
+      font-weight: 800;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .mini-label{
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .row-2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: -2px;
+      margin-bottom: 10px;
+    }
+
+    .btn-full{ width: 100%; }
+
+    .photo-preview{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .preview-img{
+      width: 92px;
+      height: 92px;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid rgba(2,8,23,.08);
+      box-shadow: 0 10px 22px rgba(2,8,23,.08);
+    }
+
+    .p-card{
+      border: 1px solid rgba(2,8,23,.08);
+      border-radius: 16px;
+      padding: 12px;
+      background: #fff;
+      box-shadow: 0 10px 22px rgba(2,8,23,.06);
+      margin-bottom: 10px;
+    }
+    .p-head{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .p-name{
+      font-weight: 900;
+      font-size: 14px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .p-role{
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+    .p-actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .btn-danger{
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(239,68,68,.35);
+      background: rgba(239,68,68,.10);
+      color: rgb(185,28,28);
+      font-weight: 900;
+      cursor:pointer;
+      flex: 0 0 auto;
+    }
+    .btn-danger:active{ transform: translateY(1px); }
+    .row-between .btn-secondary{
+      width: min(60%, 220px);   /* ← ini kuncinya */
+      padding-left: 18px;
+      padding-right: 18px;
+      white-space: nowrap;
+    }
+
+
+  </style>
+
+</body>
+</html>
