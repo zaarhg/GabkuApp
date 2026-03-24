@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gabku App – Login</title>
+
+  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1590df">
+  <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+  <div class="app">
+    <main class="app-main login-clean">
+      <img src="assets/img/logo.png" alt="Gabku" class="login-logo" />
+      <div class="login-title">Gabku App</div>
+
+      <section class="section-card login-card">
+        <label class="field-label" for="email">Email</label>
+        <input id="email" type="email" class="field" placeholder="nama@email.com" autocomplete="email" />
+
+        <label class="field-label" for="password">Password</label>
+        <input id="password" type="password" class="field" placeholder="Masukkan password..."
+          autocomplete="current-password" />
+
+        <button id="btn" class="btn-primary btn-wide" type="button">
+          Masuk
+        </button>
+
+        <p id="msg" class="msg" style="margin-top:10px; text-align:center;"></p>
+
+        <p class="login-help">
+          Masukkan email dan password yang telah didaftarkan oleh admin.
+        </p>
+      </section>
+
+      <p class="login-desc">
+        <em>Gabku App - Sekarang menggunakan Supabase untuk performa lebih cepat.</em>
+      </p>
+    </main>
+  </div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+
+  <script>
+    const emailEl = document.getElementById("email");
+    const passEl = document.getElementById("password");
+    const msgEl = document.getElementById("msg");
+    const btnEl = document.getElementById("btn");
+
+    async function doLogin() {
+      const email = emailEl.value.trim();
+      const password = passEl.value.trim();
+
+      if (!email || !password) {
+        msgEl.textContent = "Email dan password wajib diisi.";
+        return;
+      }
+
+      btnEl.disabled = true;
+      btnEl.textContent = "Memeriksa...";
+      msgEl.textContent = "";
+
+      try {
+        // Logika login Supabase
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password,
+        });
+
+        if (error) throw error;
+
+        // Jika berhasil, Supabase otomatis menyimpan sesi di LocalStorage
+        window.location.href = "index.html";
+      } catch (e) {
+        msgEl.textContent = "Gagal login: " + e.message;
+      } finally {
+        btnEl.disabled = false;
+        btnEl.textContent = "Masuk";
+      }
+    }
+
+    btnEl.addEventListener("click", doLogin);
+
+    // Menjalankan login saat tekan Enter
+    [emailEl, passEl].forEach(el => {
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doLogin();
+      });
+    });
+  </script>
+
+  <style>
+    /* Menggunakan CSS lokal yang sudah Anda buat sebelumnya agar tampilan tetap konsisten */
+    .login-clean {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      min-height: 100vh;
+    }
+
+    .login-logo {
+      width: 92px;
+      height: 92px;
+      border-radius: 24px;
+      box-shadow: 0 16px 30px rgba(2, 8, 23, .12);
+      background: #fff;
+      padding: 10px;
+    }
+
+    .login-title {
+      font-weight: 950;
+      font-size: 20px;
+      margin-top: 2px;
+    }
+
+    .login-card {
+      width: min(92vw, 400px);
+      padding: 20px;
+      border-radius: 18px;
+    }
+
+    .btn-wide {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    .msg {
+      font-weight: 800;
+      color: #dc2626;
+      font-size: 13px;
+    }
+
+    .login-help {
+      margin-top: 15px;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+    }
+  </style>
+</body>
+
+</html>

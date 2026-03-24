@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gabku App – Anggota</title>
+
+  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1590df">
+  <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+  <div class="app">
+    <header class="app-header">
+      <div class="header-bar">
+        <div class="header-left">
+          <a class="icon-back" href="index.html" aria-label="Kembali" title="Kembali">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path fill="currentColor"
+                d="M15.5 19a1 1 0 0 1-.7-.29l-6-6a1 1 0 0 1 0-1.42l6-6a1 1 0 1 1 1.4 1.42L11.62 12l4.58 4.58A1 1 0 0 1 15.5 19z" />
+            </svg>
+          </a>
+          <div class="header-text">
+            <div class="app-name">Anggota</div>
+            <div class="app-subtitle">Tambah & kelola data anggota</div>
+          </div>
+        </div>
+        <button class="btn-ghost" id="refreshBtn" type="button" aria-label="Refresh" title="Refresh">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path fill="currentColor" d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-9.58-2H5.26A7 7 0 1 0 12 6z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <section class="section-card" style="margin-top:0;">
+        <div class="section-title">Tambah Anggota</div>
+        <label class="field-label" for="name">Nama</label>
+        <input id="name" type="text" class="field" placeholder="Nama anggota" />
+        <label class="field-label" for="role">Role / Jabatan</label>
+        <select id="role" class="field">
+          <option value="">— pilih —</option>
+          <option>Atlet</option>
+          <option>Pelatih</option>
+          <option>Official</option>
+          <option>Pengurus</option>
+        </select>
+        <div class="row-actions">
+          <button id="addBtn" class="btn-primary" type="button">Simpan</button>
+          <button class="btn-secondary" type="button" onclick="resetForm()">Batal</button>
+        </div>
+        <p id="msg" class="tool-msg" style="margin-top:10px;"></p>
+      </section>
+
+      <section class="section-card">
+        <div class="row-between">
+          <div class="section-title" style="margin:0;">Daftar Anggota</div>
+          <span class="pill" id="countPill" style="display:none;"></span>
+        </div>
+        <div style="margin-top:12px;">
+          <label class="field-label" for="q" style="margin-top:0;">Cari anggota</label>
+          <input id="q" type="text" class="field" placeholder="Ketik nama untuk mencari..." />
+        </div>
+        <div id="list" style="margin-top:12px;"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/auth.js"></script>
+
+  <script>
+    // Pastikan login sebelum lanjut
+    (async () => {
+      await requireLogin();
+      load();
+    })();
+
+    const listEl = document.getElementById("list");
+    const msgEl = document.getElementById("msg");
+    const qEl = document.getElementById("q");
+    const countPill = document.getElementById("countPill");
+    let cache = [];
+
+    function escapeHtml(s) {
+      return String(s).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+    }
+
+    function resetForm() {
+      document.getElementById('name').value = '';
+      document.getElementById('role').value = '';
+      msgEl.textContent = '';
+    }
+
+    function render(items) {
+      if (!items.length) {
+        listEl.innerHTML = "<p class='muted'>Belum ada anggota.</p>";
+        countPill.style.display = "none";
+        return;
+      }
+      countPill.textContent = items.length + " orang";
+      countPill.style.display = "inline-flex";
+
+      listEl.innerHTML = items.map(m => `
+        <div class="item-card">
+          <div class="item-left">
+            <div class="item-title">${escapeHtml(m.name)}</div>
+            <div class="item-sub">${escapeHtml(m.role)} • ID: ${escapeHtml(String(m.id))}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // Load data dari Supabase
+    async function load() {
+      listEl.innerHTML = "<p class='muted'>Memuat...</p>";
+      countPill.style.display = "none";
+      try {
+        const { data, error } = await supabaseClient
+          .from('members')
+          .select('*')
+          .order('name', { ascending: true });
+
+        if (error) throw error;
+        cache = data;
+        render(cache);
+      } catch (e) {
+        listEl.innerHTML = `<p class='msg'>Gagal load: ${escapeHtml(e.message)}</p>`;
+      }
+    }
+
+    // Tambah data ke Supabase
+    async function add() {
+      const name = document.getElementById("name").value.trim();
+      const role = document.getElementById("role").value.trim();
+      msgEl.textContent = "";
+
+      if (!name) { msgEl.textContent = "Nama wajib diisi."; return; }
+      if (!role) { msgEl.textContent = "Role wajib dipilih."; return; }
+
+      try {
+        msgEl.textContent = "Menyimpan...";
+
+        // Membuat ID unik dengan format serupa data lama
+        const now = new Date();
+        const ts = now.toISOString().replace(/[-T:]/g, '').split('.')[0];
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        const member_id = `MBR-${ts}-${rand}`;
+
+        const { error } = await supabaseClient
+          .from('members')
+          .insert([{ id: member_id, name, role }]);
+
+        if (error) throw error;
+
+        msgEl.textContent = "Berhasil ditambahkan.";
+        resetForm();
+        await load();
+      } catch (e) {
+        msgEl.textContent = "Gagal: " + e.message;
+      }
+    }
+
+    qEl.addEventListener("input", () => {
+      const q = qEl.value.trim().toLowerCase();
+      if (!q) return render(cache);
+      render(cache.filter(m => String(m.name || "").toLowerCase().includes(q)));
+    });
+
+    document.getElementById("addBtn").addEventListener("click", add);
+    document.getElementById("refreshBtn").addEventListener("click", load);
+  </script>
+</body>
+
+</html>

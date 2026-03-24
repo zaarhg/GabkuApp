@@ -1,0 +1,14 @@
+{
+  "name": "Gabku App",
+  "short_name": "Gabku",
+  "description": "Presensi & rekap organisasi (V1)",
+  "start_url": "login.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b4aa2",
+  "theme_color": "#1590df",
+  "icons": [
+    { "src": "assets/img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/img/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
