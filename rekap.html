@@ -23,7 +23,7 @@
             </svg></a>
           <div class="header-text">
             <div class="app-name">Rekap Presensi</div>
-            <div class="app-subtitle">Ringkasan bulanan & anggota</div>
+            <div class="app-subtitle">Ringkasan & Riwayat PDF</div>
           </div>
         </div>
         <button class="btn-ghost" id="refreshBtn"><svg viewBox="0 0 24 24" width="20" height="20">
@@ -35,20 +35,30 @@
     <main class="app-main">
       <section class="section-card" style="margin-top:0;">
         <div class="section-title">Mode Rekap</div>
-        <div class="segmented">
-          <button id="tabMonthly" class="seg-btn active">Rekap Bulanan</button>
-          <button id="tabMember" class="seg-btn">Rekap Anggota</button>
+        <div class="segmented" style="display:flex; overflow-x:auto; gap:5px;">
+          <button id="tabSession" class="seg-btn active" style="white-space:nowrap;">Sesi & PDF</button>
+          <button id="tabMonthly" class="seg-btn" style="white-space:nowrap;">Bulanan</button>
+          <button id="tabMember" class="seg-btn" style="white-space:nowrap;">Anggota</button>
         </div>
       </section>
 
-      <section class="section-card" id="panelMonthly">
+      <section class="section-card" id="panelSession">
+        <label class="field-label">Pilih Bulan</label>
+        <select id="sessionMonthSel" class="field"></select>
+        <div class="row-actions">
+          <button id="loadSessionBtn" class="btn-primary">Muat Riwayat Sesi</button>
+        </div>
+        <div id="sessionOutput" class="mt-2" style="margin-top:15px;"></div>
+      </section>
+
+      <section class="section-card" id="panelMonthly" style="display:none;">
         <label class="field-label">Pilih Bulan</label>
         <select id="monthSel" class="field"></select>
         <div class="row-actions">
           <button id="loadMonthlyBtn" class="btn-primary">Muat Rekap</button>
           <button id="exportCsvBtn" class="btn-secondary">Export CSV</button>
         </div>
-        <div id="monthlyOutput" class="mt-2"></div>
+        <div id="monthlyOutput" class="mt-2" style="margin-top:15px;"></div>
       </section>
 
       <section class="section-card" id="panelMember" style="display:none;">
@@ -59,7 +69,7 @@
         <div class="row-actions">
           <button id="loadMemberBtn" class="btn-primary">Muat Rekap</button>
         </div>
-        <div id="memberOutput" class="mt-2"></div>
+        <div id="memberOutput" class="mt-2" style="margin-top:15px;"></div>
       </section>
     </main>
   </div>
@@ -73,15 +83,20 @@
 
     const monthSel = document.getElementById('monthSel');
     const memberMonthSel = document.getElementById('memberMonthSel');
+    const sessionMonthSel = document.getElementById('sessionMonthSel');
     const memberSel = document.getElementById('memberSel');
     let lastMonthlyData = [];
+
+    function escapeHtml(s) {
+      return String(s || '').replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    }
 
     async function init() {
       // Load Members for dropdown
       const { data: mems } = await supabaseClient.from('members').select('id, name, role').order('name');
-      memberSel.innerHTML = mems.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join('');
+      memberSel.innerHTML = mems.map(m => `<option value="${m.id}">${escapeHtml(m.name)} (${escapeHtml(m.role)})</option>`).join('');
 
-      // Generate Month List (Current & Previous)
+      // Generate Month List (12 bulan terakhir)
       const months = [];
       for (let i = 0; i < 12; i++) {
         const d = new Date(); d.setMonth(d.getMonth() - i);
@@ -89,40 +104,75 @@
         const label = d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
         months.push(`<option value="${val}">${label}</option>`);
       }
-      monthSel.innerHTML = memberMonthSel.innerHTML = months.join('');
+      monthSel.innerHTML = memberMonthSel.innerHTML = sessionMonthSel.innerHTML = months.join('');
     }
 
     // --- TAB LOGIC ---
     document.getElementById('tabMonthly').onclick = () => switchTab('monthly');
+    document.getElementById('tabSession').onclick = () => switchTab('session');
     document.getElementById('tabMember').onclick = () => switchTab('member');
+
     function switchTab(t) {
       document.getElementById('panelMonthly').style.display = t === 'monthly' ? 'block' : 'none';
+      document.getElementById('panelSession').style.display = t === 'session' ? 'block' : 'none';
       document.getElementById('panelMember').style.display = t === 'member' ? 'block' : 'none';
+
       document.getElementById('tabMonthly').classList.toggle('active', t === 'monthly');
+      document.getElementById('tabSession').classList.toggle('active', t === 'session');
       document.getElementById('tabMember').classList.toggle('active', t === 'member');
     }
 
-    // --- LOGIC REKAP BULANAN ---
-    document.getElementById('loadMonthlyBtn').onclick = async () => {
-      const out = document.getElementById('monthlyOutput');
-      out.innerHTML = "Memuat...";
-      const month = monthSel.value; // YYYY-MM
+    // --- 1. LOGIC RIWAYAT SESI & PDF (BARU) ---
+    document.getElementById('loadSessionBtn').onclick = async () => {
+      const out = document.getElementById('sessionOutput');
+      out.innerHTML = "<p class='muted'>Memuat riwayat sesi...</p>";
+      const month = sessionMonthSel.value;
 
       try {
-        // 1. Ambil semua header di bulan tersebut
+        const { data, error } = await supabaseClient.from('attendance_header')
+          .select('*')
+          .gte('date', `${month}-01`)
+          .lte('date', `${month}-31`)
+          .order('date', { ascending: false }); // Urutkan dari yang terbaru
+
+        if (error) throw error;
+        if (!data.length) return out.innerHTML = "<p class='muted'>Tidak ada kegiatan di bulan ini.</p>";
+
+        out.innerHTML = data.map(h => `
+          <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="flex:1; padding-right:10px;">
+              <div style="font-weight:700; font-size:15px; color:#111827;">${escapeHtml(h.activity_name_snapshot)}</div>
+              <div style="font-size:12px; color:#6b7280; margin-top:4px;">📅 ${h.date}</div>
+              ${h.location_snapshot ? `<div style="font-size:12px; color:#6b7280;">📍 ${escapeHtml(h.location_snapshot)}</div>` : ''}
+            </div>
+            <div>
+              ${h.pdf_file_id
+            ? `<a href="https://drive.google.com/file/d/${h.pdf_file_id}/view" target="_blank" class="btn-primary" style="padding:8px 14px; font-size:12px; text-decoration:none; border-radius:8px; display:inline-block;">Buka PDF</a>`
+            : `<span style="font-size:11px; color:#9ca3af; background:#f3f4f6; padding:6px 10px; border-radius:6px; font-weight:600;">Tanpa PDF</span>`}
+            </div>
+          </div>
+        `).join('');
+      } catch (e) { out.innerHTML = `<p class='msg'>Error: ${e.message}</p>`; }
+    };
+
+    // --- 2. LOGIC REKAP BULANAN ---
+    document.getElementById('loadMonthlyBtn').onclick = async () => {
+      const out = document.getElementById('monthlyOutput');
+      out.innerHTML = "<p class='muted'>Memuat...</p>";
+      const month = monthSel.value;
+
+      try {
         const { data: headers } = await supabaseClient.from('attendance_header')
           .select('id, activity_name_snapshot, date')
           .gte('date', `${month}-01`)
           .lte('date', `${month}-31`);
 
-        if (!headers.length) return out.innerHTML = "Tidak ada data.";
+        if (!headers.length) return out.innerHTML = "<p class='muted'>Tidak ada data.</p>";
 
-        // 2. Ambil detail untuk semua header tersebut
         const headerIds = headers.map(h => h.id);
         const { data: details } = await supabaseClient.from('attendance_detail')
           .select('*').in('attendance_id', headerIds);
 
-        // 3. Agregasi data per Anggota
         const recap = {};
         details.forEach(d => {
           if (!recap[d.member_id]) recap[d.member_id] = { name: d.member_name_snapshot, role: d.member_role_snapshot, H: 0, I: 0, S: 0, A: 0, Total: 0 };
@@ -134,7 +184,7 @@
           r.Total++;
         });
 
-        lastMonthlyData = Object.values(recap);
+        lastMonthlyData = Object.values(recap).sort((a, b) => a.name.localeCompare(b.name));
         renderTable(lastMonthlyData, out);
       } catch (e) { out.innerHTML = "Error: " + e.message; }
     };
@@ -142,40 +192,50 @@
     function renderTable(data, el) {
       el.innerHTML = `
         <div class="table-scroll"><table class="data-table" style="width:100%; font-size:12px; border-collapse:collapse;">
-          <thead><tr style="background:#eee"><th>Nama</th><th>H</th><th>I</th><th>S</th><th>A</th><th>%</th></tr></thead>
+          <thead><tr style="background:#f3f4f6; text-align:left;">
+            <th style="padding:8px;">Nama</th><th style="padding:8px; text-align:center;">H</th><th style="padding:8px; text-align:center;">I</th><th style="padding:8px; text-align:center;">S</th><th style="padding:8px; text-align:center;">A</th><th style="padding:8px; text-align:center;">%</th>
+          </tr></thead>
           <tbody>${data.map(r => `
-            <tr>
-              <td><b>${r.name}</b><br><small>${r.role}</small></td>
-              <td class="tc">${r.H}</td><td class="tc">${r.I}</td><td class="tc">${r.S}</td><td class="tc">${r.A}</td>
-              <td class="tc">${Math.round((r.H / r.Total) * 100)}%</td>
+            <tr style="border-bottom:1px solid #e5e7eb;">
+              <td style="padding:8px;"><b>${escapeHtml(r.name)}</b><br><small style="color:#6b7280;">${escapeHtml(r.role)}</small></td>
+              <td style="padding:8px; text-align:center;">${r.H}</td><td style="padding:8px; text-align:center;">${r.I}</td><td style="padding:8px; text-align:center;">${r.S}</td><td style="padding:8px; text-align:center;">${r.A}</td>
+              <td style="padding:8px; text-align:center; font-weight:bold;">${Math.round((r.H / r.Total) * 100)}%</td>
             </tr>`).join('')}
           </tbody>
         </table></div>`;
     }
 
-    // --- LOGIC REKAP ANGGOTA ---
+    // --- 3. LOGIC REKAP ANGGOTA ---
     document.getElementById('loadMemberBtn').onclick = async () => {
       const out = document.getElementById('memberOutput');
-      out.innerHTML = "Memuat...";
+      out.innerHTML = "<p class='muted'>Memuat...</p>";
       const month = memberMonthSel.value;
       const memId = memberSel.value;
 
       try {
         const { data: history } = await supabaseClient.from('attendance_detail')
-          .select('presence, attendance_header(date, activity_name_snapshot)')
+          .select('presence, attendance_header(date, activity_name_snapshot, pdf_file_id)')
           .eq('member_id', memId)
           .gte('attendance_header.date', `${month}-01`)
-          .lte('attendance_header.date', `${month}-31`);
+          .lte('attendance_header.date', `${month}-31`)
+          .order('attendance_header(date)', { ascending: false }); // Urutkan terbaru
 
+        // Supabase join handling
         const validHist = history.filter(h => h.attendance_header);
-        if (!validHist.length) return out.innerHTML = "Belum ada riwayat.";
+        if (!validHist.length) return out.innerHTML = "<p class='muted'>Belum ada riwayat kehadiran.</p>";
 
         out.innerHTML = `
-          <div class="soft-card">
-            ${validHist.map(h => `
-              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee;">
-                <div><small>${h.attendance_header.date}</small><br><b>${h.attendance_header.activity_name_snapshot}</b></div>
-                <div class="badge">${h.presence}</div>
+          <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+            ${validHist.map((h, i) => `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-bottom:${i === validHist.length - 1 ? 'none' : '1px solid #e5e7eb'};">
+                <div>
+                  <div style="font-weight:600; font-size:14px;">${escapeHtml(h.attendance_header.activity_name_snapshot)}</div>
+                  <div style="font-size:12px; color:#6b7280; margin-top:2px;">${h.attendance_header.date}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span style="font-size:12px; font-weight:700; color:${h.presence === 'Hadir' ? '#16a34a' : h.presence === 'Izin' ? '#ca8a04' : '#dc2626'}; background:${h.presence === 'Hadir' ? '#dcfce7' : h.presence === 'Izin' ? '#fef08a' : '#fee2e2'}; padding:4px 10px; border-radius:12px;">${h.presence}</span>
+                  ${h.attendance_header.pdf_file_id ? `<a href="https://drive.google.com/file/d/${h.attendance_header.pdf_file_id}/view" target="_blank" title="Lihat PDF" style="color:#1590df;"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></a>` : ''}
+                </div>
               </div>`).join('')}
           </div>`;
       } catch (e) { out.innerHTML = "Error: " + e.message; }
