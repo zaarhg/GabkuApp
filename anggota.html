@@ -5,12 +5,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Gabku App – Anggota</title>
-
   <link rel="stylesheet" href="assets/css/app.css" />
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1590df">
   <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -20,22 +18,18 @@
     <header class="app-header">
       <div class="header-bar">
         <div class="header-left">
-          <a class="icon-back" href="index.html" aria-label="Kembali" title="Kembali">
-            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <a class="icon-back" href="index.html" aria-label="Kembali"><svg viewBox="0 0 24 24" width="22" height="22">
               <path fill="currentColor"
                 d="M15.5 19a1 1 0 0 1-.7-.29l-6-6a1 1 0 0 1 0-1.42l6-6a1 1 0 1 1 1.4 1.42L11.62 12l4.58 4.58A1 1 0 0 1 15.5 19z" />
-            </svg>
-          </a>
+            </svg></a>
           <div class="header-text">
             <div class="app-name">Anggota</div>
-            <div class="app-subtitle">Tambah & kelola data anggota</div>
+            <div class="app-subtitle">Kelola data anggota aktif</div>
           </div>
         </div>
-        <button class="btn-ghost" id="refreshBtn" type="button" aria-label="Refresh" title="Refresh">
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <button class="btn-ghost" id="refreshBtn"><svg viewBox="0 0 24 24" width="20" height="20">
             <path fill="currentColor" d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-9.58-2H5.26A7 7 0 1 0 12 6z" />
-          </svg>
-        </button>
+          </svg></button>
       </div>
     </header>
 
@@ -54,7 +48,6 @@
         </select>
         <div class="row-actions">
           <button id="addBtn" class="btn-primary" type="button">Simpan</button>
-          <button class="btn-secondary" type="button" onclick="resetForm()">Batal</button>
         </div>
         <p id="msg" class="tool-msg" style="margin-top:10px;"></p>
       </section>
@@ -65,8 +58,7 @@
           <span class="pill" id="countPill" style="display:none;"></span>
         </div>
         <div style="margin-top:12px;">
-          <label class="field-label" for="q" style="margin-top:0;">Cari anggota</label>
-          <input id="q" type="text" class="field" placeholder="Ketik nama untuk mencari..." />
+          <input id="q" type="text" class="field" placeholder="Cari nama anggota..." />
         </div>
         <div id="list" style="margin-top:12px;"></div>
       </section>
@@ -78,11 +70,7 @@
   <script src="assets/js/auth.js"></script>
 
   <script>
-    // Pastikan login sebelum lanjut
-    (async () => {
-      await requireLogin();
-      load();
-    })();
+    (async () => { await requireLogin(); load(); })();
 
     const listEl = document.getElementById("list");
     const msgEl = document.getElementById("msg");
@@ -90,19 +78,11 @@
     const countPill = document.getElementById("countPill");
     let cache = [];
 
-    function escapeHtml(s) {
-      return String(s).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
-    }
-
-    function resetForm() {
-      document.getElementById('name').value = '';
-      document.getElementById('role').value = '';
-      msgEl.textContent = '';
-    }
+    function escapeHtml(s) { return String(s || '').replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"); }
 
     function render(items) {
       if (!items.length) {
-        listEl.innerHTML = "<p class='muted'>Belum ada anggota.</p>";
+        listEl.innerHTML = "<p class='muted'>Tidak ada anggota.</p>";
         countPill.style.display = "none";
         return;
       }
@@ -110,73 +90,79 @@
       countPill.style.display = "inline-flex";
 
       listEl.innerHTML = items.map(m => `
-        <div class="item-card">
+        <div class="item-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
           <div class="item-left">
-            <div class="item-title">${escapeHtml(m.name)}</div>
-            <div class="item-sub">${escapeHtml(m.role)} • ID: ${escapeHtml(String(m.id))}</div>
+            <div style="font-weight:bold;">${escapeHtml(m.name)}</div>
+            <div style="font-size:12px; color:#666;">${escapeHtml(m.role)}</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn-secondary" style="padding:4px 10px; font-size:12px;" onclick="editMember('${m.id}', '${escapeHtml(m.name)}', '${escapeHtml(m.role)}')">Edit</button>
+            <button class="btn-danger" style="padding:4px 10px; font-size:12px; background:#fee2e2; color:#b91c1c; border:none; border-radius:6px;" onclick="deleteMember('${m.id}', '${escapeHtml(m.name)}')">Hapus</button>
           </div>
         </div>
       `).join("");
     }
 
-    // Load data dari Supabase
     async function load() {
       listEl.innerHTML = "<p class='muted'>Memuat...</p>";
-      countPill.style.display = "none";
       try {
-        const { data, error } = await supabaseClient
-          .from('members')
-          .select('*')
-          .order('name', { ascending: true });
-
+        // Hanya ambil anggota yang is_active = true
+        const { data, error } = await supabaseClient.from('members').select('*').eq('is_active', true).order('name');
         if (error) throw error;
         cache = data;
         render(cache);
-      } catch (e) {
-        listEl.innerHTML = `<p class='msg'>Gagal load: ${escapeHtml(e.message)}</p>`;
-      }
+      } catch (e) { listEl.innerHTML = `<p class='msg'>Error: ${e.message}</p>`; }
     }
 
-    // Tambah data ke Supabase
-    async function add() {
+    document.getElementById("addBtn").onclick = async () => {
       const name = document.getElementById("name").value.trim();
       const role = document.getElementById("role").value.trim();
       msgEl.textContent = "";
-
-      if (!name) { msgEl.textContent = "Nama wajib diisi."; return; }
-      if (!role) { msgEl.textContent = "Role wajib dipilih."; return; }
+      if (!name || !role) return msgEl.textContent = "Data belum lengkap.";
 
       try {
         msgEl.textContent = "Menyimpan...";
-
-        // Membuat ID unik dengan format serupa data lama
-        const now = new Date();
-        const ts = now.toISOString().replace(/[-T:]/g, '').split('.')[0];
-        const rand = Math.floor(1000 + Math.random() * 9000);
-        const member_id = `MBR-${ts}-${rand}`;
-
-        const { error } = await supabaseClient
-          .from('members')
-          .insert([{ id: member_id, name, role }]);
-
+        const id = `MBR-${new Date().toISOString().replace(/[-T:]/g, '').split('.')[0]}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const { error } = await supabaseClient.from('members').insert([{ id, name, role }]);
         if (error) throw error;
-
-        msgEl.textContent = "Berhasil ditambahkan.";
-        resetForm();
+        msgEl.textContent = "Berhasil!";
+        document.getElementById("name").value = ''; document.getElementById("role").value = '';
         await load();
-      } catch (e) {
-        msgEl.textContent = "Gagal: " + e.message;
-      }
-    }
+      } catch (e) { msgEl.textContent = "Gagal: " + e.message; }
+    };
+
+    // FUNGSI EDIT
+    window.editMember = async (id, oldName, oldRole) => {
+      const newName = prompt("Edit Nama:", oldName);
+      if (newName === null) return;
+      const newRole = prompt("Edit Role (Atlet/Pelatih/Official/Pengurus):", oldRole);
+      if (newRole === null) return;
+
+      if (!newName.trim() || !newRole.trim()) return alert("Data tidak boleh kosong!");
+
+      try {
+        const { error } = await supabaseClient.from('members').update({ name: newName.trim(), role: newRole.trim() }).eq('id', id);
+        if (error) throw error;
+        load();
+      } catch (e) { alert("Error: " + e.message); }
+    };
+
+    // FUNGSI HAPUS (Soft Delete)
+    window.deleteMember = async (id, name) => {
+      if (!confirm(`Hapus ${name}? (Riwayat presensinya akan tetap aman)`)) return;
+      try {
+        const { error } = await supabaseClient.from('members').update({ is_active: false }).eq('id', id);
+        if (error) throw error;
+        load();
+      } catch (e) { alert("Error: " + e.message); }
+    };
 
     qEl.addEventListener("input", () => {
       const q = qEl.value.trim().toLowerCase();
-      if (!q) return render(cache);
-      render(cache.filter(m => String(m.name || "").toLowerCase().includes(q)));
+      render(q ? cache.filter(m => String(m.name || "").toLowerCase().includes(q)) : cache);
     });
 
-    document.getElementById("addBtn").addEventListener("click", add);
-    document.getElementById("refreshBtn").addEventListener("click", load);
+    document.getElementById("refreshBtn").onclick = load;
   </script>
 </body>
 

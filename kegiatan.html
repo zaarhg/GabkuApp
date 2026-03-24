@@ -9,7 +9,6 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1590df">
   <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -19,22 +18,18 @@
     <header class="app-header">
       <div class="header-bar">
         <div class="header-left">
-          <a class="icon-back" href="index.html" aria-label="Kembali" title="Kembali">
-            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <a class="icon-back" href="index.html"><svg viewBox="0 0 24 24" width="22" height="22">
               <path fill="currentColor"
                 d="M15.5 19a1 1 0 0 1-.7-.29l-6-6a1 1 0 0 1 0-1.42l6-6a1 1 0 1 1 1.4 1.42L11.62 12l4.58 4.58A1 1 0 0 1 15.5 19z" />
-            </svg>
-          </a>
+            </svg></a>
           <div class="header-text">
             <div class="app-name">Kelola Kegiatan</div>
-            <div class="app-subtitle">Tambah & edit daftar kegiatan</div>
+            <div class="app-subtitle">Tambah, edit, hapus kegiatan</div>
           </div>
         </div>
-        <button class="btn-ghost" id="refreshBtn" type="button" aria-label="Refresh" title="Refresh">
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <button class="btn-ghost" id="refreshBtn"><svg viewBox="0 0 24 24" width="20" height="20">
             <path fill="currentColor" d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 1 1-9.58-2H5.26A7 7 0 1 0 12 6z" />
-          </svg>
-        </button>
+          </svg></button>
       </div>
     </header>
 
@@ -45,8 +40,6 @@
         <input id="activityName" type="text" class="field" placeholder="Contoh: Latihan rutin / Rapat" />
         <div class="row-actions">
           <button id="addBtn" class="btn-primary" type="button">Simpan</button>
-          <button class="btn-secondary" type="button"
-            onclick="document.getElementById('activityName').value='';">Batal</button>
         </div>
         <p id="msg" class="tool-msg" style="margin-top:10px;"></p>
       </section>
@@ -66,100 +59,78 @@
   <script src="assets/js/auth.js"></script>
 
   <script>
-    (async () => {
-      await requireLogin();
-      load();
-    })();
+    (async () => { await requireLogin(); load(); })();
 
     const listEl = document.getElementById("list");
     const msgEl = document.getElementById("msg");
     const countPill = document.getElementById("countPill");
 
+    function escapeHtml(s) { return String(s || '').replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"); }
+
     async function load() {
       listEl.innerHTML = "<p class='muted'>Memuat...</p>";
       countPill.style.display = "none";
       try {
-        const { data, error } = await supabaseClient
-          .from('activities')
-          .select('*')
-          .eq('is_active', true)
-          .order('name', { ascending: true });
-
+        const { data, error } = await supabaseClient.from('activities').select('*').eq('is_active', true).order('name');
         if (error) throw error;
 
-        if (!data.length) {
-          listEl.innerHTML = "<p class='muted'>Belum ada kegiatan.</p>";
-          return;
-        }
+        if (!data.length) return listEl.innerHTML = "<p class='muted'>Belum ada kegiatan.</p>";
 
         countPill.textContent = data.length + " item";
         countPill.style.display = "inline-flex";
 
         listEl.innerHTML = data.map(r => `
-          <div class="item-card">
+          <div class="item-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div class="item-left">
-              <div class="item-title">${escapeHtml(r.name)}</div>
-              <div class="item-sub">ID: ${escapeHtml(String(r.id))}</div>
+              <div style="font-weight:bold;">${escapeHtml(r.name)}</div>
             </div>
-            <button class="btn-mini" onclick="editPrompt('${escapeHtml(String(r.id))}','${escapeHtml(String(r.name))}')" type="button">
-              Edit
-            </button>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-secondary" style="padding:4px 10px; font-size:12px;" onclick="editActivity('${r.id}', '${escapeHtml(r.name)}')">Edit</button>
+              <button class="btn-danger" style="padding:4px 10px; font-size:12px; background:#fee2e2; color:#b91c1c; border:none; border-radius:6px;" onclick="deleteActivity('${r.id}', '${escapeHtml(r.name)}')">Hapus</button>
+            </div>
           </div>
         `).join("");
-      } catch (e) {
-        listEl.innerHTML = `<p class='msg'>Gagal load: ${e.message}</p>`;
-      }
+      } catch (e) { listEl.innerHTML = `<p class='msg'>Gagal load: ${e.message}</p>`; }
     }
 
-    async function add() {
+    document.getElementById("addBtn").onclick = async () => {
       const name = document.getElementById("activityName").value.trim();
       msgEl.textContent = "";
-      if (!name) { msgEl.textContent = "Nama kegiatan wajib diisi."; return; }
+      if (!name) return msgEl.textContent = "Nama wajib diisi.";
 
       try {
         msgEl.textContent = "Menyimpan...";
-
-        const now = new Date();
-        const ts = now.toISOString().replace(/[-T:]/g, '').split('.')[0];
-        const activity_id = `ACT-${ts}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-        const { error } = await supabaseClient
-          .from('activities')
-          .insert([{ id: activity_id, name: name }]);
-
+        const id = `ACT-${new Date().toISOString().replace(/[-T:]/g, '').split('.')[0]}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const { error } = await supabaseClient.from('activities').insert([{ id, name }]);
         if (error) throw error;
-
-        msgEl.textContent = "Berhasil ditambahkan.";
+        msgEl.textContent = "Berhasil!";
         document.getElementById("activityName").value = "";
         await load();
-      } catch (e) {
-        msgEl.textContent = "Gagal: " + e.message;
-      }
-    }
+      } catch (e) { msgEl.textContent = "Gagal: " + e.message; }
+    };
 
-    async function editPrompt(id, currentName) {
+    // FUNGSI EDIT
+    window.editActivity = async (id, currentName) => {
       const newName = prompt("Edit nama kegiatan:", currentName);
       if (!newName || newName.trim() === "") return;
-
       try {
-        const { error } = await supabaseClient
-          .from('activities')
-          .update({ name: newName.trim() })
-          .eq('id', id);
-
+        const { error } = await supabaseClient.from('activities').update({ name: newName.trim() }).eq('id', id);
         if (error) throw error;
-        await load();
-      } catch (e) {
-        alert("Gagal update: " + e.message);
-      }
-    }
+        load();
+      } catch (e) { alert("Gagal update: " + e.message); }
+    };
 
-    function escapeHtml(s) {
-      return String(s).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-    }
+    // FUNGSI HAPUS (Soft Delete)
+    window.deleteActivity = async (id, currentName) => {
+      if (!confirm(`Hapus kegiatan "${currentName}"?`)) return;
+      try {
+        const { error } = await supabaseClient.from('activities').update({ is_active: false }).eq('id', id);
+        if (error) throw error;
+        load();
+      } catch (e) { alert("Gagal hapus: " + e.message); }
+    };
 
-    document.getElementById("addBtn").addEventListener("click", add);
-    document.getElementById("refreshBtn").addEventListener("click", load);
+    document.getElementById("refreshBtn").onclick = load;
   </script>
 </body>
 
