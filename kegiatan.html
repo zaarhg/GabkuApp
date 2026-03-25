@@ -10,6 +10,12 @@
   <meta name="theme-color" content="#1590df">
   <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .radio-group { display:flex; gap:10px; margin-bottom:12px; }
+    .radio-btn { flex:1; text-align:center; padding:10px; border:1px solid var(--border); border-radius:8px; cursor:pointer; font-weight:600; font-size:14px; color:#6b7280; background:#f9fafb; transition:all 0.2s; }
+    .radio-btn.active { background:#e7f0fd; border-color:#1590df; color:#1590df; }
+    .radio-btn[data-val="Latihan"].active { background:#dcfce7; border-color:#166534; color:#166534; }
+  </style>
 </head>
 
 <body>
@@ -34,14 +40,46 @@
     </header>
 
     <main class="app-main">
-      <section class="section-card" style="margin-top:0;">
-        <div class="section-title">Tambah Kegiatan</div>
-        <label class="field-label" for="activityName">Nama kegiatan</label>
-        <input id="activityName" type="text" class="field" placeholder="Contoh: Latihan rutin / Rapat" />
-        <div class="row-actions">
-          <button id="addBtn" class="btn-primary" type="button">Simpan</button>
+      <section class="section-card" id="toggleAddActivityBtn" style="margin-top:0; padding:14px; background:#f3f4f6; display:flex; justify-content:center; align-items:center; cursor:pointer; border:1px dashed #d1d5db; transition:background 0.2s;">
+         <span style="font-weight:700; color:#1590df; font-size:14px;">+ Tambah Kegiatan Baru</span>
+      </section>
+
+      <section class="section-card" id="addActivityForm" style="display:none; margin-top:0;">
+        <div class="row-between">
+          <div class="section-title" style="margin:0;">Tambah Kegiatan</div>
+          <button class="btn-ghost" id="cancelAddActivityBtn" style="font-size:24px; padding:0 8px; line-height:1; color:#9ca3af;">&times;</button>
         </div>
-        <p id="msg" class="tool-msg" style="margin-top:10px;"></p>
+
+        <label class="field-label" for="activityName" style="margin-top:10px;">Nama kegiatan</label>
+        <input id="activityName" type="text" class="field" placeholder="Contoh: Latihan rutin / Rapat" />
+        
+        <label class="field-label" style="margin-top:10px;">Kategori Kegiatan</label>
+        <div class="radio-group" id="activityCategoryGroup">
+          <div class="radio-btn" data-val="Kegiatan Lain">Kegiatan Lainnya</div>
+          <div class="radio-btn active" data-val="Latihan">Latihan</div>
+        </div>
+        <input type="hidden" id="activityCategory" value="Latihan" />
+
+        <label class="field-label" for="activityLocation">Tempat Default (Opsional)</label>
+        <select id="activityLocSel" class="field" onchange="document.getElementById('activityLocation').style.display = this.value === 'Lainnya' ? 'block' : 'none';"></select>
+        <input id="activityLocation" type="text" class="field" style="display:none; margin-top:6px; margin-bottom:12px;" placeholder="Ketik tempat manual..." />
+
+        <label class="field-label" style="margin-top:10px;">Rentang Tanggal (Opsional)</label>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+          <div style="flex:1;"><label style="font-size:11px; margin-bottom:2px; color:#6b7280; display:block;">Mulai</label><input id="activityStartD" type="date" class="field" /></div>
+          <div style="flex:1;"><label style="font-size:11px; margin-bottom:2px; color:#6b7280; display:block;">Sampai</label><input id="activityEndD" type="date" class="field" /></div>
+        </div>
+        
+        <div class="row-between" style="margin-top:10px;">
+          <label class="field-label" style="margin:0;">List Peserta Default</label>
+          <button class="btn-secondary" id="addPartBtn" type="button" style="padding:4px 10px; font-size:12px;">Tambah</button>
+        </div>
+        <div id="addPartList" style="margin-top:10px; margin-bottom:15px;"></div>
+
+        <div class="row-actions">
+          <button id="addBtn" class="btn-primary" type="button" style="width:100%;">Simpan Kegiatan</button>
+        </div>
+        <p id="msg" class="tool-msg" style="margin-top:10px; text-align:center;"></p>
       </section>
 
       <section class="section-card">
@@ -51,7 +89,75 @@
         </div>
         <div id="list" style="margin-top:12px;"></div>
       </section>
+
+      <!-- Custom Modals -->
+      <div id="customConfirm" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div class="section-card" style="width:90%; max-width:350px; margin:0; text-align:center;">
+          <h3 style="margin-top:0; font-size:16px;" id="confirmTitle">Peringatan</h3>
+          <p id="confirmMsg" style="font-size:14px; color:#4b5563; margin-bottom:20px;"></p>
+          <div style="display:flex; gap:10px; justify-content:center;">
+            <button id="confirmBtnNo" class="btn-secondary" style="padding:8px 20px;">Batal</button>
+            <button id="confirmBtnYes" class="btn-primary" style="padding:8px 20px;">Ya, Lanjutkan</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="customPrompt" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div class="section-card" style="width:90%; max-width:350px; margin:0;">
+          <h3 style="margin-top:0; font-size:16px;" id="promptTitle">Cari Nama</h3>
+          
+          <input type="text" id="promptInput" class="field" style="margin-bottom:10px;" placeholder="Ketik nama (opsional)..." />
+          <div style="text-align:center; font-size:12px; color:#666; margin-bottom:10px;">- ATAU -</div>
+          <select id="promptSelect" class="field" style="margin-bottom:15px;">
+            <option value="">-- Pilih dari daftar --</option>
+          </select>
+
+          <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button id="promptBtnNo" class="btn-secondary" style="padding:8px 16px;">Batal</button>
+            <button id="promptBtnYes" class="btn-primary" style="padding:8px 16px;">Konfirmasi</button>
+          </div>
+        </div>
+      </div>
     </main>
+
+    <!-- Modal Edit -->
+    <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; justify-content:center; align-items:center;">
+      <div class="section-card" style="width:90%; max-width:400px; margin:0; max-height:90vh; overflow-y:auto;">
+        <div class="section-title" style="margin-top:0;">Edit Kegiatan</div>
+        <input type="hidden" id="editId" />
+        
+        <label class="field-label" for="editName">Nama kegiatan</label>
+        <input id="editName" type="text" class="field" style="margin-bottom:12px;" />
+        
+        <label class="field-label" style="margin-top:10px;">Kategori Kegiatan</label>
+        <div class="radio-group" id="editCategoryGroup">
+          <div class="radio-btn" data-val="Kegiatan Lain">Kegiatan Lainnya</div>
+          <div class="radio-btn" data-val="Latihan">Latihan</div>
+        </div>
+        <input type="hidden" id="editCategory" value="Kegiatan Lain" />
+
+        <label class="field-label" for="editLocation">Tempat Default</label>
+        <select id="editLocSel" class="field" onchange="document.getElementById('editLocation').style.display = this.value === 'Lainnya' ? 'block' : 'none';"></select>
+        <input id="editLocation" type="text" class="field" style="display:none; margin-top:6px; margin-bottom:12px;" placeholder="Ketik tempat manual..." />
+
+        <label class="field-label">Rentang Tanggal</label>
+        <div style="display:flex; gap:10px; margin-bottom:12px;">
+          <input id="editStartD" type="date" class="field" style="flex:1;" />
+          <input id="editEndD" type="date" class="field" style="flex:1;" />
+        </div>
+
+        <div class="row-between" style="margin-top:10px;">
+          <label class="field-label" style="margin:0;">Peserta Default</label>
+          <button class="btn-secondary" onclick="addEditParticipant()" type="button" style="padding:4px 10px; font-size:12px;">Tambah</button>
+        </div>
+        <div id="editPartList" style="margin-top:10px; margin-bottom:15px;"></div>
+
+        <div style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
+          <button class="btn-secondary" onclick="closeEditModal()" style="padding:8px 16px;">Batal</button>
+          <button class="btn-primary" onclick="saveEdit()" style="padding:8px 16px;">Simpan</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="assets/js/config.js"></script>
@@ -59,13 +165,137 @@
   <script src="assets/js/auth.js"></script>
 
   <script>
-    (async () => { await requireLogin(); load(); })();
-
     const listEl = document.getElementById("list");
     const msgEl = document.getElementById("msg");
     const countPill = document.getElementById("countPill");
+    
+    let membersCache = [];
+    let activitiesCache = [];
+    let addParticipants = [];
+    let editParticipants = [];
+    let locationOpts = [];
+
+    async function initOptions() {
+      const { data } = await supabaseClient.from('app_settings').select('*').eq('setting_key', 'location_options').single();
+      if (data && data.setting_value) {
+        locationOpts = Array.isArray(data.setting_value) ? data.setting_value : JSON.parse(data.setting_value);
+      }
+      let optsHtml = `<option value="">— pilih tempat (opsional) —</option>` + locationOpts.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+      optsHtml += `<option value="Lainnya">Lainnya...</option>`;
+      document.getElementById('activityLocSel').innerHTML = optsHtml;
+      document.getElementById('editLocSel').innerHTML = optsHtml;
+    }
+
+    async function initMembers() {
+      if(membersCache.length === 0) {
+        const { data } = await supabaseClient.from('members').select('*').eq('is_active', true).order('name');
+        if(data) membersCache = data;
+      }
+    }
+
+    (async () => { await requireLogin(); await initMembers(); await initOptions(); load(); })();
 
     function escapeHtml(s) { return String(s || '').replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"); }
+
+    function asyncConfirm(msg, title = "Peringatan") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        document.getElementById("confirmBtnNo").style.display = 'block';
+        modal.style.display = 'flex';
+        
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+        document.getElementById("confirmBtnNo").onclick = () => { modal.style.display = 'none'; resolve(false); };
+      });
+    }
+
+    function asyncAlert(msg, title = "Informasi") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        document.getElementById("confirmBtnNo").style.display = 'none';
+        modal.style.display = 'flex';
+        
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+      });
+    }
+
+    function asyncPrompt(title = "Cari Nama", options = [], btnText = "Konfirmasi") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customPrompt");
+        document.getElementById("promptTitle").textContent = title;
+        document.getElementById("promptBtnYes").textContent = btnText;
+        
+        const input = document.getElementById("promptInput");
+        const select = document.getElementById("promptSelect");
+        
+        input.value = "";
+        select.innerHTML = `<option value="">-- Pilih dari daftar --</option>` + 
+                           options.map(o => `<option value="${escapeHtml(o.name || o)}">${escapeHtml(o.name || o)}</option>`).join("");
+        select.value = "";
+        
+        modal.style.display = 'flex';
+        input.focus();
+        
+        document.getElementById("promptBtnYes").onclick = () => {
+          modal.style.display = 'none';
+          const val = select.value ? select.value : input.value.trim();
+          resolve(val);
+        };
+        document.getElementById("promptBtnNo").onclick = () => { modal.style.display = 'none'; resolve(null); };
+      });
+    }
+
+    // RENDER PARTICIPANTS UNTUK TAMBAH
+    function renderAddParts() {
+      document.getElementById("addPartList").innerHTML = addParticipants.map((p, i) => `
+        <div class="item-card" style="margin-bottom:8px; padding:10px; display:flex; justify-content:space-between; align-items:center; background:#f9fafb;">
+          <div><b style="font-size:13px;">${escapeHtml(p.name)}</b><br><small style="font-size:11px;">${escapeHtml(p.role)}</small></div>
+          <button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="addParticipants.splice(${i},1); renderAddParts();" type="button">×</button>
+        </div>`).join("");
+    }
+
+    document.getElementById("addPartBtn").onclick = async () => {
+      const q = await asyncPrompt("Cari / Pilih Anggota:", membersCache, "Tambah");
+      if (!q) return;
+      const found = membersCache.find(m => m.name.toLowerCase().includes(q.toLowerCase()));
+      if (!found) return await asyncAlert("Anggota tidak ditemukan");
+      if (addParticipants.find(p => p.member_id === found.id)) return await asyncAlert("Sudah ada di daftar");
+      addParticipants.push({ member_id: found.id, name: found.name, role: found.role });
+      renderAddParts();
+    };
+
+    // RENDER PARTICIPANTS UNTUK EDIT
+    function renderEditParts() {
+      document.getElementById("editPartList").innerHTML = editParticipants.map((p, i) => `
+        <div class="item-card" style="margin-bottom:8px; padding:10px; display:flex; justify-content:space-between; align-items:center; background:#f9fafb;">
+          <div><b style="font-size:13px;">${escapeHtml(p.name)}</b><br><small style="font-size:11px;">${escapeHtml(p.role)}</small></div>
+          <button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="editParticipants.splice(${i},1); renderEditParts();" type="button">×</button>
+        </div>`).join("");
+    }
+
+    window.addEditParticipant = async () => {
+      const q = await asyncPrompt("Cari / Pilih Anggota:", membersCache, "Tambah");
+      if (!q) return;
+      const found = membersCache.find(m => m.name.toLowerCase().includes(q.toLowerCase()));
+      if (!found) return await asyncAlert("Anggota tidak ditemukan");
+      if (editParticipants.find(p => p.member_id === found.id)) return await asyncAlert("Sudah ada di daftar");
+      editParticipants.push({ member_id: found.id, name: found.name, role: found.role });
+      renderEditParts();
+    };
+
+    document.getElementById("toggleAddActivityBtn").onclick = () => {
+      document.getElementById("toggleAddActivityBtn").style.display = "none";
+      document.getElementById("addActivityForm").style.display = "block";
+      document.getElementById("activityName").focus();
+    };
+    document.getElementById("cancelAddActivityBtn").onclick = () => {
+      document.getElementById("addActivityForm").style.display = "none";
+      document.getElementById("toggleAddActivityBtn").style.display = "flex";
+      msgEl.textContent = "";
+    };
 
     async function load() {
       listEl.innerHTML = "<p class='muted'>Memuat...</p>";
@@ -73,19 +303,25 @@
       try {
         const { data, error } = await supabaseClient.from('activities').select('*').eq('is_active', true).order('name');
         if (error) throw error;
+        
+        activitiesCache = data || [];
 
-        if (!data.length) return listEl.innerHTML = "<p class='muted'>Belum ada kegiatan.</p>";
+        if (!activitiesCache.length) return listEl.innerHTML = "<p class='muted'>Belum ada kegiatan.</p>";
 
-        countPill.textContent = data.length + " item";
+        countPill.textContent = activitiesCache.length + " item";
         countPill.style.display = "inline-flex";
 
-        listEl.innerHTML = data.map(r => `
+        listEl.innerHTML = activitiesCache.map(r => `
           <div class="item-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div class="item-left">
-              <div style="font-weight:bold;">${escapeHtml(r.name)}</div>
+              <div style="font-weight:bold; margin-bottom:2px;">${escapeHtml(r.name)}</div>
+              ${r.category === 'Latihan' ? `<span style="background:#dcfce7; color:#166534; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700;">Latihan</span>` : `<span style="background:#f3f4f6; color:#4b5563; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700;">Kegiatan Lain</span>`}
+              ${r.location ? `<div style="font-size:12px; color:#6b7280; margin-top:4px;">📍 ${escapeHtml(r.location)}</div>` : ''}
+              ${r.start_date ? `<div style="font-size:11px; color:#6b7280; margin-top:2px;">🗓️ ${r.start_date} s/d ${r.end_date || '?'}</div>` : ''}
+              ${r.default_participants && r.default_participants.length ? `<div style="font-size:12px; color:#6b7280; margin-top:2px;">👥 ${r.default_participants.length} peserta default</div>` : ''}
             </div>
             <div style="display:flex; gap:6px;">
-              <button class="btn-secondary" style="padding:4px 10px; font-size:12px;" onclick="editActivity('${r.id}', '${escapeHtml(r.name)}')">Edit</button>
+              <button class="btn-secondary" style="padding:4px 10px; font-size:12px;" onclick="editActivity('${r.id}')">Edit</button>
               <button class="btn-danger" style="padding:4px 10px; font-size:12px; background:#fee2e2; color:#b91c1c; border:none; border-radius:6px;" onclick="deleteActivity('${r.id}', '${escapeHtml(r.name)}')">Hapus</button>
             </div>
           </div>
@@ -93,41 +329,157 @@
       } catch (e) { listEl.innerHTML = `<p class='msg'>Gagal load: ${e.message}</p>`; }
     }
 
+    const handleRadioSel = (groupId, inputId) => {
+       document.querySelectorAll(`#${groupId} .radio-btn`).forEach(btn => {
+         btn.onclick = () => {
+           document.querySelectorAll(`#${groupId} .radio-btn`).forEach(b => {
+             b.classList.remove('active');
+           });
+           btn.classList.add('active');
+           const dt = btn.getAttribute('data-val');
+           document.getElementById(inputId).value = dt;
+         };
+       });
+    };
+    handleRadioSel('activityCategoryGroup', 'activityCategory');
+    handleRadioSel('editCategoryGroup', 'editCategory');
+
     document.getElementById("addBtn").onclick = async () => {
       const name = document.getElementById("activityName").value.trim();
+      let locValRaw = document.getElementById("activityLocSel").value;
+      const loc = locValRaw === 'Lainnya' ? document.getElementById("activityLocation").value.trim() : locValRaw;
+      const cat = document.getElementById("activityCategory").value;
+      const sd = document.getElementById("activityStartD").value;
+      const ed = document.getElementById("activityEndD").value;
+
       msgEl.textContent = "";
       if (!name) return msgEl.textContent = "Nama wajib diisi.";
+      if (name.toLowerCase() === 'latihan') {
+        return await asyncAlert('Nama kegiatan tidak boleh dibiarkan hanya bernama "Latihan". Mohon tulis lebih spesifik dan unik, contoh: Latihan Gabungan, Latihan Rutin, dsb.', 'Hindari Ambiguitas');
+      }
 
       try {
         msgEl.textContent = "Menyimpan...";
         const id = `ACT-${new Date().toISOString().replace(/[-T:]/g, '').split('.')[0]}-${Math.floor(1000 + Math.random() * 9000)}`;
-        const { error } = await supabaseClient.from('activities').insert([{ id, name }]);
+        const payload = { id, name, category: cat };
+        if (loc) payload.location = loc;
+        if (sd) payload.start_date = sd;
+        if (ed) payload.end_date = ed;
+        if (addParticipants.length > 0) payload.default_participants = addParticipants;
+
+        const { error } = await supabaseClient.from('activities').insert([payload]);
         if (error) throw error;
         msgEl.textContent = "Berhasil!";
         document.getElementById("activityName").value = "";
+        document.getElementById("activityLocation").value = "";
+        document.getElementById("activityLocSel").value = "";
+        document.getElementById("activityLocation").style.display = "none";
+        document.getElementById("activityCategory").value = "Kegiatan Lain";
+        document.getElementById("activityStartD").value = "";
+        document.getElementById("activityEndD").value = "";
+        addParticipants = [];
+        renderAddParts();
+        document.getElementById("addActivityForm").style.display = "none";
+        document.getElementById("toggleAddActivityBtn").style.display = "flex";
         await load();
       } catch (e) { msgEl.textContent = "Gagal: " + e.message; }
     };
 
     // FUNGSI EDIT
-    window.editActivity = async (id, currentName) => {
-      const newName = prompt("Edit nama kegiatan:", currentName);
-      if (!newName || newName.trim() === "") return;
+    window.editActivity = (id) => {
+      const act = activitiesCache.find(a => a.id === id);
+      if(!act) return;
+      
+      document.getElementById('editId').value = act.id;
+      document.getElementById('editName').value = act.name || '';
+      
+      const locVal = act.location || '';
+      if (locationOpts.includes(locVal) || !locVal) {
+         document.getElementById('editLocSel').value = locVal;
+         document.getElementById('editLocation').style.display = 'none';
+         document.getElementById('editLocation').value = '';
+      } else {
+         document.getElementById('editLocSel').value = 'Lainnya';
+         document.getElementById('editLocation').style.display = 'block';
+         document.getElementById('editLocation').value = locVal;
+      }
+      
+      const cVal = act.category || 'Kegiatan Lain';
+      document.getElementById('editCategory').value = cVal;
+      document.querySelectorAll('#editCategoryGroup .radio-btn').forEach(b => {
+         b.classList.remove('active');
+         if(b.getAttribute('data-val') === cVal) b.classList.add('active');
+      });
+      document.getElementById('editStartD').value = act.start_date || '';
+      document.getElementById('editEndD').value = act.end_date || '';
+      
+      editParticipants = act.default_participants ? JSON.parse(JSON.stringify(act.default_participants)) : [];
+      renderEditParts();
+      
+      document.getElementById('editModal').style.display = 'flex';
+    };
+
+    window.closeEditModal = () => {
+      document.getElementById('editModal').style.display = 'none';
+      document.getElementById('editId').value = '';
+      document.getElementById('editName').value = '';
+      document.getElementById('editLocation').value = '';
+      document.getElementById('editLocSel').value = '';
+      editParticipants = [];
+    };
+
+    window.saveEdit = async () => {
+      const id = document.getElementById('editId').value;
+      const newName = document.getElementById('editName').value.trim();
+      let editLocRaw = document.getElementById("editLocSel").value;
+      const newLoc = editLocRaw === 'Lainnya' ? document.getElementById('editLocation').value.trim() : editLocRaw;
+      const cat = document.getElementById('editCategory').value;
+      const sd = document.getElementById('editStartD').value;
+      const ed = document.getElementById('editEndD').value;
+
+      if (!newName) return await asyncAlert("Nama kegiatan wajib diisi!");
+      if (newName.toLowerCase() === 'latihan') return await asyncAlert('Nama kegiatan tidak boleh dibiarkan hanya bernama "Latihan". Mohon tulis lebih spesifik dan unik, contoh: Latihan Mingguan, Latihan Gabungan.', 'Hindari Ambiguitas');
+
       try {
-        const { error } = await supabaseClient.from('activities').update({ name: newName.trim() }).eq('id', id);
+        const btn = document.querySelector('#editModal .btn-primary');
+        const originalText = btn.textContent;
+        btn.textContent = 'Menyimpan...';
+        btn.disabled = true;
+
+        const payload = { 
+          name: newName, 
+          location: newLoc || null, 
+          category: cat,
+          start_date: sd || null,
+          end_date: ed || null,
+          default_participants: editParticipants.length > 0 ? editParticipants : null 
+        };
+
+        const { error } = await supabaseClient.from('activities').update(payload).eq('id', id);
         if (error) throw error;
+        
+        closeEditModal();
         load();
-      } catch (e) { alert("Gagal update: " + e.message); }
+        
+        btn.textContent = originalText;
+        btn.disabled = false;
+      } catch (e) { 
+        await asyncAlert("Gagal update: " + e.message);
+        const btn = document.querySelector('#editModal .btn-primary');
+        btn.textContent = 'Simpan';
+        btn.disabled = false;
+      }
     };
 
     // FUNGSI HAPUS (Soft Delete)
     window.deleteActivity = async (id, currentName) => {
-      if (!confirm(`Hapus kegiatan "${currentName}"?`)) return;
+      const proceed = await asyncConfirm(`Hapus kegiatan "${currentName}"?`);
+      if (!proceed) return;
       try {
         const { error } = await supabaseClient.from('activities').update({ is_active: false }).eq('id', id);
         if (error) throw error;
         load();
-      } catch (e) { alert("Gagal hapus: " + e.message); }
+      } catch (e) { await asyncAlert("Gagal hapus: " + e.message); }
     };
 
     document.getElementById("refreshBtn").onclick = load;

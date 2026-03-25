@@ -42,17 +42,25 @@
         <label class="field-label" for="date">Tanggal</label>
         <input id="date" type="date" class="field" />
 
-        <div class="row-2" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
-          <div>
-            <div class="mini-label">Mulai</div><input id="timeStart" type="time" class="field" />
-          </div>
-          <div>
-            <div class="mini-label">Selesai</div><input id="timeEnd" type="time" class="field" />
+        <div class="row-2" style="margin-top:10px;">
+          <div class="mini-label" style="margin-bottom:6px;">Waktu Kegiatan</div>
+          <select id="timeSel" class="field"></select>
+          
+          <div id="timeManual" style="display:none; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;">
+            <div>
+              <div class="mini-label">Mulai</div>
+              <input id="timeStartManual" type="time" class="field" oninput="checkFormReady()" />
+            </div>
+            <div>
+              <div class="mini-label">Selesai</div>
+              <input id="timeEndManual" type="time" class="field" oninput="checkFormReady()" />
+            </div>
           </div>
         </div>
 
-        <label class="field-label" for="locationCustom">Tempat</label>
-        <input id="locationCustom" type="text" class="field" placeholder="Lokasi kegiatan" />
+        <label class="field-label" for="locationSel">Tempat</label>
+        <select id="locationSel" class="field"></select>
+        <input id="locationManual" type="text" class="field" style="display:none; margin-top:6px;" placeholder="Tulis lokasi manual..." oninput="checkFormReady()" />
 
         <label class="field-label" for="note">Catatan (opsional)</label>
         <textarea id="note" rows="2" class="field"></textarea>
@@ -77,13 +85,36 @@
       <section class="section-card">
         <button id="saveBtn" class="btn-primary" style="width:100%" type="button">Simpan & Generate PDF</button>
         <p id="msg" class="tool-msg" style="margin-top:10px; font-weight:bold;"></p>
-
-        <div id="after" style="display:none; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-          <a id="pdfLink" class="btn-secondary"
-            style="width:100%; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;"
-            target="_blank">Buka PDF (Google Drive)</a>
-        </div>
       </section>
+
+      <!-- Custom Modals -->
+      <div id="customConfirm" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div class="section-card" style="width:90%; max-width:350px; margin:0; text-align:center;">
+          <h3 style="margin-top:0; font-size:16px;" id="confirmTitle">Peringatan</h3>
+          <p id="confirmMsg" style="font-size:14px; color:#4b5563; margin-bottom:20px;"></p>
+          <div style="display:flex; gap:10px; justify-content:center;">
+            <button id="confirmBtnNo" class="btn-secondary" style="padding:8px 20px;">Batal</button>
+            <button id="confirmBtnYes" class="btn-primary" style="padding:8px 20px;">Ya, Lanjutkan</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="customPrompt" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div class="section-card" style="width:90%; max-width:350px; margin:0;">
+          <h3 style="margin-top:0; font-size:16px;" id="promptTitle">Cari Nama</h3>
+          
+          <input type="text" id="promptInput" class="field" style="margin-bottom:10px;" placeholder="Ketik nama (opsional)..." />
+          <div style="text-align:center; font-size:12px; color:#666; margin-bottom:10px;">- ATAU -</div>
+          <select id="promptSelect" class="field" style="margin-bottom:15px;">
+            <option value="">-- Pilih dari daftar --</option>
+          </select>
+
+          <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button id="promptBtnNo" class="btn-secondary" style="padding:8px 16px;">Batal</button>
+            <button id="promptBtnYes" class="btn-primary" style="padding:8px 16px;">Konfirmasi</button>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -101,29 +132,257 @@
     const dateEl = document.getElementById("date");
     const msgEl = document.getElementById("msg");
     const photoPreview = document.getElementById("photoPreview");
+    
+    const timeSel = document.getElementById("timeSel");
+    const locSel = document.getElementById("locationSel");
+    const saveBtn = document.getElementById("saveBtn");
+
+    let activitiesCache = [];
     let membersCache = [];
     let participants = [];
     let photoB64 = [];
+
+    window.toggleManualInput = (type) => {
+      if (type === 'time') {
+        document.getElementById('timeManual').style.display = timeSel.value === 'Lainnya' ? 'grid' : 'none';
+      } else if (type === 'location') {
+        document.getElementById('locationManual').style.display = locSel.value === 'Lainnya' ? 'block' : 'none';
+      }
+    };
+
+    window.checkFormReady = () => {
+      // otomatis hilangkan pesan error bila user mulai mengetik/berubah
+      msgEl.textContent = "";
+
+      let ready = true;
+      if (!activitySel.value) ready = false;
+      if (!dateEl.value) ready = false;
+      
+      if (timeSel.value === 'Lainnya') {
+        if (!document.getElementById("timeStartManual").value || !document.getElementById("timeEndManual").value) ready = false;
+      } else if (!timeSel.value) ready = false;
+
+      if (locSel.value === 'Lainnya') {
+        if (!document.getElementById("locationManual").value.trim()) ready = false;
+      } else if (!locSel.value) ready = false;
+
+      if (!participants.length) ready = false;
+
+      if (ready) {
+        saveBtn.style.background = "#1590df";
+        saveBtn.style.cursor = "pointer";
+      } else {
+        saveBtn.style.background = "#9ca3af";
+        saveBtn.style.cursor = "pointer"; // tetap bisa diklik untuk memunculkan pesan error
+      }
+    };
+
+    function asyncConfirm(msg, title = "Peringatan") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        document.getElementById("confirmBtnNo").style.display = 'block';
+        modal.style.display = 'flex';
+        
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+        document.getElementById("confirmBtnNo").onclick = () => { modal.style.display = 'none'; resolve(false); };
+      });
+    }
+
+    function asyncAlert(msg, title = "Informasi") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        document.getElementById("confirmBtnNo").style.display = 'none';
+        modal.style.display = 'flex';
+        
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+      });
+    }
+
+    const escapeHtml = (s) => String(s || '').replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+    function asyncPrompt(title = "Cari Nama", options = [], btnText = "Konfirmasi") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customPrompt");
+        document.getElementById("promptTitle").textContent = title;
+        document.getElementById("promptBtnYes").textContent = btnText;
+        
+        const input = document.getElementById("promptInput");
+        const select = document.getElementById("promptSelect");
+        
+        input.value = "";
+        select.innerHTML = `<option value="">-- Pilih dari daftar --</option>` + 
+                           options.map(o => `<option value="${escapeHtml(o.name || o)}">${escapeHtml(o.name || o)}</option>`).join("");
+        select.value = "";
+        
+        modal.style.display = 'flex';
+        input.focus();
+        
+        document.getElementById("promptBtnYes").onclick = () => {
+          modal.style.display = 'none';
+          const val = select.value ? select.value : input.value.trim();
+          resolve(val);
+        };
+        document.getElementById("promptBtnNo").onclick = () => { modal.style.display = 'none'; resolve(null); };
+      });
+    }
+
+    let hasWarnedTemplateMod = false;
+    async function checkTemplateWarning(actionDesc, type) {
+      if (hasWarnedTemplateMod) return true;
+      const selId = activitySel.value;
+      if (!selId) return true;
+      const act = activitiesCache.find(a => a.id === selId);
+      if (!act) return true;
+
+      let shouldWarn = false;
+      if (type === 'location' && act.location) shouldWarn = true;
+      if (type === 'participant' && act.default_participants && act.default_participants.length > 0) shouldWarn = true;
+
+      if (shouldWarn) {
+        const proceed = await asyncConfirm(`Kegiatan ini memiliki template. Yakin ingin ${actionDesc}?`);
+        if (proceed) {
+           hasWarnedTemplateMod = true;
+           return true;
+        }
+        return false;
+      }
+      return true;
+    }
 
     async function init() {
       dateEl.value = new Date().toISOString().slice(0, 10);
       try {
         const { data: acts } = await supabaseClient.from('activities').select('*').eq('is_active', true).order('name');
-        activitySel.innerHTML = `<option value="">-- pilih --</option>` + acts.map(a => `<option value="${a.id}">${a.name}</option>`).join("");
+        activitiesCache = acts || [];
+        
+        activitySel.innerHTML = `<option value="">-- pilih --</option>` + activitiesCache.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join("");
 
         const { data: mems } = await supabaseClient.from('members').select('*').order('name');
         membersCache = mems;
+
+        // Load Settings
+        const { data: sets } = await supabaseClient.from('app_settings').select('*');
+        if (sets) {
+          const tRow = sets.find(r => r.setting_key === 'time_options');
+          const lRow = sets.find(r => r.setting_key === 'location_options');
+          const timeOpts = tRow ? tRow.setting_value : [];
+          const locOpts = lRow ? lRow.setting_value : [];
+
+          const tHtml = `<option value="">-- pilih --</option>` + timeOpts.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("") + `<option value="Lainnya">Lainnya...</option>`;
+          timeSel.innerHTML = tHtml;
+
+          const lHtml = `<option value="">-- pilih --</option>` + locOpts.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join("") + `<option value="Lainnya">Lainnya...</option>`;
+          locSel.innerHTML = lHtml;
+        }
+
+        // Setup live validation form 
+        const inputsForValidation = [
+          activitySel, dateEl, 
+          document.getElementById('timeStartManual'), document.getElementById('timeEndManual'), document.getElementById('locationManual')
+        ];
+        inputsForValidation.forEach(el => el.addEventListener('input', checkFormReady));
+        inputsForValidation.forEach(el => el.addEventListener('change', checkFormReady));
+
+        locSel.addEventListener('focus', function() { this.dataset.old = this.value; });
+        locSel.addEventListener('change', async function() {
+          const proceed = await checkTemplateWarning("mengubah setelan tempat master", "location");
+          if (!proceed) {
+            this.value = this.dataset.old || "";
+          } else {
+            this.dataset.old = this.value;
+          }
+          toggleManualInput('location');
+          checkFormReady();
+        });
+
+        timeSel.addEventListener('change', () => {
+          toggleManualInput('time');
+          checkFormReady();
+        });
+
+        checkFormReady(); // init warna tombol
+
       } catch (e) { console.error(e); }
     }
 
-    // Logika Tambah/Hapus Peserta (seperti sebelumnya)
-    document.getElementById("addMemberBtn").onclick = () => {
-      const q = prompt("Cari nama:");
+    activitySel.addEventListener('change', () => {
+      hasWarnedTemplateMod = false; 
+
+      // Pastikan pop-up peringatan/prompt hilang
+      document.getElementById('customConfirm').style.display = 'none';
+      document.getElementById('customPrompt').style.display = 'none';
+      msgEl.textContent = "";
+
+      const act = activitiesCache.find(a => a.id === activitySel.value);
+
+      // Reset Waktu dan Catatan
+      timeSel.value = "";
+      document.getElementById("timeStartManual").value = "";
+      document.getElementById("timeEndManual").value = "";
+      toggleManualInput('time');
+      document.getElementById("note").value = "";
+
+      if (!act) {
+        locSel.value = "";
+        toggleManualInput('location');
+        document.getElementById("locationManual").value = "";
+        participants = [];
+        renderParticipants();
+        return;
+      }
+      
+      if (act.location) {
+        // Cek apakah lokasi master ada di dropdown
+        const exists = Array.from(locSel.options).some(opt => opt.value === act.location);
+        if (exists) {
+          locSel.value = act.location;
+          toggleManualInput('location');
+        } else {
+          locSel.value = 'Lainnya';
+          toggleManualInput('location');
+          document.getElementById("locationManual").value = act.location;
+        }
+      } else {
+        locSel.value = "";
+        toggleManualInput('location');
+        document.getElementById("locationManual").value = "";
+      }
+      
+      if (act.default_participants && act.default_participants.length > 0) {
+        participants = act.default_participants.map(p => ({
+          member_id: p.member_id,
+          name: p.name,
+          role: p.role,
+          presence: "Hadir"
+        }));
+      } else {
+        participants = [];
+      }
+      renderParticipants();
+    });
+
+    // Logika Tambah/Hapus Peserta
+    document.getElementById("addMemberBtn").onclick = async () => {
+      const proceed = await checkTemplateWarning("menambah peserta manual di luar template", "participant");
+      if (!proceed) return;
+
+      const q = await asyncPrompt("Pilih / Cari Anggota:", membersCache, "Tambah");
       if (!q) return;
       const found = membersCache.find(m => m.name.toLowerCase().includes(q.toLowerCase()));
-      if (!found) return alert("Tidak ditemukan");
-      if (participants.find(p => p.member_id === found.id)) return alert("Sudah ada");
+      if (!found) return await asyncAlert("Anggota tidak ditemukan");
+      if (participants.find(p => p.member_id === found.id)) return await asyncAlert("Sudah ada di daftar");
       participants.push({ member_id: found.id, name: found.name, role: found.role, presence: "Hadir" });
+      renderParticipants();
+    };
+
+    window.removeParticipant = async (i) => {
+      const proceed = await checkTemplateWarning("menghapus peserta dari template", "participant");
+      if (!proceed) return;
+      participants.splice(i, 1);
       renderParticipants();
     };
 
@@ -135,9 +394,10 @@
             <select class="field" style="padding:4px;" onchange="participants[${i}].presence = this.value">
               <option>Hadir</option><option>Izin</option><option>Sakit</option><option>Alpa</option>
             </select>
-            <button class="btn-danger" style="padding:4px 8px;" onclick="participants.splice(${i},1); renderParticipants();">×</button>
+            <button class="btn-danger" style="padding:4px 8px;" onclick="removeParticipant(${i})">×</button>
           </div>
         </div>`).join("");
+      if (typeof checkFormReady === 'function') checkFormReady();
     }
 
     // Logika Kompres Foto (dari kode lama Anda)
@@ -174,22 +434,41 @@
 
     // LOGIKA SIMPAN HYBRID
     document.getElementById("saveBtn").onclick = async () => {
+      msgEl.style.color = "red";
+      if (!activitySel.value) return msgEl.textContent = "Mohon pilih Kegiatan.";
+      if (!dateEl.value) return msgEl.textContent = "Tanggal wajib diisi.";
+      if (timeSel.value === 'Lainnya' && (!document.getElementById("timeStartManual").value || !document.getElementById("timeEndManual").value)) return msgEl.textContent = "Waktu kegiatan manual belum lengkap.";
+      if (!timeSel.value) return msgEl.textContent = "Waktu kegiatan belum dipilih.";
+      if (locSel.value === 'Lainnya' && !document.getElementById("locationManual").value.trim()) return msgEl.textContent = "Lokasi manual belum diisi.";
+      if (!locSel.value) return msgEl.textContent = "Pilih lokasi/tempat kegiatan.";
+      if (!participants.length) return msgEl.textContent = "Daftar peserta tidak boleh kosong. Tambahkan minimal 1 orang.";
+
       msgEl.textContent = "";
-      if (!activitySel.value || !participants.length) return alert("Data belum lengkap");
 
       const btn = document.getElementById("saveBtn");
       btn.disabled = true;
 
       try {
-        // A. TAHAP 1: Generate PDF via Google Apps Script (Metode 2)
+        let ts = '', te = '';
+        if (timeSel.value === 'Lainnya') {
+          ts = document.getElementById("timeStartManual").value;
+          te = document.getElementById("timeEndManual").value;
+        } else {
+          const parts = timeSel.value.split(" - ");
+          ts = parts[0] ? parts[0].trim() : "";
+          te = parts.length > 1 ? parts[1].trim() : "";
+        }
+
+        // A. TAHAP 1: Generate PDF via Google Apps Script
+        msgEl.style.color = "#1590df";
         msgEl.textContent = "Tahap 1: Membuat PDF di Google Drive...";
         const headerData = {
           activity_id: activitySel.value,
           activity_name: activitySel.options[activitySel.selectedIndex].text,
           date: dateEl.value,
-          time_start: document.getElementById("timeStart").value,
-          time_end: document.getElementById("timeEnd").value,
-          location: document.getElementById("locationCustom").value,
+          time_start: ts,
+          time_end: te,
+          location: locSel.value === 'Lainnya' ? document.getElementById("locationManual").value : locSel.value,
           note: document.getElementById("note").value
         };
 
@@ -232,10 +511,10 @@
         if (errD) throw errD;
 
         msgEl.style.color = "green";
-        msgEl.textContent = "Berhasil! PDF tersimpan di Drive & Data tercatat di Supabase.";
+        msgEl.textContent = "Berhasil! Membuka PDF dan kembali ke beranda...";
 
-        document.getElementById("after").style.display = "block";
-        document.getElementById("pdfLink").href = `https://drive.google.com/file/d/${pdfId}/view`;
+        window.open(`https://drive.google.com/file/d/${pdfId}/view`, '_blank');
+        window.location.href = 'index.html';
 
       } catch (e) {
         msgEl.style.color = "red";

@@ -10,6 +10,22 @@
   <meta name="theme-color" content="#1590df">
   <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .segmented { display:flex; background:#f1f5f9; padding:4px; border-radius:12px; width:100%; gap:2px; }
+    .seg-btn { flex:1; background:transparent; color:#64748b; border:none; font-weight:600; border-radius:8px; cursor:pointer; padding:10px 4px; font-size:12px; white-space:nowrap; transition:background 0.2s, color 0.2s; }
+    .seg-btn.active { background:#1590df; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+    
+    .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+    .info-box { background: #fff; border-radius: 10px; padding: 10px 4px; text-align: center; border: 1px solid rgba(15,23,42,0.1); box-shadow: 0 2px 8px rgba(2,8,23,0.04); }
+    .info-box.hadir { border-top: 3px solid #16a34a; }
+    .info-box.izin { border-top: 3px solid #ca8a04; }
+    .info-box.sakit { border-top: 3px solid #f97316; }
+    .info-box.alpa { border-top: 3px solid #dc2626; }
+    .info-val { font-size: 18px; font-weight: 800; margin-bottom: 2px; color: #111827; }
+    .info-label { font-size: 10px; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-badge { display:inline-block; padding:4px 8px; background:#e0f2fe; color:#0369a1; border-radius:6px; font-weight:600; font-size:12px; margin-bottom:8px; margin-right:6px;}
+  </style>
 </head>
 
 <body>
@@ -35,42 +51,92 @@
     <main class="app-main">
       <section class="section-card" style="margin-top:0;">
         <div class="section-title">Mode Rekap</div>
-        <div class="segmented" style="display:flex; overflow-x:auto; gap:5px;">
-          <button id="tabSession" class="seg-btn active" style="white-space:nowrap;">Sesi & PDF</button>
-          <button id="tabMonthly" class="seg-btn" style="white-space:nowrap;">Bulanan</button>
-          <button id="tabMember" class="seg-btn" style="white-space:nowrap;">Anggota</button>
+        <div class="segmented">
+          <button id="tabSession" class="seg-btn active">Sesi & PDF</button>
+          <button id="tabMonthly" class="seg-btn">Bulanan</button>
+          <button id="tabMember" class="seg-btn">Anggota</button>
         </div>
       </section>
 
       <section class="section-card" id="panelSession">
-        <label class="field-label">Pilih Bulan</label>
-        <select id="sessionMonthSel" class="field"></select>
-        <div class="row-actions">
+        <label class="field-label">Pilih Periode</label>
+        <select id="sessionMonthSel" class="field" onchange="document.getElementById('sessionDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
+        <div id="sessionDateWrap" style="display:none; gap:10px; margin-top:10px;">
+          <div style="flex:1;"><label class="field-label">Mulai</label><input type="date" id="sessionStartD" class="field"/></div>
+          <div style="flex:1;"><label class="field-label">S/d</label><input type="date" id="sessionEndD" class="field"/></div>
+        </div>
+        <label class="field-label" style="margin-top:10px;">Pilih Kegiatan</label>
+        <select id="sessionActivitySel" class="field"><option value="">Semua Kegiatan</option></select>
+        <div class="row-actions" style="margin-top:12px;">
           <button id="loadSessionBtn" class="btn-primary">Muat Riwayat Sesi</button>
         </div>
         <div id="sessionOutput" class="mt-2" style="margin-top:15px;"></div>
       </section>
 
       <section class="section-card" id="panelMonthly" style="display:none;">
-        <label class="field-label">Pilih Bulan</label>
-        <select id="monthSel" class="field"></select>
-        <div class="row-actions">
+        <label class="field-label">Pilih Periode</label>
+        <select id="monthSel" class="field" onchange="document.getElementById('monthlyDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
+        <div id="monthlyDateWrap" style="display:none; gap:10px; margin-top:10px;">
+          <div style="flex:1;"><label class="field-label">Mulai</label><input type="date" id="monthlyStartD" class="field"/></div>
+          <div style="flex:1;"><label class="field-label">S/d</label><input type="date" id="monthlyEndD" class="field"/></div>
+        </div>
+        <label class="field-label" style="margin-top:10px;">Pilih Kegiatan</label>
+        <select id="monthlyActivitySel" class="field"><option value="">Semua Kegiatan</option></select>
+        <div class="row-actions" style="margin-top:12px;">
           <button id="loadMonthlyBtn" class="btn-primary">Muat Rekap</button>
-          <button id="exportCsvBtn" class="btn-secondary">Export CSV</button>
         </div>
         <div id="monthlyOutput" class="mt-2" style="margin-top:15px;"></div>
       </section>
 
       <section class="section-card" id="panelMember" style="display:none;">
         <label class="field-label">Pilih Anggota</label>
-        <select id="memberSel" class="field"></select>
-        <label class="field-label">Pilih Bulan</label>
-        <select id="memberMonthSel" class="field"></select>
-        <div class="row-actions">
+        <button id="memberSelBtn" class="field" style="text-align:left; background:#fff; color:#333; display:flex; justify-content:space-between; align-items:center;" type="button">
+          <span id="memberSelText">Pilih anggota...</span>
+          <span style="color:#999; font-size:12px;">▼</span>
+        </button>
+        <input type="hidden" id="memberSel" value="" />
+        <label class="field-label">Pilih Periode</label>
+        <select id="memberMonthSel" class="field" onchange="document.getElementById('memberDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
+        <div id="memberDateWrap" style="display:none; gap:10px; margin-top:10px;">
+          <div style="flex:1;"><label class="field-label">Mulai</label><input type="date" id="memberStartD" class="field"/></div>
+          <div style="flex:1;"><label class="field-label">S/d</label><input type="date" id="memberEndD" class="field"/></div>
+        </div>
+        <label class="field-label" style="margin-top:10px;">Pilih Kegiatan</label>
+        <select id="memberActivitySel" class="field"><option value="">Semua Kegiatan</option></select>
+        <div class="row-actions" style="margin-top:12px;">
           <button id="loadMemberBtn" class="btn-primary">Muat Rekap</button>
         </div>
         <div id="memberOutput" class="mt-2" style="margin-top:15px;"></div>
       </section>
+
+      <!-- Custom Modals -->
+      <div id="customConfirm" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div class="section-card" style="width:90%; max-width:350px; margin:0; text-align:center;">
+          <h3 style="margin-top:0; font-size:16px;" id="confirmTitle">Peringatan</h3>
+          <p id="confirmMsg" style="font-size:14px; color:#4b5563; margin-bottom:20px;"></p>
+          <div style="display:flex; gap:10px; justify-content:center;">
+            <button id="confirmBtnNo" class="btn-secondary" style="padding:8px 20px;">Batal</button>
+            <button id="confirmBtnYes" class="btn-primary" style="padding:8px 20px;">Ya, Lanjutkan</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="customPrompt" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div class="section-card" style="width:90%; max-width:350px; margin:0;">
+          <h3 style="margin-top:0; font-size:16px;" id="promptTitle">Cari Nama</h3>
+          
+          <input type="text" id="promptInput" class="field" style="margin-bottom:10px;" placeholder="Ketik nama (opsional)..." />
+          <div style="text-align:center; font-size:12px; color:#666; margin-bottom:10px;">- ATAU -</div>
+          <select id="promptSelect" class="field" style="margin-bottom:15px;">
+            <option value="">-- Pilih dari daftar --</option>
+          </select>
+
+          <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button id="promptBtnNo" class="btn-secondary" style="padding:8px 16px;">Batal</button>
+            <button id="promptBtnYes" class="btn-primary" style="padding:8px 16px;">Konfirmasi</button>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -84,27 +150,132 @@
     const monthSel = document.getElementById('monthSel');
     const memberMonthSel = document.getElementById('memberMonthSel');
     const sessionMonthSel = document.getElementById('sessionMonthSel');
-    const memberSel = document.getElementById('memberSel');
     let lastMonthlyData = [];
+    let membersCache = [];
 
     function escapeHtml(s) {
       return String(s || '').replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
     }
 
-    async function init() {
-      // Load Members for dropdown
-      const { data: mems } = await supabaseClient.from('members').select('id, name, role').order('name');
-      memberSel.innerHTML = mems.map(m => `<option value="${m.id}">${escapeHtml(m.name)} (${escapeHtml(m.role)})</option>`).join('');
+    function getDateRange(val, startId, endId) {
+      if (val === 'last3') {
+        const d = new Date(); d.setMonth(d.getMonth() - 2);
+        return { start: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`, end: '2099-12-31' };
+      }
+      if (val === 'last6') {
+        const d = new Date(); d.setMonth(d.getMonth() - 5);
+        return { start: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`, end: '2099-12-31' };
+      }
+      if (val === 'last12') {
+        const d = new Date(); d.setMonth(d.getMonth() - 11);
+        return { start: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`, end: '2099-12-31' };
+      }
+      if (val === 'custom') {
+        const s = document.getElementById(startId).value;
+        const e = document.getElementById(endId).value;
+        return { start: s || '2000-01-01', end: e || '2099-12-31' };
+      }
+      return { start: `${val}-01`, end: `${val}-31` };
+    }
 
-      // Generate Month List (12 bulan terakhir)
-      const months = [];
-      for (let i = 0; i < 12; i++) {
-        const d = new Date(); d.setMonth(d.getMonth() - i);
+    function asyncAlert(msg, title = "Informasi") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        document.getElementById("confirmBtnNo").style.display = 'none';
+        modal.style.display = 'flex';
+        
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+      });
+    }
+
+    function asyncPrompt(title = "Cari Nama", options = [], btnText = "Konfirmasi") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customPrompt");
+        document.getElementById("promptTitle").textContent = title;
+        document.getElementById("promptBtnYes").textContent = btnText;
+        
+        const input = document.getElementById("promptInput");
+        const select = document.getElementById("promptSelect");
+        
+        input.value = "";
+        select.innerHTML = `<option value="">-- Pilih dari daftar --</option>` + 
+                           options.map(o => `<option value="${escapeHtml(o.id || o)}">${escapeHtml(o.name || o)}</option>`).join("");
+        select.value = "";
+        
+        modal.style.display = 'flex';
+        input.focus();
+        
+        document.getElementById("promptBtnYes").onclick = () => {
+          modal.style.display = 'none';
+          const val = select.value ? select.value : input.value.trim();
+          resolve(val);
+        };
+        document.getElementById("promptBtnNo").onclick = () => { modal.style.display = 'none'; resolve(null); };
+      });
+    }
+
+    let latihanNames = [];
+    let sessionLoaded = true;
+    let monthlyLoaded = true;
+    let memberLoaded = true;
+
+    async function init() {
+      // Load Members
+      const { data: mems } = await supabaseClient.from('members').select('id, name, role').order('name');
+      if (mems) membersCache = mems;
+
+      // Ambil daftar bulan yang ada absensinya dari attendance_header
+      const { data: headers, error } = await supabaseClient.from('attendance_header').select('date').order('date', {ascending: false});
+      
+      const uniqueMonths = new Set();
+      if (headers) {
+        headers.forEach(h => {
+          if (h.date) uniqueMonths.add(h.date.slice(0, 7)); // Ekstrak YYYY-MM
+        });
+      }
+
+      const months = [
+        `<option value="last3">3 Bulan Terakhir</option>`,
+        `<option value="last6">6 Bulan Terakhir</option>`,
+        `<option value="last12">1 Tahun Terakhir</option>`
+      ];
+
+      if (uniqueMonths.size === 0) {
+        // Fallback jika belum ada data, tampilkan bulan berjalan
+        const d = new Date();
         const val = d.toISOString().slice(0, 7);
         const label = d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
         months.push(`<option value="${val}">${label}</option>`);
+      } else {
+        uniqueMonths.forEach(val => {
+          const [yyyy, mm] = val.split('-');
+          const d = new Date(yyyy, parseInt(mm) - 1, 1);
+          const label = d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+          months.push(`<option value="${val}">${label}</option>`);
+        });
       }
+      months.push(`<option value="custom">Custom (Tanggal)</option>`);
       monthSel.innerHTML = memberMonthSel.innerHTML = sessionMonthSel.innerHTML = months.join('');
+
+      // Load Activities for Filter
+      const { data: acts } = await supabaseClient.from('activities').select('name, category').order('name');
+      if (acts) {
+        latihanNames = acts.filter(a => a.category === 'Latihan').map(a => a.name);
+        const uniqueActs = [...new Set(acts.map(a => a.name))];
+        const actOpts = `
+          <option value="">Semua Kegiatan (Gabung)</option>
+          <option value="[CAT]Latihan">--- Kategori: Latihan ---</option>
+          <option value="[CAT]Lainnya">--- Kategori: Kegiatan Lainnya ---</option>
+          <optgroup label="Spesifik Kegiatan Tunggal:">
+            ${uniqueActs.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('')}
+          </optgroup>
+        `;
+        document.getElementById('sessionActivitySel').innerHTML = actOpts;
+        document.getElementById('monthlyActivitySel').innerHTML = actOpts;
+        document.getElementById('memberActivitySel').innerHTML = actOpts;
+      }
     }
 
     // --- TAB LOGIC ---
@@ -122,23 +293,85 @@
       document.getElementById('tabMember').classList.toggle('active', t === 'member');
     }
 
+    document.getElementById('memberSelBtn').onclick = async () => {
+      const q = await asyncPrompt("Cari / Pilih Anggota:", membersCache, "Pilih");
+      if (!q) return;
+      
+      // Jika q adalah UUID anggota (karena dipilih dari select)
+      let found = membersCache.find(m => m.id === q);
+      // Jika tidak ketemu id, coba cari berdasarkan input text
+      if (!found) {
+        found = membersCache.find(m => m.name.toLowerCase().includes(q.toLowerCase()));
+      }
+      
+      if (found) {
+        document.getElementById('memberSel').value = found.id;
+        document.getElementById('memberSelText').textContent = found.name;
+        document.getElementById('memberSelText').style.color = '#111827';
+        if (memberLoaded) document.getElementById('loadMemberBtn').click();
+      } else {
+        await asyncAlert("Anggota tidak ditemukan");
+      }
+    };
+
     // --- 1. LOGIC RIWAYAT SESI & PDF (BARU) ---
     document.getElementById('loadSessionBtn').onclick = async () => {
+      sessionLoaded = true;
       const out = document.getElementById('sessionOutput');
       out.innerHTML = "<p class='muted'>Memuat riwayat sesi...</p>";
-      const month = sessionMonthSel.value;
+      const { start, end } = getDateRange(sessionMonthSel.value, 'sessionStartD', 'sessionEndD');
+      const actFilter = document.getElementById('sessionActivitySel').value;
 
       try {
-        const { data, error } = await supabaseClient.from('attendance_header')
+        let query = supabaseClient.from('attendance_header')
           .select('*')
-          .gte('date', `${month}-01`)
-          .lte('date', `${month}-31`)
-          .order('date', { ascending: false }); // Urutkan dari yang terbaru
+          .gte('date', start)
+          .lte('date', end)
+          .order('date', { ascending: false });
+          
+        const { data: fetchRaw, error } = await query;
 
         if (error) throw error;
-        if (!data.length) return out.innerHTML = "<p class='muted'>Tidak ada kegiatan di bulan ini.</p>";
+        let data = fetchRaw;
+        
+        if (actFilter) {
+          if (actFilter === '[CAT]Latihan') {
+            data = data.filter(d => latihanNames.includes(d.activity_name_snapshot));
+          } else if (actFilter === '[CAT]Lainnya') {
+            data = data.filter(d => !latihanNames.includes(d.activity_name_snapshot));
+          } else {
+            data = data.filter(d => d.activity_name_snapshot.toLowerCase() === actFilter.toLowerCase());
+          }
+        }
 
-        out.innerHTML = data.map(h => `
+        if (!data.length) return out.innerHTML = "<p class='muted'>Tidak ada kegiatan di periode ini berdasarkan filter.</p>";
+
+        const countLatihan = data.filter(d => latihanNames.includes(d.activity_name_snapshot)).length;
+        const countLain = data.length - countLatihan;
+
+        let recapHtml = '';
+        if (actFilter === '[CAT]Lainnya' || (countLatihan === 0 && countLain > 0)) {
+           recapHtml = `
+             <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
+               <div style="font-size:13px; color:#1e40af; font-weight:600;">Total Kegiatan Lainnya: <span style="font-size:16px; font-weight:800;">${countLain}</span> sesi</div>
+             </div>
+           `;
+        } else if (actFilter === '[CAT]Latihan' || (countLatihan > 0 && countLain === 0)) {
+           recapHtml = `
+             <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
+               <div style="font-size:13px; color:#166534; font-weight:600;">Total Latihan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi</div>
+             </div>
+           `;
+        } else {
+           recapHtml = `
+             <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
+               <div style="font-size:13px; color:#166534; font-weight:600;">Total Latihan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi</div>
+               <div style="font-size:12px; color:#15803d; margin-top:4px;">+ ${countLain} kegiatan lainnya</div>
+             </div>
+           `;
+        }
+
+        out.innerHTML = recapHtml + data.map(h => `
           <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
             <div style="flex:1; padding-right:10px;">
               <div style="font-weight:700; font-size:15px; color:#111827;">${escapeHtml(h.activity_name_snapshot)}</div>
@@ -155,19 +388,41 @@
       } catch (e) { out.innerHTML = `<p class='msg'>Error: ${e.message}</p>`; }
     };
 
+    const autoSession = () => { if (sessionLoaded) document.getElementById('loadSessionBtn').click(); };
+    document.getElementById('sessionMonthSel').addEventListener('change', autoSession);
+    document.getElementById('sessionActivitySel').addEventListener('change', autoSession);
+    document.getElementById('sessionStartD').addEventListener('change', autoSession);
+    document.getElementById('sessionEndD').addEventListener('change', autoSession);
+
     // --- 2. LOGIC REKAP BULANAN ---
     document.getElementById('loadMonthlyBtn').onclick = async () => {
       const out = document.getElementById('monthlyOutput');
       out.innerHTML = "<p class='muted'>Memuat...</p>";
-      const month = monthSel.value;
+      const { start, end } = getDateRange(monthSel.value, 'monthlyStartD', 'monthlyEndD');
+      const actFilter = document.getElementById('monthlyActivitySel').value;
 
       try {
-        const { data: headers } = await supabaseClient.from('attendance_header')
+        let { data: headers, error } = await supabaseClient.from('attendance_header')
           .select('id, activity_name_snapshot, date')
-          .gte('date', `${month}-01`)
-          .lte('date', `${month}-31`);
+          .gte('date', start)
+          .lte('date', end);
+
+        if (error) throw error;
+
+        if (actFilter) {
+          if (actFilter === '[CAT]Latihan') {
+            headers = headers.filter(h => latihanNames.includes(h.activity_name_snapshot));
+          } else if (actFilter === '[CAT]Lainnya') {
+            headers = headers.filter(h => !latihanNames.includes(h.activity_name_snapshot));
+          } else {
+            headers = headers.filter(h => h.activity_name_snapshot.toLowerCase() === actFilter.toLowerCase());
+          }
+        }
 
         if (!headers.length) return out.innerHTML = "<p class='muted'>Tidak ada data.</p>";
+
+        const countLatihan = headers.filter(h => latihanNames.includes(h.activity_name_snapshot)).length;
+        const countLain = headers.length - countLatihan;
 
         const headerIds = headers.map(h => h.id);
         const { data: details } = await supabaseClient.from('attendance_detail')
@@ -185,12 +440,42 @@
         });
 
         lastMonthlyData = Object.values(recap).sort((a, b) => a.name.localeCompare(b.name));
+        
+        let recapHtml = '';
+        if (actFilter === '[CAT]Lainnya' || (countLatihan === 0 && countLain > 0)) {
+           recapHtml = `
+             <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
+               <div style="font-size:13px; color:#1e40af; font-weight:600;">Kegiatan Lainnya Berjalan: <span style="font-size:16px; font-weight:800;">${countLain}</span> sesi</div>
+             </div>
+           `;
+        } else if (actFilter === '[CAT]Latihan' || (countLatihan > 0 && countLain === 0)) {
+           recapHtml = `
+             <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
+               <div style="font-size:13px; color:#166534; font-weight:600;">Latihan Berjalan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi</div>
+             </div>
+           `;
+        } else {
+           recapHtml = `
+             <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
+               <div style="font-size:13px; color:#166534; font-weight:600;">Latihan Berjalan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi</div>
+               <div style="font-size:12px; color:#15803d; margin-top:4px;">+ ${countLain} kegiatan lainnya</div>
+             </div>
+           `;
+        }
+        
+        out.innerHTML = recapHtml;
         renderTable(lastMonthlyData, out);
       } catch (e) { out.innerHTML = "Error: " + e.message; }
     };
 
+    const autoMonthly = () => { if (monthlyLoaded) document.getElementById('loadMonthlyBtn').click(); };
+    document.getElementById('monthSel').addEventListener('change', autoMonthly);
+    document.getElementById('monthlyActivitySel').addEventListener('change', autoMonthly);
+    document.getElementById('monthlyStartD').addEventListener('change', autoMonthly);
+    document.getElementById('monthlyEndD').addEventListener('change', autoMonthly);
+
     function renderTable(data, el) {
-      el.innerHTML = `
+      el.innerHTML += `
         <div class="table-scroll"><table class="data-table" style="width:100%; font-size:12px; border-collapse:collapse;">
           <thead><tr style="background:#f3f4f6; text-align:left;">
             <th style="padding:8px;">Nama</th><th style="padding:8px; text-align:center;">H</th><th style="padding:8px; text-align:center;">I</th><th style="padding:8px; text-align:center;">S</th><th style="padding:8px; text-align:center;">A</th><th style="padding:8px; text-align:center;">%</th>
@@ -205,29 +490,93 @@
         </table></div>`;
     }
 
+    let memberChartInstance = null;
+
     // --- 3. LOGIC REKAP ANGGOTA ---
     document.getElementById('loadMemberBtn').onclick = async () => {
+      memberLoaded = true;
       const out = document.getElementById('memberOutput');
+      const { start, end } = getDateRange(memberMonthSel.value, 'memberStartD', 'memberEndD');
+      const memId = document.getElementById('memberSel').value;
+      const actFilter = document.getElementById('memberActivitySel').value;
+      const tMonth = memberMonthSel.value;
+      
+      if (!memId) {
+         return await asyncAlert("Pilih anggota terlebih dahulu.");
+      }
+
       out.innerHTML = "<p class='muted'>Memuat...</p>";
-      const month = memberMonthSel.value;
-      const memId = memberSel.value;
 
       try {
-        const { data: history } = await supabaseClient.from('attendance_detail')
+        const { data: fetchRaw } = await supabaseClient.from('attendance_detail')
           .select('presence, attendance_header(date, activity_name_snapshot, pdf_file_id)')
           .eq('member_id', memId)
-          .gte('attendance_header.date', `${month}-01`)
-          .lte('attendance_header.date', `${month}-31`)
-          .order('attendance_header(date)', { ascending: false }); // Urutkan terbaru
+          .gte('attendance_header.date', start)
+          .lte('attendance_header.date', end)
+          .order('attendance_header(date)', { ascending: false });
 
-        // Supabase join handling
-        const validHist = history.filter(h => h.attendance_header);
-        if (!validHist.length) return out.innerHTML = "<p class='muted'>Belum ada riwayat kehadiran.</p>";
+        let history = fetchRaw.filter(h => h.attendance_header);
+        if (actFilter) {
+           if (actFilter === '[CAT]Latihan') {
+             history = history.filter(h => latihanNames.includes(h.attendance_header.activity_name_snapshot));
+           } else if (actFilter === '[CAT]Lainnya') {
+             history = history.filter(h => !latihanNames.includes(h.attendance_header.activity_name_snapshot));
+           } else {
+             history = history.filter(h => h.attendance_header.activity_name_snapshot.toLowerCase() === actFilter.toLowerCase());
+           }
+        }
+        
+        if (!history.length) return out.innerHTML = "<p class='muted'>Belum ada riwayat kehadiran.</p>";
 
-        out.innerHTML = `
+        // Kalkulasi Infografis
+        let H = 0, I = 0, S = 0, A = 0;
+        let countLatihan = 0;
+        history.forEach(h => {
+           if (h.presence === 'Hadir') H++;
+           else if (h.presence === 'Izin') I++;
+           else if (h.presence === 'Sakit') S++;
+           else A++;
+           
+           if (latihanNames.includes(h.attendance_header.activity_name_snapshot)) {
+             countLatihan++;
+           }
+        });
+        const total = H + I + S + A;
+        const perc = Math.round((H / total) * 100) || 0;
+        const countLain = history.length - countLatihan;
+
+        let recapHtml = '';
+        let baseBg = '#f0fdf4', borderC = '#bbf7d0', primC = '#166534', secC = '#15803d', accC = '#dcfce7';
+        
+        if (actFilter === '[CAT]Lainnya' || (countLatihan === 0 && countLain > 0)) {
+           recapHtml = `Terlibat Dalam Kegiatan Lainnya: <span style="font-size:16px; font-weight:800;">${countLain}</span> sesi`;
+           baseBg = '#eff6ff'; borderC = '#bfdbfe'; primC = '#1e40af'; secC = '#1d4ed8'; accC = '#dbeafe';
+        } else if (actFilter === '[CAT]Latihan' || (countLatihan > 0 && countLain === 0)) {
+           recapHtml = `Terlibat Dalam Latihan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi`;
+        } else {
+           recapHtml = `Sesi Latihan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> | Lainnya: <span style="font-size:16px; font-weight:800;">${countLain}</span>`;
+        }
+
+        let html = `
+          <div style="background:${baseBg}; border:1px solid ${borderC}; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
+            <div style="font-size:13px; color:${primC}; font-weight:600;">${recapHtml}</div>
+            <div style="font-size:12px; color:${secC}; margin-top:4px;">Tingkat Kehadiran Keseluruhan: <span style="background:${accC}; padding:2px 6px; border-radius:4px; font-weight:700;">${perc}%</span></div>
+          </div>
+          
+          <div class="info-grid">
+            <div class="info-box hadir"><div class="info-val">${H}</div><div class="info-label">Hadir</div></div>
+            <div class="info-box izin"><div class="info-val">${I}</div><div class="info-label">Izin</div></div>
+            <div class="info-box sakit"><div class="info-val">${S}</div><div class="info-label">Sakit</div></div>
+            <div class="info-box alpa"><div class="info-val">${A}</div><div class="info-label">Alpa</div></div>
+          </div>
+
+          <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:15px; box-shadow:var(--shadow-soft);">
+            <canvas id="memberChartCanvas" height="180"></canvas>
+          </div>
+
           <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
-            ${validHist.map((h, i) => `
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-bottom:${i === validHist.length - 1 ? 'none' : '1px solid #e5e7eb'};">
+            ${history.map((h, i) => `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-bottom:${i === history.length - 1 ? 'none' : '1px solid #e5e7eb'};">
                 <div>
                   <div style="font-weight:600; font-size:14px;">${escapeHtml(h.attendance_header.activity_name_snapshot)}</div>
                   <div style="font-size:12px; color:#6b7280; margin-top:2px;">${h.attendance_header.date}</div>
@@ -238,8 +587,95 @@
                 </div>
               </div>`).join('')}
           </div>`;
+          
+          out.innerHTML = html;
+
+          // Render Chart.js
+          setTimeout(() => {
+             renderMemberChart(history, tMonth);
+          }, 50);
+
       } catch (e) { out.innerHTML = "Error: " + e.message; }
     };
+
+    const autoMember = () => {
+       if (memberLoaded && document.getElementById('memberSel').value) {
+          document.getElementById('loadMemberBtn').click();
+       }
+    };
+    document.getElementById('memberMonthSel').addEventListener('change', autoMember);
+    document.getElementById('memberActivitySel').addEventListener('change', autoMember);
+    document.getElementById('memberStartD').addEventListener('change', autoMember);
+    document.getElementById('memberEndD').addEventListener('change', autoMember);
+
+    function renderMemberChart(history, tMonth) {
+      if (memberChartInstance) memberChartInstance.destroy();
+      const ctx = document.getElementById('memberChartCanvas').getContext('2d');
+      // Tentukan agregasi grafiknya (Bulanan vs Mingguan)
+      let groupBy = 'month';
+      if (tMonth.match(/^\d{4}-\d{2}$/) || history.length <= 10) groupBy = 'week'; 
+      
+      const groups = {};
+      const sortedHistory = [...history].sort((a,b) => a.attendance_header.date.localeCompare(b.attendance_header.date));
+      
+      sortedHistory.forEach(h => {
+         const dateStr = h.attendance_header.date; // YYYY-MM-DD
+         let key;
+         if (groupBy === 'week') {
+            const d = parseInt(dateStr.split('-')[2], 10);
+            const w = Math.ceil(d / 7);
+            key = `Mg-${w}`;
+         } else {
+            const [y, m] = dateStr.split('-');
+            const dObj = new Date(y, parseInt(m)-1, 1);
+            key = dObj.toLocaleString('id-ID', { month: 'short' });
+         }
+         if (!groups[key]) groups[key] = { H: 0, Total: 0 };
+         groups[key].Total++;
+         if (h.presence === 'Hadir') groups[key].H++;
+      });
+      
+      const labels = Object.keys(groups);
+      const dataHadir = labels.map(k => groups[k].H);
+      const dataTotal = labels.map(k => groups[k].Total);
+
+      memberChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Hadir',
+              data: dataHadir,
+              borderColor: '#16a34a',
+              backgroundColor: 'rgba(22, 163, 74, 0.1)',
+              borderWidth: 2,
+              tension: 0.3,
+              fill: true
+            },
+            {
+              label: 'Total Sesi',
+              data: dataTotal,
+              borderColor: '#dc2626',
+              borderWidth: 1,
+              borderDash: [4, 4],
+              tension: 0.3,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+          },
+          scales: {
+            y: { beginAtZero: true, suggestedMax: 5, ticks: { stepSize: 1 } }
+          }
+        }
+      });
+    }
   </script>
 </body>
 
