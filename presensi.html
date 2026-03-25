@@ -45,7 +45,7 @@
         <div class="row-2" style="margin-top:10px;">
           <div class="mini-label" style="margin-bottom:6px;">Waktu Kegiatan</div>
           <select id="timeSel" class="field"></select>
-          
+
           <div id="timeManual" style="display:none; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;">
             <div>
               <div class="mini-label">Mulai</div>
@@ -60,7 +60,8 @@
 
         <label class="field-label" for="locationSel">Tempat</label>
         <select id="locationSel" class="field"></select>
-        <input id="locationManual" type="text" class="field" style="display:none; margin-top:6px;" placeholder="Tulis lokasi manual..." oninput="checkFormReady()" />
+        <input id="locationManual" type="text" class="field" style="display:none; margin-top:6px;"
+          placeholder="Tulis lokasi manual..." oninput="checkFormReady()" />
 
         <label class="field-label" for="note">Catatan (opsional)</label>
         <textarea id="note" rows="2" class="field"></textarea>
@@ -88,7 +89,8 @@
       </section>
 
       <!-- Custom Modals -->
-      <div id="customConfirm" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+      <div id="customConfirm"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
         <div class="section-card" style="width:90%; max-width:350px; margin:0; text-align:center;">
           <h3 style="margin-top:0; font-size:16px;" id="confirmTitle">Peringatan</h3>
           <p id="confirmMsg" style="font-size:14px; color:#4b5563; margin-bottom:20px;"></p>
@@ -99,11 +101,13 @@
         </div>
       </div>
 
-      <div id="customPrompt" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+      <div id="customPrompt"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
         <div class="section-card" style="width:90%; max-width:350px; margin:0;">
           <h3 style="margin-top:0; font-size:16px;" id="promptTitle">Cari Nama</h3>
-          
-          <input type="text" id="promptInput" class="field" style="margin-bottom:10px;" placeholder="Ketik nama (opsional)..." />
+
+          <input type="text" id="promptInput" class="field" style="margin-bottom:10px;"
+            placeholder="Ketik nama (opsional)..." />
           <div style="text-align:center; font-size:12px; color:#666; margin-bottom:10px;">- ATAU -</div>
           <select id="promptSelect" class="field" style="margin-bottom:15px;">
             <option value="">-- Pilih dari daftar --</option>
@@ -132,7 +136,7 @@
     const dateEl = document.getElementById("date");
     const msgEl = document.getElementById("msg");
     const photoPreview = document.getElementById("photoPreview");
-    
+
     const timeSel = document.getElementById("timeSel");
     const locSel = document.getElementById("locationSel");
     const saveBtn = document.getElementById("saveBtn");
@@ -157,7 +161,7 @@
       let ready = true;
       if (!activitySel.value) ready = false;
       if (!dateEl.value) ready = false;
-      
+
       if (timeSel.value === 'Lainnya') {
         if (!document.getElementById("timeStartManual").value || !document.getElementById("timeEndManual").value) ready = false;
       } else if (!timeSel.value) ready = false;
@@ -184,7 +188,7 @@
         document.getElementById("confirmMsg").textContent = msg;
         document.getElementById("confirmBtnNo").style.display = 'block';
         modal.style.display = 'flex';
-        
+
         document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
         document.getElementById("confirmBtnNo").onclick = () => { modal.style.display = 'none'; resolve(false); };
       });
@@ -197,7 +201,7 @@
         document.getElementById("confirmMsg").textContent = msg;
         document.getElementById("confirmBtnNo").style.display = 'none';
         modal.style.display = 'flex';
-        
+
         document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
       });
     }
@@ -209,18 +213,18 @@
         const modal = document.getElementById("customPrompt");
         document.getElementById("promptTitle").textContent = title;
         document.getElementById("promptBtnYes").textContent = btnText;
-        
+
         const input = document.getElementById("promptInput");
         const select = document.getElementById("promptSelect");
-        
+
         input.value = "";
-        select.innerHTML = `<option value="">-- Pilih dari daftar --</option>` + 
-                           options.map(o => `<option value="${escapeHtml(o.name || o)}">${escapeHtml(o.name || o)}</option>`).join("");
+        select.innerHTML = `<option value="">-- Pilih dari daftar --</option>` +
+          options.map(o => `<option value="${escapeHtml(o.name || o)}">${escapeHtml(o.name || o)}</option>`).join("");
         select.value = "";
-        
+
         modal.style.display = 'flex';
         input.focus();
-        
+
         document.getElementById("promptBtnYes").onclick = () => {
           modal.style.display = 'none';
           const val = select.value ? select.value : input.value.trim();
@@ -245,8 +249,8 @@
       if (shouldWarn) {
         const proceed = await asyncConfirm(`Kegiatan ini memiliki template. Yakin ingin ${actionDesc}?`);
         if (proceed) {
-           hasWarnedTemplateMod = true;
-           return true;
+          hasWarnedTemplateMod = true;
+          return true;
         }
         return false;
       }
@@ -258,7 +262,7 @@
       try {
         const { data: acts } = await supabaseClient.from('activities').select('*').eq('is_active', true).order('name');
         activitiesCache = acts || [];
-        
+
         activitySel.innerHTML = `<option value="">-- pilih --</option>` + activitiesCache.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join("");
 
         const { data: mems } = await supabaseClient.from('members').select('*').order('name');
@@ -281,14 +285,14 @@
 
         // Setup live validation form 
         const inputsForValidation = [
-          activitySel, dateEl, 
+          activitySel, dateEl,
           document.getElementById('timeStartManual'), document.getElementById('timeEndManual'), document.getElementById('locationManual')
         ];
         inputsForValidation.forEach(el => el.addEventListener('input', checkFormReady));
         inputsForValidation.forEach(el => el.addEventListener('change', checkFormReady));
 
-        locSel.addEventListener('focus', function() { this.dataset.old = this.value; });
-        locSel.addEventListener('change', async function() {
+        locSel.addEventListener('focus', function () { this.dataset.old = this.value; });
+        locSel.addEventListener('change', async function () {
           const proceed = await checkTemplateWarning("mengubah setelan tempat master", "location");
           if (!proceed) {
             this.value = this.dataset.old || "";
@@ -310,7 +314,7 @@
     }
 
     activitySel.addEventListener('change', () => {
-      hasWarnedTemplateMod = false; 
+      hasWarnedTemplateMod = false;
 
       // Pastikan pop-up peringatan/prompt hilang
       document.getElementById('customConfirm').style.display = 'none';
@@ -334,7 +338,7 @@
         renderParticipants();
         return;
       }
-      
+
       if (act.location) {
         // Cek apakah lokasi master ada di dropdown
         const exists = Array.from(locSel.options).some(opt => opt.value === act.location);
@@ -351,7 +355,7 @@
         toggleManualInput('location');
         document.getElementById("locationManual").value = "";
       }
-      
+
       if (act.default_participants && act.default_participants.length > 0) {
         participants = act.default_participants.map(p => ({
           member_id: p.member_id,

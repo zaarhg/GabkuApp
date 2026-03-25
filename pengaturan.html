@@ -33,8 +33,9 @@
     <main class="app-main">
       <section class="section-card" style="margin-top:0;">
         <div class="section-title">Opsi Waktu (Jam)</div>
-        <p class="hint" style="font-size:12px; color:#666; margin-bottom:10px;">Opsi waktu mulai & akhir di halaman Presensi.</p>
-        
+        <p class="hint" style="font-size:12px; color:#666; margin-bottom:10px;">Opsi waktu mulai & akhir di halaman
+          Presensi.</p>
+
         <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center;">
           <input id="timeStartInput" type="time" class="field" style="flex:1;" />
           <span style="font-weight:bold; color:#666;">-</span>
@@ -46,25 +47,27 @@
 
       <section class="section-card">
         <div class="section-title">Opsi Tempat / Lokasi</div>
-        <p class="hint" style="font-size:12px; color:#666; margin-bottom:10px;">Pilihan dropdown Tempat di halaman Presensi.</p>
-        
+        <p class="hint" style="font-size:12px; color:#666; margin-bottom:10px;">Pilihan dropdown Tempat di halaman
+          Presensi.</p>
+
         <div style="display:flex; gap:8px; margin-bottom:12px;">
           <input id="locInput" type="text" class="field" style="flex:1;" placeholder="Cth: Ruang Rapat" />
           <button id="addLocBtn" class="btn-primary" style="padding:0 15px;" type="button">Tambah</button>
         </div>
         <div id="locList" style="margin-top:10px;"></div>
-      <section class="section-card">
-        <div class="section-title">Opsi Status Kepengurusan</div>
-        <p class="hint" style="font-size:12px; color:#666; margin-bottom:10px;">Sub-role / jabatan pengurus di profil anggota.</p>
-        
-        <div style="display:flex; gap:8px; margin-bottom:12px;">
-          <input id="pengurusInput" type="text" class="field" style="flex:1;" placeholder="Cth: Sekretaris" />
-          <button id="addPengurusBtn" class="btn-primary" style="padding:0 15px;" type="button">Tambah</button>
-        </div>
-        <div id="pengurusList" style="margin-top:10px;"></div>
-      </section>
-      
-      <p id="msgEl" class="tool-msg" style="text-align:center;"></p>
+        <section class="section-card">
+          <div class="section-title">Opsi Status Kepengurusan</div>
+          <p class="hint" style="font-size:12px; color:#666; margin-bottom:10px;">Sub-role / jabatan pengurus di profil
+            anggota.</p>
+
+          <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <input id="pengurusInput" type="text" class="field" style="flex:1;" placeholder="Cth: Sekretaris" />
+            <button id="addPengurusBtn" class="btn-primary" style="padding:0 15px;" type="button">Tambah</button>
+          </div>
+          <div id="pengurusList" style="margin-top:10px;"></div>
+        </section>
+
+        <p id="msgEl" class="tool-msg" style="text-align:center;"></p>
     </main>
   </div>
 
@@ -102,13 +105,13 @@
 
         timeOptions = timeRow ? timeRow.setting_value : [];
         locOptions = locRow ? locRow.setting_value : [];
-        
+
         if (pengRow && pengRow.setting_value) {
-           pengurusOptions = Array.isArray(pengRow.setting_value) ? pengRow.setting_value : (typeof pengRow.setting_value === 'string' ? JSON.parse(pengRow.setting_value) : []);
+          pengurusOptions = Array.isArray(pengRow.setting_value) ? pengRow.setting_value : (typeof pengRow.setting_value === 'string' ? JSON.parse(pengRow.setting_value) : []);
         } else {
-           pengurusOptions = ["Ketua", "Wakil Ketua", "Sekretaris", "Bendahara", "Anggota Divisi"];
+          pengurusOptions = ["Ketua", "Wakil Ketua", "Sekretaris", "Bendahara", "Anggota Divisi"];
         }
-        
+
         // Sorting
         timeOptions.sort();
         locOptions.sort();
@@ -117,9 +120,9 @@
         renderTimeSettings();
         renderLocSettings();
         renderPengurusSettings();
-      } catch (e) { 
+      } catch (e) {
         timeListEl.innerHTML = ""; locListEl.innerHTML = ""; pengurusListEl.innerHTML = "";
-        msgEl.style.color = "red"; msgEl.textContent = "Error: " + e.message; 
+        msgEl.style.color = "red"; msgEl.textContent = "Error: " + e.message;
       }
     }
 
@@ -127,9 +130,9 @@
       msgEl.style.color = "#1590df";
       msgEl.textContent = "Menyimpan...";
       try {
-        const { error } = await supabaseClient.from('app_settings').upsert([{ 
-          setting_key: key, 
-          setting_value: value 
+        const { error } = await supabaseClient.from('app_settings').upsert([{
+          setting_key: key,
+          setting_value: value
         }]);
         if (error) throw error;
         msgEl.style.color = "green";
@@ -187,7 +190,7 @@
       if (!s || !e) return alert("Harap isi waktu mulai dan selesai.");
       const val = `${s} - ${e}`;
       if (timeOptions.includes(val)) return alert("Waktu sudah ada dalam daftar.");
-      
+
       timeOptions.push(val);
       timeOptions.sort();
       renderTimeSettings();
@@ -208,7 +211,7 @@
       const val = document.getElementById("locInput").value.trim();
       if (!val) return;
       if (locOptions.map(l => l.toLowerCase()).includes(val.toLowerCase())) return alert("Tempat sudah ada dalam daftar.");
-      
+
       locOptions.push(val);
       locOptions.sort();
       renderLocSettings();
@@ -228,7 +231,7 @@
       const val = document.getElementById("pengurusInput").value.trim();
       if (!val) return;
       if (pengurusOptions.map(l => l.toLowerCase()).includes(val.toLowerCase())) return alert("Status sudah ada dalam daftar.");
-      
+
       pengurusOptions.push(val);
       pengurusOptions.sort();
       renderPengurusSettings();

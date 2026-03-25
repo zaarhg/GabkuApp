@@ -6,7 +6,7 @@ function _getTokenSafe() {
   // Pakai helper dari auth.js kalau ada, kalau tidak fallback ke localStorage
   try {
     if (typeof getToken === "function") return getToken() || "";
-  } catch (_) {}
+  } catch (_) { }
   return localStorage.getItem(LS_KEY_TOKEN) || "";
 }
 
@@ -26,7 +26,7 @@ function _handleAuthProblem(message) {
     // hapus token yang mungkin salah
     try {
       localStorage.removeItem(LS_KEY_TOKEN);
-    } catch (_) {}
+    } catch (_) { }
     // redirect
     window.location.href = "login.html";
     return true;

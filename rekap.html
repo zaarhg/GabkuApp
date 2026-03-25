@@ -12,19 +12,93 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    .segmented { display:flex; background:#f1f5f9; padding:4px; border-radius:12px; width:100%; gap:2px; }
-    .seg-btn { flex:1; background:transparent; color:#64748b; border:none; font-weight:600; border-radius:8px; cursor:pointer; padding:10px 4px; font-size:12px; white-space:nowrap; transition:background 0.2s, color 0.2s; }
-    .seg-btn.active { background:#1590df; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
-    
-    .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
-    .info-box { background: #fff; border-radius: 10px; padding: 10px 4px; text-align: center; border: 1px solid rgba(15,23,42,0.1); box-shadow: 0 2px 8px rgba(2,8,23,0.04); }
-    .info-box.hadir { border-top: 3px solid #16a34a; }
-    .info-box.izin { border-top: 3px solid #ca8a04; }
-    .info-box.sakit { border-top: 3px solid #f97316; }
-    .info-box.alpa { border-top: 3px solid #dc2626; }
-    .info-val { font-size: 18px; font-weight: 800; margin-bottom: 2px; color: #111827; }
-    .info-label { font-size: 10px; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-badge { display:inline-block; padding:4px 8px; background:#e0f2fe; color:#0369a1; border-radius:6px; font-weight:600; font-size:12px; margin-bottom:8px; margin-right:6px;}
+    .segmented {
+      display: flex;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 12px;
+      width: 100%;
+      gap: 2px;
+    }
+
+    .seg-btn {
+      flex: 1;
+      background: transparent;
+      color: #64748b;
+      border: none;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 10px 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .seg-btn.active {
+      background: #1590df;
+      color: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .info-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px 4px;
+      text-align: center;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      box-shadow: 0 2px 8px rgba(2, 8, 23, 0.04);
+    }
+
+    .info-box.hadir {
+      border-top: 3px solid #16a34a;
+    }
+
+    .info-box.izin {
+      border-top: 3px solid #ca8a04;
+    }
+
+    .info-box.sakit {
+      border-top: 3px solid #f97316;
+    }
+
+    .info-box.alpa {
+      border-top: 3px solid #dc2626;
+    }
+
+    .info-val {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 2px;
+      color: #111827;
+    }
+
+    .info-label {
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #e0f2fe;
+      color: #0369a1;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12px;
+      margin-bottom: 8px;
+      margin-right: 6px;
+    }
   </style>
 </head>
 
@@ -60,13 +134,18 @@
 
       <section class="section-card" id="panelSession">
         <label class="field-label">Pilih Periode</label>
-        <select id="sessionMonthSel" class="field" onchange="document.getElementById('sessionDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
+        <select id="sessionMonthSel" class="field"
+          onchange="document.getElementById('sessionDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
         <div id="sessionDateWrap" style="display:none; gap:10px; margin-top:10px;">
-          <div style="flex:1;"><label class="field-label">Mulai</label><input type="date" id="sessionStartD" class="field"/></div>
-          <div style="flex:1;"><label class="field-label">S/d</label><input type="date" id="sessionEndD" class="field"/></div>
+          <div style="flex:1;"><label class="field-label">Mulai</label><input type="date" id="sessionStartD"
+              class="field" /></div>
+          <div style="flex:1;"><label class="field-label">S/d</label><input type="date" id="sessionEndD"
+              class="field" /></div>
         </div>
         <label class="field-label" style="margin-top:10px;">Pilih Kegiatan</label>
-        <select id="sessionActivitySel" class="field"><option value="">Semua Kegiatan</option></select>
+        <select id="sessionActivitySel" class="field">
+          <option value="">Semua Kegiatan</option>
+        </select>
         <div class="row-actions" style="margin-top:12px;">
           <button id="loadSessionBtn" class="btn-primary">Muat Riwayat Sesi</button>
         </div>
@@ -75,13 +154,18 @@
 
       <section class="section-card" id="panelMonthly" style="display:none;">
         <label class="field-label">Pilih Periode</label>
-        <select id="monthSel" class="field" onchange="document.getElementById('monthlyDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
+        <select id="monthSel" class="field"
+          onchange="document.getElementById('monthlyDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
         <div id="monthlyDateWrap" style="display:none; gap:10px; margin-top:10px;">
-          <div style="flex:1;"><label class="field-label">Mulai</label><input type="date" id="monthlyStartD" class="field"/></div>
-          <div style="flex:1;"><label class="field-label">S/d</label><input type="date" id="monthlyEndD" class="field"/></div>
+          <div style="flex:1;"><label class="field-label">Mulai</label><input type="date" id="monthlyStartD"
+              class="field" /></div>
+          <div style="flex:1;"><label class="field-label">S/d</label><input type="date" id="monthlyEndD"
+              class="field" /></div>
         </div>
         <label class="field-label" style="margin-top:10px;">Pilih Kegiatan</label>
-        <select id="monthlyActivitySel" class="field"><option value="">Semua Kegiatan</option></select>
+        <select id="monthlyActivitySel" class="field">
+          <option value="">Semua Kegiatan</option>
+        </select>
         <div class="row-actions" style="margin-top:12px;">
           <button id="loadMonthlyBtn" class="btn-primary">Muat Rekap</button>
         </div>
@@ -90,19 +174,26 @@
 
       <section class="section-card" id="panelMember" style="display:none;">
         <label class="field-label">Pilih Anggota</label>
-        <button id="memberSelBtn" class="field" style="text-align:left; background:#fff; color:#333; display:flex; justify-content:space-between; align-items:center;" type="button">
+        <button id="memberSelBtn" class="field"
+          style="text-align:left; background:#fff; color:#333; display:flex; justify-content:space-between; align-items:center;"
+          type="button">
           <span id="memberSelText">Pilih anggota...</span>
           <span style="color:#999; font-size:12px;">▼</span>
         </button>
         <input type="hidden" id="memberSel" value="" />
         <label class="field-label">Pilih Periode</label>
-        <select id="memberMonthSel" class="field" onchange="document.getElementById('memberDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
+        <select id="memberMonthSel" class="field"
+          onchange="document.getElementById('memberDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
         <div id="memberDateWrap" style="display:none; gap:10px; margin-top:10px;">
-          <div style="flex:1;"><label class="field-label">Mulai</label><input type="date" id="memberStartD" class="field"/></div>
-          <div style="flex:1;"><label class="field-label">S/d</label><input type="date" id="memberEndD" class="field"/></div>
+          <div style="flex:1;"><label class="field-label">Mulai</label><input type="date" id="memberStartD"
+              class="field" /></div>
+          <div style="flex:1;"><label class="field-label">S/d</label><input type="date" id="memberEndD" class="field" />
+          </div>
         </div>
         <label class="field-label" style="margin-top:10px;">Pilih Kegiatan</label>
-        <select id="memberActivitySel" class="field"><option value="">Semua Kegiatan</option></select>
+        <select id="memberActivitySel" class="field">
+          <option value="">Semua Kegiatan</option>
+        </select>
         <div class="row-actions" style="margin-top:12px;">
           <button id="loadMemberBtn" class="btn-primary">Muat Rekap</button>
         </div>
@@ -110,7 +201,8 @@
       </section>
 
       <!-- Custom Modals -->
-      <div id="customConfirm" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+      <div id="customConfirm"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
         <div class="section-card" style="width:90%; max-width:350px; margin:0; text-align:center;">
           <h3 style="margin-top:0; font-size:16px;" id="confirmTitle">Peringatan</h3>
           <p id="confirmMsg" style="font-size:14px; color:#4b5563; margin-bottom:20px;"></p>
@@ -121,11 +213,13 @@
         </div>
       </div>
 
-      <div id="customPrompt" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+      <div id="customPrompt"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
         <div class="section-card" style="width:90%; max-width:350px; margin:0;">
           <h3 style="margin-top:0; font-size:16px;" id="promptTitle">Cari Nama</h3>
-          
-          <input type="text" id="promptInput" class="field" style="margin-bottom:10px;" placeholder="Ketik nama (opsional)..." />
+
+          <input type="text" id="promptInput" class="field" style="margin-bottom:10px;"
+            placeholder="Ketik nama (opsional)..." />
           <div style="text-align:center; font-size:12px; color:#666; margin-bottom:10px;">- ATAU -</div>
           <select id="promptSelect" class="field" style="margin-bottom:15px;">
             <option value="">-- Pilih dari daftar --</option>
@@ -160,15 +254,15 @@
     function getDateRange(val, startId, endId) {
       if (val === 'last3') {
         const d = new Date(); d.setMonth(d.getMonth() - 2);
-        return { start: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`, end: '2099-12-31' };
+        return { start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`, end: '2099-12-31' };
       }
       if (val === 'last6') {
         const d = new Date(); d.setMonth(d.getMonth() - 5);
-        return { start: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`, end: '2099-12-31' };
+        return { start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`, end: '2099-12-31' };
       }
       if (val === 'last12') {
         const d = new Date(); d.setMonth(d.getMonth() - 11);
-        return { start: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`, end: '2099-12-31' };
+        return { start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`, end: '2099-12-31' };
       }
       if (val === 'custom') {
         const s = document.getElementById(startId).value;
@@ -185,7 +279,7 @@
         document.getElementById("confirmMsg").textContent = msg;
         document.getElementById("confirmBtnNo").style.display = 'none';
         modal.style.display = 'flex';
-        
+
         document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
       });
     }
@@ -195,18 +289,18 @@
         const modal = document.getElementById("customPrompt");
         document.getElementById("promptTitle").textContent = title;
         document.getElementById("promptBtnYes").textContent = btnText;
-        
+
         const input = document.getElementById("promptInput");
         const select = document.getElementById("promptSelect");
-        
+
         input.value = "";
-        select.innerHTML = `<option value="">-- Pilih dari daftar --</option>` + 
-                           options.map(o => `<option value="${escapeHtml(o.id || o)}">${escapeHtml(o.name || o)}</option>`).join("");
+        select.innerHTML = `<option value="">-- Pilih dari daftar --</option>` +
+          options.map(o => `<option value="${escapeHtml(o.id || o)}">${escapeHtml(o.name || o)}</option>`).join("");
         select.value = "";
-        
+
         modal.style.display = 'flex';
         input.focus();
-        
+
         document.getElementById("promptBtnYes").onclick = () => {
           modal.style.display = 'none';
           const val = select.value ? select.value : input.value.trim();
@@ -227,8 +321,8 @@
       if (mems) membersCache = mems;
 
       // Ambil daftar bulan yang ada absensinya dari attendance_header
-      const { data: headers, error } = await supabaseClient.from('attendance_header').select('date').order('date', {ascending: false});
-      
+      const { data: headers, error } = await supabaseClient.from('attendance_header').select('date').order('date', { ascending: false });
+
       const uniqueMonths = new Set();
       if (headers) {
         headers.forEach(h => {
@@ -296,14 +390,14 @@
     document.getElementById('memberSelBtn').onclick = async () => {
       const q = await asyncPrompt("Cari / Pilih Anggota:", membersCache, "Pilih");
       if (!q) return;
-      
+
       // Jika q adalah UUID anggota (karena dipilih dari select)
       let found = membersCache.find(m => m.id === q);
       // Jika tidak ketemu id, coba cari berdasarkan input text
       if (!found) {
         found = membersCache.find(m => m.name.toLowerCase().includes(q.toLowerCase()));
       }
-      
+
       if (found) {
         document.getElementById('memberSel').value = found.id;
         document.getElementById('memberSelText').textContent = found.name;
@@ -328,12 +422,12 @@
           .gte('date', start)
           .lte('date', end)
           .order('date', { ascending: false });
-          
+
         const { data: fetchRaw, error } = await query;
 
         if (error) throw error;
         let data = fetchRaw;
-        
+
         if (actFilter) {
           if (actFilter === '[CAT]Latihan') {
             data = data.filter(d => latihanNames.includes(d.activity_name_snapshot));
@@ -351,19 +445,19 @@
 
         let recapHtml = '';
         if (actFilter === '[CAT]Lainnya' || (countLatihan === 0 && countLain > 0)) {
-           recapHtml = `
+          recapHtml = `
              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
                <div style="font-size:13px; color:#1e40af; font-weight:600;">Total Kegiatan Lainnya: <span style="font-size:16px; font-weight:800;">${countLain}</span> sesi</div>
              </div>
            `;
         } else if (actFilter === '[CAT]Latihan' || (countLatihan > 0 && countLain === 0)) {
-           recapHtml = `
+          recapHtml = `
              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
                <div style="font-size:13px; color:#166534; font-weight:600;">Total Latihan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi</div>
              </div>
            `;
         } else {
-           recapHtml = `
+          recapHtml = `
              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
                <div style="font-size:13px; color:#166534; font-weight:600;">Total Latihan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi</div>
                <div style="font-size:12px; color:#15803d; margin-top:4px;">+ ${countLain} kegiatan lainnya</div>
@@ -440,29 +534,29 @@
         });
 
         lastMonthlyData = Object.values(recap).sort((a, b) => a.name.localeCompare(b.name));
-        
+
         let recapHtml = '';
         if (actFilter === '[CAT]Lainnya' || (countLatihan === 0 && countLain > 0)) {
-           recapHtml = `
+          recapHtml = `
              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
                <div style="font-size:13px; color:#1e40af; font-weight:600;">Kegiatan Lainnya Berjalan: <span style="font-size:16px; font-weight:800;">${countLain}</span> sesi</div>
              </div>
            `;
         } else if (actFilter === '[CAT]Latihan' || (countLatihan > 0 && countLain === 0)) {
-           recapHtml = `
+          recapHtml = `
              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
                <div style="font-size:13px; color:#166534; font-weight:600;">Latihan Berjalan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi</div>
              </div>
            `;
         } else {
-           recapHtml = `
+          recapHtml = `
              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-bottom:15px; text-align:center;">
                <div style="font-size:13px; color:#166534; font-weight:600;">Latihan Berjalan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi</div>
                <div style="font-size:12px; color:#15803d; margin-top:4px;">+ ${countLain} kegiatan lainnya</div>
              </div>
            `;
         }
-        
+
         out.innerHTML = recapHtml;
         renderTable(lastMonthlyData, out);
       } catch (e) { out.innerHTML = "Error: " + e.message; }
@@ -500,9 +594,9 @@
       const memId = document.getElementById('memberSel').value;
       const actFilter = document.getElementById('memberActivitySel').value;
       const tMonth = memberMonthSel.value;
-      
+
       if (!memId) {
-         return await asyncAlert("Pilih anggota terlebih dahulu.");
+        return await asyncAlert("Pilih anggota terlebih dahulu.");
       }
 
       out.innerHTML = "<p class='muted'>Memuat...</p>";
@@ -517,29 +611,29 @@
 
         let history = fetchRaw.filter(h => h.attendance_header);
         if (actFilter) {
-           if (actFilter === '[CAT]Latihan') {
-             history = history.filter(h => latihanNames.includes(h.attendance_header.activity_name_snapshot));
-           } else if (actFilter === '[CAT]Lainnya') {
-             history = history.filter(h => !latihanNames.includes(h.attendance_header.activity_name_snapshot));
-           } else {
-             history = history.filter(h => h.attendance_header.activity_name_snapshot.toLowerCase() === actFilter.toLowerCase());
-           }
+          if (actFilter === '[CAT]Latihan') {
+            history = history.filter(h => latihanNames.includes(h.attendance_header.activity_name_snapshot));
+          } else if (actFilter === '[CAT]Lainnya') {
+            history = history.filter(h => !latihanNames.includes(h.attendance_header.activity_name_snapshot));
+          } else {
+            history = history.filter(h => h.attendance_header.activity_name_snapshot.toLowerCase() === actFilter.toLowerCase());
+          }
         }
-        
+
         if (!history.length) return out.innerHTML = "<p class='muted'>Belum ada riwayat kehadiran.</p>";
 
         // Kalkulasi Infografis
         let H = 0, I = 0, S = 0, A = 0;
         let countLatihan = 0;
         history.forEach(h => {
-           if (h.presence === 'Hadir') H++;
-           else if (h.presence === 'Izin') I++;
-           else if (h.presence === 'Sakit') S++;
-           else A++;
-           
-           if (latihanNames.includes(h.attendance_header.activity_name_snapshot)) {
-             countLatihan++;
-           }
+          if (h.presence === 'Hadir') H++;
+          else if (h.presence === 'Izin') I++;
+          else if (h.presence === 'Sakit') S++;
+          else A++;
+
+          if (latihanNames.includes(h.attendance_header.activity_name_snapshot)) {
+            countLatihan++;
+          }
         });
         const total = H + I + S + A;
         const perc = Math.round((H / total) * 100) || 0;
@@ -547,14 +641,14 @@
 
         let recapHtml = '';
         let baseBg = '#f0fdf4', borderC = '#bbf7d0', primC = '#166534', secC = '#15803d', accC = '#dcfce7';
-        
+
         if (actFilter === '[CAT]Lainnya' || (countLatihan === 0 && countLain > 0)) {
-           recapHtml = `Terlibat Dalam Kegiatan Lainnya: <span style="font-size:16px; font-weight:800;">${countLain}</span> sesi`;
-           baseBg = '#eff6ff'; borderC = '#bfdbfe'; primC = '#1e40af'; secC = '#1d4ed8'; accC = '#dbeafe';
+          recapHtml = `Terlibat Dalam Kegiatan Lainnya: <span style="font-size:16px; font-weight:800;">${countLain}</span> sesi`;
+          baseBg = '#eff6ff'; borderC = '#bfdbfe'; primC = '#1e40af'; secC = '#1d4ed8'; accC = '#dbeafe';
         } else if (actFilter === '[CAT]Latihan' || (countLatihan > 0 && countLain === 0)) {
-           recapHtml = `Terlibat Dalam Latihan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi`;
+          recapHtml = `Terlibat Dalam Latihan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> sesi`;
         } else {
-           recapHtml = `Sesi Latihan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> | Lainnya: <span style="font-size:16px; font-weight:800;">${countLain}</span>`;
+          recapHtml = `Sesi Latihan: <span style="font-size:16px; font-weight:800;">${countLatihan}</span> | Lainnya: <span style="font-size:16px; font-weight:800;">${countLain}</span>`;
         }
 
         let html = `
@@ -587,21 +681,21 @@
                 </div>
               </div>`).join('')}
           </div>`;
-          
-          out.innerHTML = html;
 
-          // Render Chart.js
-          setTimeout(() => {
-             renderMemberChart(history, tMonth);
-          }, 50);
+        out.innerHTML = html;
+
+        // Render Chart.js
+        setTimeout(() => {
+          renderMemberChart(history, tMonth);
+        }, 50);
 
       } catch (e) { out.innerHTML = "Error: " + e.message; }
     };
 
     const autoMember = () => {
-       if (memberLoaded && document.getElementById('memberSel').value) {
-          document.getElementById('loadMemberBtn').click();
-       }
+      if (memberLoaded && document.getElementById('memberSel').value) {
+        document.getElementById('loadMemberBtn').click();
+      }
     };
     document.getElementById('memberMonthSel').addEventListener('change', autoMember);
     document.getElementById('memberActivitySel').addEventListener('change', autoMember);
@@ -613,28 +707,28 @@
       const ctx = document.getElementById('memberChartCanvas').getContext('2d');
       // Tentukan agregasi grafiknya (Bulanan vs Mingguan)
       let groupBy = 'month';
-      if (tMonth.match(/^\d{4}-\d{2}$/) || history.length <= 10) groupBy = 'week'; 
-      
+      if (tMonth.match(/^\d{4}-\d{2}$/) || history.length <= 10) groupBy = 'week';
+
       const groups = {};
-      const sortedHistory = [...history].sort((a,b) => a.attendance_header.date.localeCompare(b.attendance_header.date));
-      
+      const sortedHistory = [...history].sort((a, b) => a.attendance_header.date.localeCompare(b.attendance_header.date));
+
       sortedHistory.forEach(h => {
-         const dateStr = h.attendance_header.date; // YYYY-MM-DD
-         let key;
-         if (groupBy === 'week') {
-            const d = parseInt(dateStr.split('-')[2], 10);
-            const w = Math.ceil(d / 7);
-            key = `Mg-${w}`;
-         } else {
-            const [y, m] = dateStr.split('-');
-            const dObj = new Date(y, parseInt(m)-1, 1);
-            key = dObj.toLocaleString('id-ID', { month: 'short' });
-         }
-         if (!groups[key]) groups[key] = { H: 0, Total: 0 };
-         groups[key].Total++;
-         if (h.presence === 'Hadir') groups[key].H++;
+        const dateStr = h.attendance_header.date; // YYYY-MM-DD
+        let key;
+        if (groupBy === 'week') {
+          const d = parseInt(dateStr.split('-')[2], 10);
+          const w = Math.ceil(d / 7);
+          key = `Mg-${w}`;
+        } else {
+          const [y, m] = dateStr.split('-');
+          const dObj = new Date(y, parseInt(m) - 1, 1);
+          key = dObj.toLocaleString('id-ID', { month: 'short' });
+        }
+        if (!groups[key]) groups[key] = { H: 0, Total: 0 };
+        groups[key].Total++;
+        if (h.presence === 'Hadir') groups[key].H++;
       });
-      
+
       const labels = Object.keys(groups);
       const dataHadir = labels.map(k => groups[k].H);
       const dataTotal = labels.map(k => groups[k].Total);
