@@ -88,6 +88,28 @@
         <p id="msg" class="tool-msg" style="margin-top:10px; font-weight:bold;"></p>
       </section>
 
+      <!-- PROGRESS OVERLAY MODAL -->
+      <div id="progressOverlay"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+        <div
+          style="background:#fff; border-radius:20px; padding:28px 24px; width:90%; max-width:340px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+          <div
+            style="width:56px; height:56px; border:5px solid #eff6ff; border-top-color:#1590df; border-radius:50%; margin:0 auto 20px; animation:spin 0.9s linear infinite;">
+          </div>
+          <div id="progressTitle" style="font-weight:800; font-size:17px; color:#0f172a; margin-bottom:8px;">
+            Memproses...</div>
+          <div id="progressMsg" style="font-size:13px; color:#64748b; line-height:1.6;">Mohon tunggu, jangan tutup
+            halaman ini.</div>
+        </div>
+      </div>
+      <style>
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      </style>
+
       <!-- Custom Modals -->
       <div id="customConfirm"
         style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
@@ -390,17 +412,42 @@
       renderParticipants();
     };
 
+    const PRESENCE_COLORS = {
+      'Hadir': { bg: '#dcfce7', color: '#166534', border: '#bbf7d0' },
+      'Izin': { bg: '#fef9c3', color: '#854d0e', border: '#fde047' },
+      'Sakit': { bg: '#ffedd5', color: '#9a3412', border: '#fed7aa' },
+      'Alpa': { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' }
+    };
+
     function renderParticipants() {
-      document.getElementById("participants").innerHTML = participants.map((p, i) => `
-        <div class="item-card" style="margin-bottom:8px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
-          <div><b>${p.name}</b><br><small>${p.role}</small></div>
-          <div style="display:flex; gap:8px;">
-            <select class="field" style="padding:4px;" onchange="participants[${i}].presence = this.value">
-              <option>Hadir</option><option>Izin</option><option>Sakit</option><option>Alpa</option>
-            </select>
-            <button class="btn-danger" style="padding:4px 8px;" onclick="removeParticipant(${i})">×</button>
+      document.getElementById("participants").innerHTML = participants.map((p, i) => {
+        const c = PRESENCE_COLORS[p.presence] || PRESENCE_COLORS['Hadir'];
+        const options = ['Hadir', 'Izin', 'Sakit', 'Alpa'].map(opt => {
+          const oc = PRESENCE_COLORS[opt];
+          return `<option value="${opt}" ${p.presence === opt ? 'selected' : ''}>${opt}</option>`;
+        }).join('');
+        return `
+        <div class="item-card" style="margin-bottom:8px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; font-size:14px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
+            <div style="font-size:12px; color:#64748b; margin-top:1px;">${p.role}</div>
           </div>
-        </div>`).join("");
+          <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+            <select
+              style="padding:8px 10px; font-size:13px; font-weight:700; border-radius:10px; border:1.5px solid ${c.border}; background:${c.bg}; color:${c.color}; cursor:pointer; outline:none; appearance:none; min-width:72px; text-align:center;"
+              onchange="participants[${i}].presence = this.value; renderParticipants();">
+              ${options}
+            </select>
+            <button
+              style="width:34px; height:34px; border-radius:10px; border:none; background:#f1f5f9; color:#64748b; font-size:18px; font-weight:300; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;"
+              onmouseenter="this.style.background='#fee2e2'; this.style.color='#dc2626';"
+              onmouseleave="this.style.background='#f1f5f9'; this.style.color='#64748b';"
+              onclick="removeParticipant(${i})" title="Hapus peserta">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+          </div>
+        </div>`;
+      }).join("");
       if (typeof checkFormReady === 'function') checkFormReady();
     }
 
@@ -436,6 +483,20 @@
       });
     }
 
+    // ===== PROGRESS OVERLAY HELPERS =====
+    function showProgress(title, msg) {
+      document.getElementById('progressTitle').textContent = title;
+      document.getElementById('progressMsg').textContent = msg;
+      document.getElementById('progressOverlay').style.display = 'flex';
+    }
+    function updateProgress(title, msg) {
+      document.getElementById('progressTitle').textContent = title;
+      document.getElementById('progressMsg').textContent = msg;
+    }
+    function hideProgress() {
+      document.getElementById('progressOverlay').style.display = 'none';
+    }
+
     // LOGIKA SIMPAN HYBRID
     document.getElementById("saveBtn").onclick = async () => {
       msgEl.style.color = "red";
@@ -448,7 +509,6 @@
       if (!participants.length) return msgEl.textContent = "Daftar peserta tidak boleh kosong. Tambahkan minimal 1 orang.";
 
       msgEl.textContent = "";
-
       const btn = document.getElementById("saveBtn");
       btn.disabled = true;
 
@@ -464,8 +524,11 @@
         }
 
         // A. TAHAP 1: Generate PDF via Google Apps Script
-        msgEl.style.color = "#1590df";
-        msgEl.textContent = "Tahap 1: Membuat PDF di Google Drive...";
+        showProgress(
+          '📄 Membuat PDF...',
+          'Sedang mengunggah data & foto ke Google Drive. Proses ini bisa memakan waktu 15–60 detik.'
+        );
+
         const headerData = {
           activity_id: activitySel.value,
           activity_name: activitySel.options[activitySel.selectedIndex].text,
@@ -486,10 +549,13 @@
         const pdfId = gasRes.pdf_fileId;
 
         // B. TAHAP 2: Simpan Data ke Supabase
-        msgEl.textContent = "Tahap 2: Menyimpan data ke Supabase...";
+        updateProgress(
+          '☁️ Menyimpan Data...',
+          'PDF berhasil dibuat! Sedang menyimpan rekap presensi ke database...'
+        );
+
         const att_id = `ATT-${new Date().getTime()}`;
 
-        // Simpan Header
         const { error: errH } = await supabaseClient.from('attendance_header').insert([{
           id: att_id,
           activity_id: headerData.activity_id,
@@ -499,11 +565,10 @@
           time_end: headerData.time_end,
           location_snapshot: headerData.location,
           note: headerData.note,
-          pdf_file_id: pdfId // Menyimpan referensi ke Google Drive
+          pdf_file_id: pdfId
         }]);
         if (errH) throw errH;
 
-        // Simpan Detail Peserta
         const details = participants.map(p => ({
           attendance_id: att_id,
           member_id: p.member_id,
@@ -514,13 +579,15 @@
         const { error: errD } = await supabaseClient.from('attendance_detail').insert(details);
         if (errD) throw errD;
 
-        msgEl.style.color = "green";
-        msgEl.textContent = "Berhasil! Membuka PDF dan kembali ke beranda...";
+        updateProgress('✅ Selesai!', 'Presensi berhasil disimpan. Membuka PDF dan kembali ke beranda...');
+        await new Promise(r => setTimeout(r, 800)); // Tampilkan pesan sukses sebentar
 
+        hideProgress();
         window.open(`https://drive.google.com/file/d/${pdfId}/view`, '_blank');
         window.location.href = 'index.html';
 
       } catch (e) {
+        hideProgress();
         msgEl.style.color = "red";
         msgEl.textContent = "Gagal: " + e.message;
       } finally {
