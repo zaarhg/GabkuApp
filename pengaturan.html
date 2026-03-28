@@ -153,9 +153,11 @@
         return;
       }
       timeListEl.innerHTML = timeOptions.map((t, i) => `
-        <div class="item-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:14px;">Waktu: ${escapeHtml(t)}</div>
-          <button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="removeTime(${i})">Hapus</button>
+        <div class="item-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:10px 12px;">
+          <div style="font-weight:700; font-size:13px; color:#0f172a;">⏰ ${escapeHtml(t)}</div>
+          <button style="width:34px; height:34px; border-radius:10px; border:none; background:#fff1f2; color:#dc2626; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:all 0.2s;" onmouseenter="this.style.background='#fee2e2';" onmouseleave="this.style.background='#fff1f2';" onclick="removeTime(${i})" title="Hapus">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg>
+          </button>
         </div>
       `).join("");
     }
@@ -166,9 +168,11 @@
         return;
       }
       locListEl.innerHTML = locOptions.map((l, i) => `
-        <div class="item-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:14px; flex:1; padding-right:10px;">${escapeHtml(l)}</div>
-          <button class="btn-danger" style="padding:4px 8px; font-size:12px; flex:0 0 auto;" onclick="removeLoc(${i})">Hapus</button>
+        <div class="item-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:10px 12px;">
+          <div style="font-weight:700; font-size:14px; flex:1; padding-right:10px; color:#0f172a;">📍 ${escapeHtml(l)}</div>
+          <button style="width:34px; height:34px; border-radius:10px; border:none; background:#fff1f2; color:#dc2626; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:all 0.2s;" onmouseenter="this.style.background='#fee2e2';" onmouseleave="this.style.background='#fff1f2';" onclick="removeLoc(${i})" title="Hapus">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg>
+          </button>
         </div>
       `).join("");
     }
@@ -179,9 +183,11 @@
         return;
       }
       pengurusListEl.innerHTML = pengurusOptions.map((p, i) => `
-        <div class="item-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:14px; flex:1; padding-right:10px;">${escapeHtml(p)}</div>
-          <button class="btn-danger" style="padding:4px 8px; font-size:12px; flex:0 0 auto;" onclick="removePengurus(${i})">Hapus</button>
+        <div class="item-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:10px 12px;">
+          <div style="font-weight:700; font-size:14px; flex:1; padding-right:10px; color:#0f172a;">👤 ${escapeHtml(p)}</div>
+          <button style="width:34px; height:34px; border-radius:10px; border:none; background:#fff1f2; color:#dc2626; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:all 0.2s;" onmouseenter="this.style.background='#fee2e2';" onmouseleave="this.style.background='#fff1f2';" onclick="removePengurus(${i})" title="Hapus">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg>
+          </button>
         </div>
       `).join("");
     }

@@ -161,8 +161,7 @@ body {
 /* MAIN CONTENT AREA */
 .app-main {
   flex: 1;
-  padding: 20px var(--safe-pad) 100px;
-  /* bottom padding for bottom nav */
+  padding: 20px var(--safe-pad) 28px; /* reduced now bottom nav is removed */
 }
 
 /* TYPOGRAPHY */
