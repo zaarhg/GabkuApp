@@ -73,9 +73,3 @@ function goHome() {
   window.location.href = "index.html";
 }
 
-function logout() {
-  if (confirm("Keluar dari Gabku App?")) {
-    localStorage.removeItem("APP_TOKEN");
-    window.location.href = "login.html";
-  }
-}

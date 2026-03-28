@@ -16,7 +16,14 @@ async function requireLogin() {
 
 // Fungsi Logout
 async function logout() {
-  if (confirm("Keluar dari Gabku App?")) {
+  let proceed = true;
+  if (typeof asyncConfirm === 'function') {
+    proceed = await asyncConfirm("Yakin ingin keluar dari akun ini?", "Konfirmasi Logout");
+  } else {
+    proceed = confirm("Keluar dari Gabku App?");
+  }
+
+  if (proceed) {
     await supabaseClient.auth.signOut();
     window.location.href = "login.html";
   }
