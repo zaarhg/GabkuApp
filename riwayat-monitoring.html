@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Riwayat Monitoring - Gabku App</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ── Period row ── */
+    .period-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .period-row select {
+      flex: 1;
+    }
+
+    /* ── Atlet chip multi-select ── */
+    .atlet-picker {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .atlet-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 36px;
+      padding: 6px 0;
+    }
+
+    .atlet-chips:empty::before {
+      content: 'Semua atlet (tidak ada filter)';
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 24px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 20px;
+      padding: 4px 10px 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .chip-del {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #93c5fd;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .chip-del:hover {
+      color: #dc2626;
+    }
+
+    .btn-add-atlet {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #f8fafc;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: fit-content;
+    }
+
+    .btn-add-atlet:hover {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: #1590df;
+    }
+
+    /* ── Picker modal ── */
+    #atletPickerModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      z-index: 9800;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #atletPickerModal.show {
+      display: flex;
+    }
+
+    .picker-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      width: 92%;
+      max-width: 400px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .picker-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    #pickerSearch {
+      border-radius: 8px;
+      border: 1.5px solid #e2e8f0;
+      padding: 9px 12px;
+      font-size: 13px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #pickerSearch:focus {
+      outline: none;
+      border-color: #1590df;
+    }
+
+    .picker-list {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .picker-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      gap: 10px;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.15s;
+    }
+
+    .picker-item:hover {
+      background: #f0f9ff;
+    }
+
+    .picker-item.selected {
+      background: #eff6ff;
+    }
+
+    .picker-item-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .picker-item-role {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .picker-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #cbd5e1;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .picker-item.selected .picker-check {
+      background: #1590df;
+      border-color: #1590df;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .picker-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .picker-actions button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+    }
+
+    .picker-cancel {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .picker-ok {
+      background: #1590df;
+      color: #fff;
+    }
+
+    /* ── Chart ── */
+    .chart-wrap {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .chart-wrap canvas {
+      max-height: 220px;
+    }
+
+    /* ── Mon card ── */
+    .mon-card {
+      background: #fff;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+
+    .mon-card-header {
+      padding: 13px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+    }
+
+    .mon-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #1590df, #0a6cb5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .mon-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mon-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 1px;
+    }
+
+    .mon-periode {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .score-badge-main {
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 9px;
+      border-radius: 20px;
+      background: #1590df;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .score-badge-main.good {
+      background: #16a34a;
+    }
+
+    .score-badge-main.mid {
+      background: #ca8a04;
+    }
+
+    .score-badge-main.low {
+      background: #dc2626;
+    }
+
+    .chevron {
+      font-size: 11px;
+      color: #94a3b8;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .mon-card.open .chevron {
+      transform: rotate(180deg);
+    }
+
+    .mon-card-body {
+      display: none;
+      padding: 0 14px 14px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .mon-card.open .mon-card-body {
+      display: block;
+    }
+
+    .pilar-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .pilar-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 9px 10px;
+    }
+
+    .pilar-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .pilar-score {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1590df;
+    }
+
+    .pilar-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1590df;
+      background: #eff6ff;
+      padding: 5px 8px;
+      border-radius: 6px;
+      margin: 10px 0 4px;
+    }
+
+    .detail-table {
+      width: 100%;
+      font-size: 11px;
+      border-collapse: collapse;
+    }
+
+    .detail-table thead th {
+      background: #f1f5f9;
+      padding: 5px 6px;
+      text-align: left;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .detail-table tbody td {
+      padding: 5px 6px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+      vertical-align: top;
+    }
+
+    .note-box {
+      background: #fefce8;
+      border: 1px solid #fef08a;
+      border-radius: 8px;
+      padding: 9px 11px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #713f12;
+    }
+
+    .note-box strong {
+      display: block;
+      margin-bottom: 3px;
+      color: #92400e;
+    }
+
+    .pdf-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn-gen-pdf {
+      flex: 1;
+      background: #1590df;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-gen-pdf:hover {
+      background: #0a6cb5;
+    }
+
+    .btn-view-pdf {
+      flex: 1;
+      background: #f1f5f9;
+      color: #94a3b8;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: not-allowed;
+    }
+
+    .btn-view-pdf.ready {
+      background: #dcfce7;
+      color: #16a34a;
+      border-color: #bbf7d0;
+      cursor: pointer;
+    }
+
+    #pdfOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #pdfOverlay.show {
+      display: flex;
+    }
+
+    .pdf-overlay-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 30px 28px;
+      text-align: center;
+      width: 280px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    .pdf-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #1590df;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 20px;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .count-pill {
+      display: inline-flex;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-left: 8px;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #16a34a;
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 9999;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: opacity 0.35s ease;
+      max-width: 90vw;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="header-bar">
+        <div class="header-left">
+          <a class="icon-back" href="index.html" aria-label="Kembali">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <path fill="currentColor"
+                d="M15.5 19a1 1 0 0 1-.7-.29l-6-6a1 1 0 0 1 0-1.42l6-6a1 1 0 1 1 1.4 1.42L11.62 12l4.58 4.58A1 1 0 0 1 15.5 19z" />
+            </svg>
+          </a>
+          <div class="header-text">
+            <div class="app-name">Riwayat Monitoring</div>
+            <div class="app-subtitle">Semua data penilaian atlet</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main" style="padding-bottom:80px;">
+
+      <!-- ── FILTER ── -->
+      <section class="section-card" style="margin-top:0;">
+        <div class="section-title" style="margin-top:0;">Filter Data</div>
+
+        <!-- 1. Event -->
+        <label class="field-label">Event / Kegiatan (Opsional)</label>
+        <select id="filterEvent" class="field" onchange="onEventChange()">
+          <option value="">— Semua Kegiatan —</option>
+        </select>
+
+        <!-- 2. Atlet (multi-chip) -->
+        <label class="field-label" style="margin-top:10px;">Atlet (Opsional)</label>
+        <div class="atlet-picker">
+          <div class="atlet-chips" id="atletChips"></div>
+          <button class="btn-add-atlet" onclick="openAtletPicker()">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+            </svg>
+            Pilih Atlet
+          </button>
+        </div>
+
+        <!-- 3. Waktu Mulai -->
+        <label class="field-label" style="margin-top:10px;">Waktu Mulai</label>
+        <div class="period-row">
+          <select id="startBulan" class="field">
+            <option value="1">Januari</option>
+            <option value="2">Februari</option>
+            <option value="3">Maret</option>
+            <option value="4">April</option>
+            <option value="5">Mei</option>
+            <option value="6">Juni</option>
+            <option value="7">Juli</option>
+            <option value="8">Agustus</option>
+            <option value="9">September</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+            <option value="12">Desember</option>
+          </select>
+          <select id="startTahun" class="field"></select>
+        </div>
+
+        <!-- 4. Waktu Selesai -->
+        <label class="field-label" style="margin-top:10px;">Waktu Selesai</label>
+        <div class="period-row">
+          <select id="endBulan" class="field">
+            <option value="1">Januari</option>
+            <option value="2">Februari</option>
+            <option value="3">Maret</option>
+            <option value="4">April</option>
+            <option value="5">Mei</option>
+            <option value="6">Juni</option>
+            <option value="7">Juli</option>
+            <option value="8">Agustus</option>
+            <option value="9">September</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+            <option value="12">Desember</option>
+          </select>
+          <select id="endTahun" class="field"></select>
+        </div>
+
+        <button class="btn-primary" style="width:100%; margin-top:16px;" onclick="loadRiwayat()">
+          Lihat Monitoring
+        </button>
+      </section>
+
+      <!-- ── HASIL ── -->
+      <div id="hasilSection" style="display:none;">
+        <section class="section-card">
+          <div class="section-title" style="margin-top:0;">
+            Tren Perkembangan <span class="count-pill" id="countPill"></span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </section>
+        <section class="section-card">
+          <div class="section-title" style="margin-top:0;">Detail Monitoring</div>
+          <div id="listContainer"></div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Atlet Picker Modal -->
+  <div id="atletPickerModal">
+    <div class="picker-box">
+      <div class="picker-title">Pilih Atlet</div>
+      <input id="pickerSearch" placeholder="Cari nama atlet…" oninput="filterPickerList(this.value)">
+      <div class="picker-list" id="pickerList"></div>
+      <div class="picker-actions">
+        <button class="picker-cancel" onclick="closeAtletPicker()">Batal</button>
+        <button class="picker-ok" onclick="confirmAtletPicker()">Konfirmasi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Overlay -->
+  <div id="pdfOverlay">
+    <div class="pdf-overlay-box">
+      <div class="pdf-spinner"></div>
+      <div style="font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px;">Membuat PDF…</div>
+      <div style="font-size:13px;color:#64748b;">Mohon tunggu, jangan tutup halaman ini.</div>
+    </div>
+  </div>
+
+  <div id="toast" style="display:none;"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/api.js"></script>
+
+  <script>
+    /* ── Konstanta ── */
+    const NB = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    const PILAR_LABEL = { b1: "Bidding", b2: "Play (Declarer)", b3: "Defense", b4: "Mental & Kemitraan" };
+    const PILAR_ITEMS = {
+      b1: ["Akurasi Penentuan Kontrak", "Pemahaman Sistem & Konvensi", "Konsistensi Interpretasi Bid", "Kepatuhan Sistem & Kesepakatan", "Penanganan Bid Kompetitif & Preemp"],
+      b2: ["Perencanaan Play Awal", "Teknik Declarer", "Analisis Peluang & Distribusi", "Timing & Entry Management", "Konsistensi Rencana Main (Line of Play)"],
+      b3: ["Ketepatan Opening Lead", "Kejelasan Signaling", "Akurasi Switching & Discard", "Membaca Permainan Partner", "Defense Planning (2 trik awal)"],
+      b4: ["Konsistensi Fokus & Stamina", "Respon Papan Buruk", "Komunikasi & Harmonisasi Partner", "Manajemen Waktu (Tempo Permainan)", "Diskusi Pasca Latihan & Error Awareness"]
+    };
+    const CHART_COLORS = ["#1590df", "#16a34a", "#ca8a04", "#dc2626", "#8b5cf6", "#0891b2", "#db2777"];
+
+    /* ── State ── */
+    let _allMembers = [];   // [{id, name, role}]
+    let _allActivities = [];   // [{id, name, start_date, end_date, default_participants}]
+    let _pickerPool = [];   // subset of _allMembers shown in picker (filtered by event)
+    let _pickerTemp = new Set(); // IDs selected in picker (before confirm)
+    let _selectedAtlets = [];  // [{id, name}] confirmed selection
+    let _chartInst = null;
+
+    /* ── localStorage PDF helpers ── */
+    const _PDF = 'mon_pdf_';
+    const _pdfSave = (id, url) => { try { localStorage.setItem(_PDF + id, url); } catch (_) { } };
+    const _pdfLoad = (id) => { try { return localStorage.getItem(_PDF + id) || ''; } catch (_) { return ''; } };
+
+    /* ── INIT ── */
+    (async () => {
+      await requireLogin();
+
+      const now = new Date();
+      const curM = now.getMonth() + 1;
+      const curY = now.getFullYear();
+
+      ['startTahun', 'endTahun'].forEach(id => {
+        const sel = document.getElementById(id);
+        for (let y = curY; y >= curY - 5; y--)
+          sel.innerHTML += `<option value="${y}">${y}</option>`;
+      });
+      document.getElementById('startBulan').value = 1;
+      document.getElementById('startTahun').value = curY;
+      document.getElementById('endBulan').value = curM;
+      document.getElementById('endTahun').value = curY;
+
+      const [{ data: acts }, { data: mems }] = await Promise.all([
+        supabaseClient.from('activities').select('id,name,start_date,end_date,default_participants').eq('is_active', true).order('name'),
+        supabaseClient.from('members').select('id,name,role').eq('is_active', true).order('name')
+      ]);
+      if (acts) {
+        _allActivities = acts;
+        const sel = document.getElementById('filterEvent');
+        acts.forEach(a => sel.innerHTML += `<option value="${a.id}">${escHtml(a.name)}</option>`);
+      }
+      if (mems) {
+        _allMembers = mems;
+        _pickerPool = [...mems]; // default: semua
+      }
+    })();
+
+    /* ── Event change: auto-fill tanggal + filter atlet ── */
+    function onEventChange() {
+      const actId = document.getElementById('filterEvent').value;
+
+      // Reset picker pool ke semua atlet dulu
+      _pickerPool = [..._allMembers];
+      _selectedAtlets = [];
+      renderChips();
+
+      if (!actId) return;
+
+      const act = _allActivities.find(a => a.id === actId);
+      if (!act) return;
+
+      // Auto-fill tanggal
+      if (act.start_date) {
+        const [sy, sm] = act.start_date.split('-');
+        document.getElementById('startBulan').value = parseInt(sm);
+        document.getElementById('startTahun').value = parseInt(sy);
+      }
+      if (act.end_date) {
+        const [ey, em] = act.end_date.split('-');
+        document.getElementById('endBulan').value = parseInt(em);
+        document.getElementById('endTahun').value = parseInt(ey);
+      }
+
+      // Filter picker pool ke peserta event saja (jika ada default_participants)
+      const dp = act.default_participants;
+      if (dp && dp.length > 0) {
+        const ids = new Set(dp.map(p => p.member_id));
+        _pickerPool = _allMembers.filter(m => ids.has(m.id));
+      }
+    }
+
+    /* ── Atlet Picker Modal ── */
+    function openAtletPicker() {
+      _pickerTemp = new Set(_selectedAtlets.map(a => a.id));
+      document.getElementById('pickerSearch').value = '';
+      filterPickerList('');
+      document.getElementById('atletPickerModal').classList.add('show');
+    }
+
+    function closeAtletPicker() {
+      document.getElementById('atletPickerModal').classList.remove('show');
+    }
+
+    function filterPickerList(q) {
+      const filtered = q.trim()
+        ? _pickerPool.filter(m => m.name.toLowerCase().includes(q.toLowerCase()))
+        : _pickerPool;
+      renderPickerList(filtered);
+    }
+
+    function renderPickerList(pool) {
+      const el = document.getElementById('pickerList');
+      el.innerHTML = pool.map(m => {
+        const sel = _pickerTemp.has(m.id);
+        return `
+          <div class="picker-item${sel ? ' selected' : ''}" onclick="togglePickerItem('${m.id}','${escHtml(m.name)}',this)">
+            <div class="picker-check">${sel ? '✓' : ''}</div>
+            <div>
+              <div class="picker-item-name">${escHtml(m.name)}</div>
+              <div class="picker-item-role">${escHtml(m.role || '')}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function togglePickerItem(id, name, el) {
+      if (_pickerTemp.has(id)) { _pickerTemp.delete(id); }
+      else { _pickerTemp.add(id); }
+      el.classList.toggle('selected');
+      el.querySelector('.picker-check').textContent = _pickerTemp.has(id) ? '✓' : '';
+    }
+
+    function confirmAtletPicker() {
+      _selectedAtlets = _allMembers.filter(m => _pickerTemp.has(m.id));
+      renderChips();
+      closeAtletPicker();
+    }
+
+    function renderChips() {
+      const wrap = document.getElementById('atletChips');
+      wrap.innerHTML = _selectedAtlets.map(a => `
+        <span class="chip">
+          ${escHtml(a.name)}
+          <button class="chip-del" onclick="removeAtlet('${a.id}')" title="Hapus">✕</button>
+        </span>`).join('');
+    }
+
+    function removeAtlet(id) {
+      _selectedAtlets = _selectedAtlets.filter(a => a.id !== id);
+      renderChips();
+    }
+
+    /* ── Load Riwayat ── */
+    async function loadRiwayat() {
+      const container = document.getElementById('listContainer');
+      const hasil = document.getElementById('hasilSection');
+      const pill = document.getElementById('countPill');
+
+      hasil.style.display = 'none';
+      container.innerHTML = '<div class="empty-state">Memuat data…</div>';
+
+      const startB = parseInt(document.getElementById('startBulan').value);
+      const startY = parseInt(document.getElementById('startTahun').value);
+      const endB = parseInt(document.getElementById('endBulan').value);
+      const endY = parseInt(document.getElementById('endTahun').value);
+      const startOrd = startY * 100 + startB;
+      const endOrd = endY * 100 + endB;
+
+      if (startOrd > endOrd) {
+        showToastMsg('Waktu mulai tidak boleh lebih besar dari waktu selesai.', 'error');
+        return;
+      }
+
+      try {
+        let query = supabaseClient
+          .from('monitoring_atlet')
+          .select('id,member_id,bulan,tahun,rata_rata_total,sistem_utama,catatan_pelatih,data_b1,data_b2,data_b3,data_b4,members(name,role)')
+          .gte('tahun', startY)
+          .lte('tahun', endY)
+          .order('tahun', { ascending: true })
+          .order('bulan', { ascending: true });
+
+        // Filter multi-atlet
+        if (_selectedAtlets.length > 0)
+          query = query.in('member_id', _selectedAtlets.map(a => a.id));
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        // Filter range bulan detail
+        const filtered = (data || []).filter(item => {
+          const ord = item.tahun * 100 + item.bulan;
+          return ord >= startOrd && ord <= endOrd;
+        });
+
+        hasil.style.display = 'block';
+
+        if (!filtered.length) {
+          pill.textContent = '0 data';
+          container.innerHTML = '<div class="empty-state">Tidak ada data monitoring pada rentang waktu ini.</div>';
+          if (_chartInst) { _chartInst.destroy(); _chartInst = null; }
+          return;
+        }
+
+        pill.textContent = filtered.length + ' data';
+        renderChart(filtered);
+        renderList(filtered, container);
+
+      } catch (err) {
+        console.error(err);
+        hasil.style.display = 'block';
+        container.innerHTML = `<div class="empty-state" style="color:#dc2626;">Gagal memuat: ${err.message}</div>`;
+      }
+    }
+
+    /* ── Chart ── */
+    function renderChart(data) {
+      if (_chartInst) { _chartInst.destroy(); _chartInst = null; }
+      const periodeSet = new Set();
+      data.forEach(i => periodeSet.add(`${i.tahun}-${String(i.bulan).padStart(2, '0')}`));
+      const allP = [...periodeSet].sort();
+      const labels = allP.map(p => { const [y, m] = p.split('-'); return `${NB[parseInt(m)]} ${y}`; });
+
+      const byAtlet = {};
+      data.forEach(item => {
+        const name = item.members?.name || item.member_id;
+        if (!byAtlet[name]) byAtlet[name] = {};
+        const key = `${item.tahun}-${String(item.bulan).padStart(2, '0')}`;
+        byAtlet[name][key] = item.rata_rata_total ?? null;
+      });
+
+      const datasets = Object.entries(byAtlet).map(([name, pMap], idx) => ({
+        label: name,
+        data: allP.map(p => pMap[p] ?? null),
+        borderColor: CHART_COLORS[idx % CHART_COLORS.length],
+        backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] + '22',
+        borderWidth: 2, pointRadius: 5, pointHoverRadius: 7,
+        tension: 0.3, fill: false, spanGaps: false
+      }));
+
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      _chartInst = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: datasets.length > 1, position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw ?? '—'}` } }
+          },
+          scales: {
+            y: { min: 0, max: 5, ticks: { stepSize: 0.5, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+            x: { ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    /* ── Render list ── */
+    function renderList(data, container) {
+      const sorted = [...data].sort((a, b) => (b.tahun * 100 + b.bulan) - (a.tahun * 100 + a.bulan));
+      container.innerHTML = sorted.map(renderCard).join('');
+      container.querySelectorAll('.mon-card-header').forEach(h =>
+        h.addEventListener('click', () => h.closest('.mon-card').classList.toggle('open'))
+      );
+    }
+
+    function renderCard(item) {
+      const namaAtlet = item.members?.name || 'Unknown';
+      const role = item.members?.role || '';
+      const periode = `${NB[item.bulan]} ${item.tahun}`;
+      const avg = item.rata_rata_total;
+      const cls = avg >= 4 ? 'good' : avg >= 2.5 ? 'mid' : 'low';
+      const inisial = namaAtlet.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      const dataStr = encodeURIComponent(JSON.stringify(item));
+      const namaStr = encodeURIComponent(namaAtlet);
+      const savedUrl = _pdfLoad(item.id);
+
+      const pilarGrid = ['b1', 'b2', 'b3', 'b4'].map(k => {
+        const rr = (item[`data_${k}`] || {}).rata_rata ?? '—';
+        return `<div class="pilar-box"><div class="pilar-label">${PILAR_LABEL[k]}</div><div class="pilar-score">${rr}</div></div>`;
+      }).join('');
+
+      let detailHtml = '';
+      ['b1', 'b2', 'b3', 'b4'].forEach(k => {
+        const d = item[`data_${k}`] || {};
+        const rows = PILAR_ITEMS[k].map((lbl, idx) => {
+          const i = idx + 1;
+          return `<tr><td>${i}. ${lbl}</td><td style="font-weight:700;text-align:center;width:36px;">${d[`n${i}`] ?? '—'}</td><td style="color:#64748b;">${escHtml(d[`c${i}`] || '')}</td></tr>`;
+        }).join('');
+        detailHtml += `<div class="pilar-section-title">B${k.slice(1)}. ${PILAR_LABEL[k]} — rata-rata ${d.rata_rata ?? '?'}</div>
+          <table class="detail-table"><thead><tr><th>Indikator</th><th style="text-align:center;">Nilai</th><th>Catatan</th></tr></thead><tbody>${rows}</tbody></table>`;
+      });
+
+      const catBox = item.catatan_pelatih
+        ? `<div class="note-box"><strong>💬 Catatan Pelatih:</strong>${escHtml(item.catatan_pelatih)}</div>` : '';
+      const sysTag = item.sistem_utama
+        ? `<div style="font-size:11px;color:#475569;margin:8px 0 0;">Sistem: <strong>${escHtml(item.sistem_utama)}</strong></div>` : '';
+
+      return `
+        <div class="mon-card" id="card-${item.id}">
+          <div class="mon-card-header">
+            <div class="mon-avatar">${inisial}</div>
+            <div class="mon-info">
+              <div class="mon-name">${escHtml(namaAtlet)}</div>
+              <div class="mon-periode">${periode}${role ? ' · ' + escHtml(role) : ''}</div>
+            </div>
+            <span class="score-badge-main ${cls}">⭐ ${avg ?? '—'}</span>
+            <span class="chevron">▼</span>
+          </div>
+          <div class="mon-card-body">
+            ${sysTag}
+            <div class="pilar-grid">${pilarGrid}</div>
+            ${detailHtml}
+            ${catBox}
+            <div class="pdf-actions">
+              <button class="btn-gen-pdf" onclick="generatePDF('${dataStr}','${namaStr}','${periode}','${item.id}')">📄 Generate PDF</button>
+              <button class="btn-view-pdf${savedUrl ? ' ready' : ''}" id="viewbtn-${item.id}"
+                ${savedUrl ? `onclick="viewPDF('${item.id}')"` : ' disabled title="Generate PDF terlebih dahulu"'}>👁 View PDF</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    /* ── PDF ── */
+    function _showOv() { document.getElementById('pdfOverlay').classList.add('show'); }
+    function _hideOv() { document.getElementById('pdfOverlay').classList.remove('show'); }
+
+    async function generatePDF(dataStr, namaStr, periode, itemId) {
+      const item = JSON.parse(decodeURIComponent(dataStr));
+      const nama = decodeURIComponent(namaStr);
+      _showOv();
+      try {
+        const res = await apiPost('generateMonitoringPDF', {
+          nama_atlet: nama, periode,
+          kehadiran: 'Lihat Rekap Absen',
+          sistem_utama: item.sistem_utama || '—',
+          rata_rata_total: item.rata_rata_total,
+          catatan_pelatih: item.catatan_pelatih || '—',
+          b1: item.data_b1, b2: item.data_b2, b3: item.data_b3, b4: item.data_b4
+        });
+        const url = res?.pdfUrl || res?.pdf_url;
+        if (!url) throw new Error('Gagal mendapatkan link PDF.');
+        _pdfSave(itemId, url);
+        const btn = document.getElementById(`viewbtn-${itemId}`);
+        if (btn) {
+          btn.classList.add('ready'); btn.removeAttribute('disabled');
+          btn.setAttribute('onclick', `viewPDF('${itemId}')`); btn.title = '';
+        }
+        showToastMsg('PDF berhasil dibuat!', 'success');
+      } catch (err) {
+        showToastMsg('Gagal: ' + err.message, 'error');
+      } finally { _hideOv(); }
+    }
+
+    function viewPDF(itemId) {
+      const url = _pdfLoad(itemId);
+      if (url) window.open(url, '_blank');
+      else showToastMsg('Generate ulang PDF terlebih dahulu.', 'error');
+    }
+
+    /* ── Helpers ── */
+    function escHtml(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function showToastMsg(msg, type) {
+      const t = document.getElementById('toast');
+      if (!t) { alert(msg); return; }
+      t.textContent = msg;
+      t.style.display = 'block';
+      t.style.background = type === 'error' ? '#dc2626' : type === 'info' ? '#0369a1' : '#16a34a';
+      t.style.opacity = '1';
+      setTimeout(() => {
+        t.style.opacity = '0';
+        setTimeout(() => { t.style.display = 'none'; t.style.opacity = '1'; }, 400);
+      }, 3500);
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('atletPickerModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('atletPickerModal')) closeAtletPicker();
+    });
+  </script>
+</body>
+
+</html>

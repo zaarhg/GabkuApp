@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Monitoring Atlet - Gabku App</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    .phase-section {
+      animation: fadeInUp 0.3s ease;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Profile card */
+    .profile-card {
+      background: linear-gradient(135deg, #1590df 0%, #0a6cb5 100%);
+      border-radius: 14px;
+      padding: 18px;
+      color: #fff;
+      margin-bottom: 0;
+    }
+
+    .profile-card .profile-name {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 0 4px;
+    }
+
+    .profile-card .profile-role {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.22);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+
+    .profile-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .profile-stat-box {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .profile-stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.8;
+      margin-bottom: 3px;
+    }
+
+    .profile-stat-value {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    /* History cards */
+    .history-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+      border-left: 4px solid #1590df;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .history-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .history-card-info h4 {
+      margin: 0 0 2px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .history-card-info p {
+      margin: 0;
+      font-size: 12px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-card-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* PDF buttons */
+    .btn-gen-pdf {
+      background: #1590df;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    .btn-gen-pdf:hover {
+      background: #0a6cb5;
+    }
+
+    .btn-view-pdf {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: not-allowed;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .btn-view-pdf.ready {
+      background: #dcfce7;
+      color: #16a34a;
+      border-color: #bbf7d0;
+      cursor: pointer;
+    }
+
+    .btn-view-pdf.ready:hover {
+      background: #bbf7d0;
+    }
+
+    /* PDF Generation Overlay */
+    #pdfOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #pdfOverlay.show {
+      display: flex;
+    }
+
+    .pdf-overlay-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 30px 28px;
+      text-align: center;
+      width: 280px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    .pdf-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #1590df;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .pdf-overlay-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+
+    .pdf-overlay-sub {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    /* Indikator form rows */
+    .indikator-row {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .indikator-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+
+    .indikator-inputs {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .indikator-inputs select {
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    /* Catatan wrapper */
+    .catatan-wrap {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .catatan-wrap textarea {
+      flex: 1;
+      resize: none;
+      overflow: hidden;
+      min-height: 36px;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Clear button for catatan */
+    .btn-clear-catatan {
+      position: absolute;
+      right: 4px;
+      top: 4px;
+      background: #e2e8f0;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      font-size: 11px;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .btn-clear-catatan:hover {
+      background: #cbd5e1;
+    }
+
+    /* Month picker */
+    .month-picker {
+      display: flex;
+      gap: 10px;
+    }
+
+    .month-picker select,
+    .month-picker input[type="number"] {
+      flex: 1;
+    }
+
+    /* Back button */
+    .btn-back-phase {
+      background: none;
+      border: 1px solid #cbd5e1;
+      color: #64748b;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .btn-back-phase:hover {
+      background: #f1f5f9;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 20px;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #16a34a;
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 9999;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: opacity 0.35s ease;
+      max-width: 90vw;
+      text-align: center;
+    }
+
+    /* Catatan pelatih wrapper */
+    .catatan-pelatih-wrap {
+      position: relative;
+    }
+
+    .catatan-pelatih-wrap textarea {
+      width: 100%;
+      box-sizing: border-box;
+      resize: none;
+      overflow: hidden;
+    }
+
+    .catatan-pelatih-wrap .btn-clear-catatan {
+      position: absolute;
+      right: 6px;
+      top: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="header-bar">
+        <div class="header-left">
+          <button class="icon-back" onclick="handleBack()" aria-label="Kembali">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <path fill="currentColor"
+                d="M15.5 19a1 1 0 0 1-.7-.29l-6-6a1 1 0 0 1 0-1.42l6-6a1 1 0 1 1 1.4 1.42L11.62 12l4.58 4.58A1 1 0 0 1 15.5 19z" />
+            </svg>
+          </button>
+          <div class="header-text">
+            <div class="app-name">Monitoring Atlet</div>
+            <div class="app-subtitle">Input &amp; rekap perkembangan</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main" style="padding-bottom: 80px;">
+
+      <!-- ===== FASE 1: PILIH ATLET ===== -->
+      <section class="section-card phase-section" id="phase-select">
+        <div class="section-title" style="margin-top:0;">Pilih Atlet</div>
+
+        <label class="field-label" for="filterKegiatan">Filter Kegiatan (Opsional)</label>
+        <select id="filterKegiatan" class="field">
+          <option value="">— Semua Kegiatan —</option>
+        </select>
+
+        <label class="field-label" for="selectAtlet" style="margin-top:12px;">Pilih Atlet *</label>
+        <select id="selectAtlet" class="field">
+          <option value="">— Memuat Data Atlet… —</option>
+        </select>
+
+        <button class="btn-primary" style="margin-top:16px; width:100%;" onclick="onConfirmAthlete()">
+          Konfirmasi Pilihan
+        </button>
+        <p id="phase1-msg" style="color:#dc2626; font-size:13px; margin-top:8px; min-height:18px;"></p>
+      </section>
+
+      <!-- ===== FASE 2: PROFIL + RIWAYAT ===== -->
+      <div id="phase-profile" style="display:none;" class="phase-section">
+
+        <!-- Profil singkat -->
+        <section class="section-card" style="padding:0; overflow:hidden;">
+          <div class="profile-card">
+            <p class="profile-name" id="profName">—</p>
+            <span class="profile-role" id="profRole">—</span>
+            <div class="profile-stats">
+              <div class="profile-stat-box">
+                <div class="profile-stat-label">Gender</div>
+                <div class="profile-stat-value" id="profGender">—</div>
+              </div>
+              <div class="profile-stat-box">
+                <div class="profile-stat-label">Tgl Lahir</div>
+                <div class="profile-stat-value" id="profBirth">—</div>
+              </div>
+              <div class="profile-stat-box" style="grid-column:span 2;">
+                <div class="profile-stat-label">No WhatsApp</div>
+                <div class="profile-stat-value" id="profPhone">—</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Buat monitoring baru -->
+        <section class="section-card">
+          <div class="section-title" style="margin-top:0;">Buat Monitoring Baru</div>
+          <label class="field-label">Pilih Bulan &amp; Tahun *</label>
+          <div class="month-picker">
+            <select id="inputBulan" class="field">
+              <option value="">— Bulan —</option>
+              <option value="1">Januari</option>
+              <option value="2">Februari</option>
+              <option value="3">Maret</option>
+              <option value="4">April</option>
+              <option value="5">Mei</option>
+              <option value="6">Juni</option>
+              <option value="7">Juli</option>
+              <option value="8">Agustus</option>
+              <option value="9">September</option>
+              <option value="10">Oktober</option>
+              <option value="11">November</option>
+              <option value="12">Desember</option>
+            </select>
+            <input type="number" id="inputTahun" class="field" placeholder="Tahun" min="2020" max="2099">
+          </div>
+          <button class="btn-primary" style="margin-top:14px; width:100%;" onclick="onStartMonitoring()">
+            Mulai Input Monitoring
+          </button>
+          <p id="phase2-msg" style="color:#dc2626; font-size:13px; margin-top:8px; min-height:18px;"></p>
+        </section>
+
+        <!-- Riwayat -->
+        <section class="section-card">
+          <div class="section-title" style="margin-top:0;">Riwayat Monitoring</div>
+          <div id="historyList">
+            <div class="empty-state">Memuat riwayat…</div>
+          </div>
+        </section>
+      </div>
+
+      <!-- PDF Generation Overlay (blocking) -->
+      <div id="pdfOverlay" role="alertdialog" aria-modal="true" aria-label="Membuat PDF">
+        <div class="pdf-overlay-box">
+          <div class="pdf-spinner"></div>
+          <div class="pdf-overlay-title">Membuat PDF…</div>
+          <div class="pdf-overlay-sub">Mohon tunggu, jangan tutup halaman ini.</div>
+        </div>
+      </div>
+
+      <!-- ===== FASE 3: FORM PENILAIAN ===== -->
+      <div id="phase-form" style="display:none;" class="phase-section">
+
+        <section class="section-card" style="padding:14px 16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div>
+              <div style="font-weight:700; font-size:15px; color:#1e293b;" id="formAtletLabel">—</div>
+              <div style="font-size:12px; color:#64748b;" id="formPeriodeLabel">—</div>
+            </div>
+            <button class="btn-back-phase" onclick="resetToPhase2()">← Kembali</button>
+          </div>
+        </section>
+
+        <form id="formMonitoring" onsubmit="submitMonitoring(event)">
+
+          <section class="section-card">
+            <label class="field-label" for="inputSistem">Sistem Utama Pasangan (Opsional)</label>
+            <input type="text" id="inputSistem" class="field" placeholder="Contoh: Standard American, Precision…">
+          </section>
+
+          <div id="penilaianContainer"></div>
+
+          <section class="section-card">
+            <div class="section-title" style="margin-top:0;">C. Catatan Pelatih</div>
+            <div class="catatan-pelatih-wrap">
+              <textarea id="inputCatatanPelatih" class="field" rows="3"
+                placeholder="Evaluasi keseluruhan atau saran untuk atlet…"
+                oninput="autoResizeTextarea(this); _updateCatatanPelatihClearBtn(this.value)"></textarea>
+              <button type="button" class="btn-clear-catatan" id="btnClearCatatanPelatih" style="display:none;"
+                onclick="clearCatatanPelatih()" title="Hapus catatan">✕</button>
+            </div>
+          </section>
+
+          <div style="padding:0 0 16px;">
+            <button type="submit" class="btn-primary" style="width:100%;">Simpan Data Monitoring</button>
+          </div>
+        </form>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="toast" style="display:none;"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/api.js"></script>
+
+  <script>
+    /* =====================================================
+     * KONSTANTA
+     * ===================================================== */
+    const NAMA_BULAN = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+    const INDIKATOR_DATA = {
+      b1: { title: "B1. TABEL BIDDING", items: ["Akurasi Penentuan Kontrak", "Pemahaman Sistem & Konvensi", "Konsistensi Interpretasi Bid", "Kepatuhan Sistem & Kesepakatan", "Penanganan Bid Kompetitif & Preemp"] },
+      b2: { title: "B2. TABEL PLAY (DECLARER PLAY)", items: ["Perencanaan Play Awal", "Teknik Declarer", "Analisis Peluang & Distribusi", "Timing & Entry Management", "Konsistensi Rencana Main (Line of Play)"] },
+      b3: { title: "B3. TABEL DEFENSE", items: ["Ketepatan Opening Lead", "Kejelasan Signaling", "Akurasi Switching & Discard", "Membaca Permainan Partner", "Defense Planning (2 trik awal)"] },
+      b4: { title: "B4. TABEL MENTAL & KEMITRAAN", items: ["Konsistensi Fokus & Stamina", "Respon Papan Buruk", "Komunikasi & Harmonisasi Partner", "Manajemen Waktu (Tempo Permainan)", "Diskusi Pasca Latihan & Error Awareness"] }
+    };
+
+    /* =====================================================
+     * STATE
+     * ===================================================== */
+    let _currentMember = null;
+    let _existingId = null;
+    let _allMembers = [];
+    let _allActivities = [];
+    let _historyCache = [];
+
+    /* =====================================================
+     * INIT
+     * ===================================================== */
+    (async () => {
+      await requireLogin();
+      await loadDropdowns();
+      document.getElementById('inputBulan').value = new Date().getMonth() + 1;
+      document.getElementById('inputTahun').value = new Date().getFullYear();
+
+      // Restore atlet yang terakhir dipilih sebelum refresh
+      const savedMemberId = localStorage.getItem('mon_last_member');
+      if (savedMemberId && _allMembers.length) {
+        const member = _allMembers.find(m => m.id === savedMemberId);
+        if (member) {
+          _currentMember = member;
+          _renderProfile(member);
+          await loadMonitoringHistory(member.id);
+          showPhase(2);
+        } else {
+          localStorage.removeItem('mon_last_member'); // ID sudah tidak valid, hapus
+        }
+      }
+    })();
+
+    /* =====================================================
+     * LOAD DROPDOWNS
+     * ===================================================== */
+    async function loadDropdowns() {
+      try {
+        const [{ data: members, error: errM }, { data: activities, error: errA }] = await Promise.all([
+          supabaseClient.from('members').select('id,name,role,gender,birth_date,phone').eq('is_active', true).order('name'),
+          supabaseClient.from('activities').select('id,name,default_participants').eq('is_active', true).order('name')
+        ]);
+
+        if (!errM && members) {
+          _allMembers = members;
+          _populateAtletDropdown(members);
+        }
+        if (!errA && activities) {
+          _allActivities = activities;
+          const selK = document.getElementById('filterKegiatan');
+          activities.forEach(a => { selK.innerHTML += `<option value="${a.id}">${escHtml(a.name)}</option>`; });
+        }
+      } catch (err) { console.error('loadDropdowns:', err); }
+    }
+
+    function _populateAtletDropdown(members) {
+      const sel = document.getElementById('selectAtlet');
+      sel.innerHTML = '<option value="">— Pilih Atlet —</option>';
+      members.forEach(m => { sel.innerHTML += `<option value="${m.id}">${escHtml(m.name)} (${m.role || '-'})</option>`; });
+    }
+
+    /* FIX #1: Filter atlet berdasarkan peserta kegiatan */
+    document.getElementById('filterKegiatan').addEventListener('change', function () {
+      const actId = this.value;
+      if (!actId) { _populateAtletDropdown(_allMembers); return; }
+
+      const act = _allActivities.find(a => a.id === actId);
+      if (!act || !act.default_participants || !act.default_participants.length) {
+        _populateAtletDropdown(_allMembers);
+        showToastMsg('Kegiatan ini belum punya daftar peserta, menampilkan semua atlet.', 'info');
+        return;
+      }
+      const ids = new Set(act.default_participants.map(p => p.member_id));
+      const filtered = _allMembers.filter(m => ids.has(m.id));
+      _populateAtletDropdown(filtered.length ? filtered : _allMembers);
+      if (!filtered.length) showToastMsg('Tidak ada anggota aktif yang cocok, menampilkan semua.', 'info');
+    });
+
+    /* =====================================================
+     * FASE 1 → 2
+     * ===================================================== */
+    function onConfirmAthlete() {
+      const msgEl = document.getElementById('phase1-msg');
+      const memberId = document.getElementById('selectAtlet').value;
+      if (!memberId) { msgEl.textContent = 'Pilih atlet terlebih dahulu!'; return; }
+      msgEl.textContent = '';
+
+      const member = _allMembers.find(m => m.id === memberId);
+      if (!member) { msgEl.textContent = 'Data atlet tidak ditemukan.'; return; }
+
+      _currentMember = member;
+      localStorage.setItem('mon_last_member', member.id); // Simpan agar tahan refresh
+      _renderProfile(member);
+      loadMonitoringHistory(member.id);
+      showPhase(2);
+    }
+
+    function _renderProfile(m) {
+      document.getElementById('profName').textContent = m.name || '—';
+      document.getElementById('profRole').textContent = m.role || '—';
+      document.getElementById('profGender').textContent = m.gender || '—';
+      document.getElementById('profPhone').textContent = m.phone || '—';
+      let bDateOut = '—';
+      if (m.birth_date) {
+        try {
+          const d = new Date(m.birth_date);
+          const mth = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+          bDateOut = `${d.getDate()} ${mth[d.getMonth()]} ${d.getFullYear()}`;
+          const age = Math.abs(new Date(Date.now() - d.getTime()).getUTCFullYear() - 1970);
+          bDateOut += ` (${age} th)`;
+        } catch (_) { }
+      }
+      document.getElementById('profBirth').textContent = bDateOut;
+    }
+
+    /* =====================================================
+     * LOAD RIWAYAT
+     * ===================================================== */
+    async function loadMonitoringHistory(memberId) {
+      const container = document.getElementById('historyList');
+      container.innerHTML = '<div class="empty-state">Memuat riwayat…</div>';
+      _historyCache = [];
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('monitoring_atlet')
+          .select('id,bulan,tahun,rata_rata_total,sistem_utama,catatan_pelatih,data_b1,data_b2,data_b3,data_b4')
+          .eq('member_id', memberId)
+          .order('tahun', { ascending: false })
+          .order('bulan', { ascending: false });
+
+        if (error) throw error;
+        _historyCache = data || [];
+
+        if (!_historyCache.length) {
+          container.innerHTML = '<div class="empty-state">Belum ada data monitoring untuk atlet ini.</div>';
+          return;
+        }
+
+        container.innerHTML = _historyCache.map(item => {
+          const periode = `${NAMA_BULAN[item.bulan]} ${item.tahun}`;
+          const dataStr = encodeURIComponent(JSON.stringify(item));
+          const namaStr = encodeURIComponent(_currentMember.name);
+          const savedUrl = _pdfLoad(item.id); // Cek localStorage
+          return `
+            <div class="history-card" id="hcard-${item.id}">
+              <div class="history-card-info">
+                <h4>${periode}</h4>
+                <p>Rata-rata: <strong>${item.rata_rata_total || '—'}</strong> | Sistem: ${escHtml(item.sistem_utama || '—')}</p>
+              </div>
+              <div class="history-card-actions">
+                <button class="btn-gen-pdf"
+                  onclick="generatePDF('${dataStr}','${namaStr}','${periode}','${item.id}')">📄 Generate</button>
+                <button class="btn-view-pdf${savedUrl ? ' ready' : ''}" id="viewbtn-${item.id}"
+                  ${savedUrl ? `onclick="viewPDF('${item.id}')"` : 'disabled title="Generate PDF terlebih dahulu"'}>👁 View</button>
+              </div>
+            </div>`;
+        }).join('');
+
+      } catch (err) {
+        console.error('loadMonitoringHistory:', err);
+        container.innerHTML = '<div class="empty-state" style="color:#dc2626;">Gagal memuat riwayat.</div>';
+      }
+    }
+
+    /* Cari data monitoring paling akhir sebelum bulan yang dipilih */
+    function _getPrevMonitoring(bulan, tahun) {
+      const target = tahun * 100 + bulan;
+      return _historyCache.find(item => (item.tahun * 100 + item.bulan) < target) || null;
+    }
+
+    /* =====================================================
+     * FASE 2 → 3
+     * ===================================================== */
+    async function onStartMonitoring() {
+      const msgEl = document.getElementById('phase2-msg');
+      const bulan = parseInt(document.getElementById('inputBulan').value);
+      const tahun = parseInt(document.getElementById('inputTahun').value);
+
+      if (!bulan || !tahun) { msgEl.textContent = 'Pilih bulan dan tahun terlebih dahulu!'; return; }
+      if (tahun < 2020 || tahun > 2099) { msgEl.textContent = 'Tahun tidak valid (2020–2099).'; return; }
+      msgEl.textContent = '';
+
+      if (typeof showLoading === 'function') showLoading();
+      try {
+        const { data: existing, error } = await supabaseClient
+          .from('monitoring_atlet').select('*')
+          .eq('member_id', _currentMember.id).eq('bulan', bulan).eq('tahun', tahun)
+          .maybeSingle();
+        if (error) throw error;
+
+        _existingId = existing ? existing.id : null;
+
+        const periode = `${NAMA_BULAN[bulan]} ${tahun}`;
+        document.getElementById('formAtletLabel').textContent = _currentMember.name;
+        document.getElementById('formPeriodeLabel').textContent = `Periode: ${periode}`;
+
+        if (existing) {
+          renderFormPenilaian(existing, null);
+          showToastMsg('Data sudah ada — mode Edit aktif.', 'info');
+        } else {
+          const prev = _getPrevMonitoring(bulan, tahun);
+          renderFormPenilaian(null, prev);
+          if (prev) showToastMsg(`Nilai dari ${NAMA_BULAN[prev.bulan]} ${prev.tahun} diisi otomatis sebagai referensi.`, 'info');
+        }
+        showPhase(3);
+
+      } catch (err) {
+        console.error('onStartMonitoring:', err);
+        msgEl.textContent = 'Gagal memeriksa data: ' + err.message;
+      } finally {
+        if (typeof hideLoading === 'function') hideLoading();
+      }
+    }
+
+    /* =====================================================
+     * RENDER FORM B1–B4
+     * existingData = data yang sudah tersimpan (edit mode)
+     * prefillData  = data bulan sebelumnya (new mode)
+     * ===================================================== */
+    function renderFormPenilaian(existingData, prefillData) {
+      const source = existingData || prefillData;
+      const container = document.getElementById('penilaianContainer');
+
+      const nilaiOpts = () => {
+        let o = '<option value="">Nilai</option>';
+        for (let n = 0.5; n <= 5; n = +(n + 0.5).toFixed(1)) o += `<option value="${n}">${n}</option>`;
+        return o;
+      };
+
+      let html = '';
+      for (const [key, data] of Object.entries(INDIKATOR_DATA)) {
+        const pilar = source ? (source[`data_${key}`] || {}) : {};
+        html += `<section class="section-card"><div class="section-title" style="margin-top:0;font-size:14px;">${data.title}</div>`;
+
+        data.items.forEach((indikator, idx) => {
+          const i = idx + 1;
+          const fid = `${key}_${i}`;
+          const catatan = pilar[`c${i}`] || '';
+          const hasCat = catatan.trim().length > 0;
+
+          html += `
+            <div class="indikator-row">
+              <div class="indikator-label">${i}. ${indikator}</div>
+              <div class="indikator-inputs">
+                <select id="${fid}_n" class="field" required>${nilaiOpts()}</select>
+                <div class="catatan-wrap">
+                  <textarea id="${fid}_c" class="field" rows="1"
+                    placeholder="Catatan (opsional)"
+                    style="padding-right:${hasCat ? '34px' : '8px'};"
+                    oninput="autoResizeTextarea(this);toggleClearBtn(this,'${fid}_clear')"
+                  >${escHtml(catatan)}</textarea>
+                  <button type="button" class="btn-clear-catatan" id="${fid}_clear"
+                    style="display:${hasCat ? 'flex' : 'none'};"
+                    onclick="clearField('${fid}_c','${fid}_clear')" title="Hapus catatan">✕</button>
+                </div>
+              </div>
+            </div>`;
+        });
+        html += '</section>';
+      }
+      container.innerHTML = html;
+
+      // Isi nilai setelah DOM siap
+      if (source) {
+        for (const key of Object.keys(INDIKATOR_DATA)) {
+          const pilar = source[`data_${key}`] || {};
+          for (let i = 1; i <= 5; i++) {
+            const val = pilar[`n${i}`];
+            if (val !== null && val !== undefined && val !== '') {
+              const sel = document.getElementById(`${key}_${i}_n`);
+              if (sel) sel.value = String(val);
+            }
+          }
+        }
+        document.getElementById('inputSistem').value = source.sistem_utama || '';
+
+        // catatan pelatih: hanya isi saat edit mode (bukan prefill)
+        const catPelatih = existingData ? (existingData.catatan_pelatih || '') : '';
+        document.getElementById('inputCatatanPelatih').value = catPelatih;
+        autoResizeTextarea(document.getElementById('inputCatatanPelatih'));
+        _updateCatatanPelatihClearBtn(catPelatih);
+      } else {
+        document.getElementById('inputSistem').value = '';
+        document.getElementById('inputCatatanPelatih').value = '';
+        autoResizeTextarea(document.getElementById('inputCatatanPelatih'));
+        _updateCatatanPelatihClearBtn('');
+      }
+
+      // Auto-resize semua textarea catatan
+      setTimeout(() => {
+        container.querySelectorAll('textarea').forEach(ta => autoResizeTextarea(ta));
+      }, 0);
+    }
+
+    /* =====================================================
+     * AUTO-RESIZE & CLEAR BTN HELPERS
+     * ===================================================== */
+    function autoResizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    function toggleClearBtn(textarea, clearId) {
+      const btn = document.getElementById(clearId);
+      if (!btn) return;
+      const hasVal = textarea.value.trim().length > 0;
+      btn.style.display = hasVal ? 'flex' : 'none';
+      textarea.style.paddingRight = hasVal ? '34px' : '8px';
+    }
+
+    function clearField(textareaId, clearId) {
+      const ta = document.getElementById(textareaId);
+      const btn = document.getElementById(clearId);
+      if (ta) { ta.value = ''; autoResizeTextarea(ta); ta.style.paddingRight = '8px'; }
+      if (btn) btn.style.display = 'none';
+    }
+
+    function _updateCatatanPelatihClearBtn(val) {
+      const btn = document.getElementById('btnClearCatatanPelatih');
+      if (btn) btn.style.display = val.trim().length > 0 ? 'flex' : 'none';
+    }
+
+    function clearCatatanPelatih() {
+      const ta = document.getElementById('inputCatatanPelatih');
+      ta.value = ''; autoResizeTextarea(ta); _updateCatatanPelatihClearBtn('');
+    }
+
+    /* =====================================================
+     * SUBMIT
+     * ===================================================== */
+    async function submitMonitoring(e) {
+      e.preventDefault();
+      const bulan = parseInt(document.getElementById('inputBulan').value);
+      const tahun = parseInt(document.getElementById('inputTahun').value);
+      const activity_id = document.getElementById('filterKegiatan').value || null;
+
+      if (typeof showLoading === 'function') showLoading();
+
+      function extractPilar(prefix) {
+        const r = {}; let total = 0, count = 0;
+        for (let i = 1; i <= 5; i++) {
+          const n = parseFloat(document.getElementById(`${prefix}_${i}_n`)?.value);
+          const c = document.getElementById(`${prefix}_${i}_c`)?.value?.trim() || '';
+          r[`n${i}`] = isNaN(n) ? null : n;
+          r[`c${i}`] = c;
+          if (!isNaN(n) && n) { total += n; count++; }
+        }
+        r.rata_rata = count > 0 ? parseFloat((total / count).toFixed(2)) : 0;
+        return r;
+      }
+
+      const data_b1 = extractPilar('b1'), data_b2 = extractPilar('b2'),
+        data_b3 = extractPilar('b3'), data_b4 = extractPilar('b4');
+
+      const rata_rata_total = parseFloat(
+        ((data_b1.rata_rata + data_b2.rata_rata + data_b3.rata_rata + data_b4.rata_rata) / 4).toFixed(2)
+      );
+
+      const payload = {
+        member_id: _currentMember.id, activity_id, bulan, tahun,
+        sistem_utama: document.getElementById('inputSistem').value.trim(),
+        catatan_pelatih: document.getElementById('inputCatatanPelatih').value.trim(),
+        data_b1, data_b2, data_b3, data_b4, rata_rata_total
+      };
+
+      try {
+        let error;
+        if (_existingId) {
+          ({ error } = await supabaseClient.from('monitoring_atlet').update(payload).eq('id', _existingId));
+        } else {
+          ({ error } = await supabaseClient.from('monitoring_atlet').insert([payload]));
+        }
+        if (error) {
+          if (error.code === '23505') throw new Error('Data bulan & tahun ini sudah ada untuk atlet tersebut!');
+          throw error;
+        }
+        showToastMsg('Data monitoring berhasil disimpan! 🎉', 'success');
+        // Hapus URL PDF dari localStorage agar user generate ulang dengan data terbaru
+        if (_existingId) _pdfDel(_existingId);
+        await loadMonitoringHistory(_currentMember.id);
+        resetToPhase2();
+      } catch (err) {
+        console.error('submitMonitoring:', err);
+        showToastMsg(err.message || 'Gagal menyimpan data.', 'error');
+      } finally {
+        if (typeof hideLoading === 'function') hideLoading();
+      }
+    }
+
+    /* =====================================================
+     * PDF — Persistent localStorage helpers
+     * ===================================================== */
+    const _PDF_LS_PREFIX = 'mon_pdf_';
+    const _pdfSave = (id, url) => { try { localStorage.setItem(_PDF_LS_PREFIX + id, url); } catch (_) { } };
+    const _pdfLoad = (id) => { try { return localStorage.getItem(_PDF_LS_PREFIX + id) || ''; } catch (_) { return ''; } };
+    const _pdfDel = (id) => { try { localStorage.removeItem(_PDF_LS_PREFIX + id); } catch (_) { } };
+
+    function _showPdfOverlay() {
+      document.getElementById('pdfOverlay').classList.add('show');
+    }
+    function _hidePdfOverlay() {
+      document.getElementById('pdfOverlay').classList.remove('show');
+    }
+
+    async function generatePDF(dataStringEncoded, namaEncoded, periode, itemId) {
+      const item = JSON.parse(decodeURIComponent(dataStringEncoded));
+      const namaAtlet = decodeURIComponent(namaEncoded);
+
+      _showPdfOverlay();
+      try {
+        const response = await apiPost('generateMonitoringPDF', {
+          nama_atlet: namaAtlet, periode,
+          kehadiran: 'Lihat Rekap Absen',
+          sistem_utama: item.sistem_utama || '—',
+          rata_rata_total: item.rata_rata_total,
+          catatan_pelatih: item.catatan_pelatih || '—',
+          b1: item.data_b1, b2: item.data_b2, b3: item.data_b3, b4: item.data_b4
+        });
+
+        const url = response?.pdfUrl || response?.pdf_url;
+        if (!url) throw new Error('Gagal mendapatkan link PDF dari server.');
+
+        // Simpan ke localStorage agar persisten setelah navigasi
+        _pdfSave(itemId, url);
+
+        const viewBtn = document.getElementById(`viewbtn-${itemId}`);
+        if (viewBtn) {
+          viewBtn.classList.add('ready');
+          viewBtn.removeAttribute('disabled');
+          viewBtn.title = '';
+          viewBtn.setAttribute('onclick', `viewPDF('${itemId}')`);
+        }
+        showToastMsg('PDF berhasil dibuat! Klik tombol View untuk membuka.', 'success');
+
+      } catch (err) {
+        console.error('generatePDF:', err);
+        showToastMsg('Gagal membuat PDF: ' + err.message, 'error');
+      } finally {
+        _hidePdfOverlay();
+      }
+    }
+
+    function viewPDF(itemId) {
+      const url = _pdfLoad(itemId);
+      if (url) window.open(url, '_blank');
+      else showToastMsg('URL tidak ditemukan, silakan generate ulang PDF.', 'error');
+    }
+
+    let _currentPhase = 1;
+
+    function showPhase(n) {
+      _currentPhase = n;
+      document.getElementById('phase-select').style.display = n === 1 ? 'block' : 'none';
+      document.getElementById('phase-profile').style.display = n === 2 ? 'block' : 'none';
+      document.getElementById('phase-form').style.display = n === 3 ? 'block' : 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* Tombol back header: phase 2/3 → kembali ke phase 1; phase 1 → index.html */
+    function handleBack() {
+      if (_currentPhase > 1) { resetToPhase1(); }
+      else { window.location.href = 'index.html'; }
+    }
+
+    function resetToPhase1() {
+      _currentMember = null; _existingId = null; _historyCache = [];
+      localStorage.removeItem('mon_last_member'); // Hapus pilihan atlet
+      showPhase(1);
+    }
+
+    function resetToPhase2() {
+      _existingId = null;
+      document.getElementById('inputBulan').value = new Date().getMonth() + 1;
+      document.getElementById('inputTahun').value = new Date().getFullYear();
+      document.getElementById('phase2-msg').textContent = '';
+      showPhase(2);
+    }
+
+    /* =====================================================
+     * HELPER
+     * ===================================================== */
+    function escHtml(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function showToastMsg(msg, type) {
+      const toast = document.getElementById('toast');
+      if (!toast) { alert(msg); return; }
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      toast.style.background = type === 'error' ? '#dc2626' : type === 'info' ? '#0369a1' : '#16a34a';
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.style.display = 'none'; toast.style.opacity = '1'; }, 400);
+      }, 3500);
+    }
+  </script>
+</body>
+
+</html>
