@@ -1017,7 +1017,7 @@
           const tTahun = item.tahun;
           const lastDay = new Date(tTahun, item.bulan, 0).getDate();
           const dateFrom = `${tTahun}-${tBulan}-01`;
-          const dateTo   = `${tTahun}-${tBulan}-${lastDay}`;
+          const dateTo = `${tTahun}-${tBulan}-${lastDay}`;
 
           console.log('[generatePDF] Querying attendance for member_id:', _currentMember.id, 'periode:', dateFrom, '→', dateTo);
 
@@ -1039,7 +1039,7 @@
           } else {
             const total = presRows.length;
             const hadir = presRows.filter(r => r.presence === 'Hadir').length;
-            const pct   = Math.round((hadir / total) * 100);
+            const pct = Math.round((hadir / total) * 100);
             kehadiranStr = `${hadir}/${total} sesi (${pct}% hadir)`;
             console.log('[generatePDF] kehadiran computed:', kehadiranStr);
           }
@@ -1052,10 +1052,10 @@
 
 
         const payload = {
-          nama_atlet:      namaAtlet,
+          nama_atlet: namaAtlet,
           periode,
-          kehadiran:       kehadiranStr,
-          sistem_utama:    item.sistem_utama || '',
+          kehadiran: kehadiranStr,
+          sistem_utama: item.sistem_utama || '',
           rata_rata_total: item.rata_rata_total ?? '',
           catatan_pelatih: item.catatan_pelatih || '',
           b1: item.data_b1 || null,
