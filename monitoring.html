@@ -372,30 +372,30 @@
     <main class="app-main" style="padding-bottom: 80px;">
 
       <!-- ===== FASE 1: PILIH ATLET ===== -->
-      <section class="section-card phase-section" id="phase-select">
-        <div class="section-title" style="margin-top:0;">Pilih Atlet</div>
+      <section class="section-card phase-section mt-0" id="phase-select">
+        <div class="section-title m-0 mb-3">Pilih Atlet</div>
 
         <label class="field-label" for="filterKegiatan">Filter Kegiatan (Opsional)</label>
-        <select id="filterKegiatan" class="field">
+        <select id="filterKegiatan" class="field mb-3">
           <option value="">— Semua Kegiatan —</option>
         </select>
 
-        <label class="field-label" for="selectAtlet" style="margin-top:12px;">Pilih Atlet *</label>
+        <label class="field-label mt-3" for="selectAtlet">Pilih Atlet *</label>
         <select id="selectAtlet" class="field">
           <option value="">— Memuat Data Atlet… —</option>
         </select>
 
-        <button class="btn-primary" style="margin-top:16px; width:100%;" onclick="onConfirmAthlete()">
+        <button class="btn-primary w-full mt-4" onclick="onConfirmAthlete()">
           Konfirmasi Pilihan
         </button>
-        <p id="phase1-msg" style="color:#dc2626; font-size:13px; margin-top:8px; min-height:18px;"></p>
+        <p id="phase1-msg" class="text-danger text-sm mt-2" style="min-height:18px;"></p>
       </section>
 
       <!-- ===== FASE 2: PROFIL + RIWAYAT ===== -->
       <div id="phase-profile" style="display:none;" class="phase-section">
 
         <!-- Profil singkat -->
-        <section class="section-card" style="padding:0; overflow:hidden;">
+        <section class="section-card p-0 overflow-hidden">
           <div class="profile-card">
             <p class="profile-name" id="profName">—</p>
             <span class="profile-role" id="profRole">—</span>
@@ -418,9 +418,9 @@
 
         <!-- Buat monitoring baru -->
         <section class="section-card">
-          <div class="section-title" style="margin-top:0;">Buat Monitoring Baru</div>
+          <div class="section-title m-0 mb-3">Buat Monitoring Baru</div>
           <label class="field-label">Pilih Bulan &amp; Tahun *</label>
-          <div class="month-picker">
+          <div class="month-picker mb-2">
             <select id="inputBulan" class="field">
               <option value="">— Bulan —</option>
               <option value="1">Januari</option>
@@ -438,16 +438,16 @@
             </select>
             <input type="number" id="inputTahun" class="field" placeholder="Tahun" min="2020" max="2099">
           </div>
-          <button class="btn-primary" style="margin-top:14px; width:100%;" onclick="onStartMonitoring()">
+          <button class="btn-primary w-full mt-3" onclick="onStartMonitoring()">
             Mulai Input Monitoring
           </button>
-          <p id="phase2-msg" style="color:#dc2626; font-size:13px; margin-top:8px; min-height:18px;"></p>
+          <p id="phase2-msg" class="text-danger text-sm mt-2" style="min-height:18px;"></p>
         </section>
 
         <!-- Riwayat -->
         <section class="section-card">
-          <div class="section-title" style="margin-top:0;">Riwayat Monitoring</div>
-          <div id="historyList">
+          <div class="section-title m-0 mb-3">Riwayat Monitoring</div>
+          <div id="historyList" class="flex-col gap-2">
             <div class="empty-state">Memuat riwayat…</div>
           </div>
         </section>
@@ -465,17 +465,20 @@
       <!-- ===== FASE 3: FORM PENILAIAN ===== -->
       <div id="phase-form" style="display:none;" class="phase-section">
 
-        <section class="section-card" style="padding:14px 16px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <section class="section-card py-3 px-4">
+          <div class="row-between flex-wrap gap-2">
             <div>
-              <div style="font-weight:700; font-size:15px; color:#1e293b;" id="formAtletLabel">—</div>
-              <div style="font-size:12px; color:#64748b;" id="formPeriodeLabel">—</div>
+              <div class="font-bold text-main" style="font-size:15px;" id="formAtletLabel">—</div>
+              <div class="text-xs text-muted mt-1" id="formPeriodeLabel">—</div>
             </div>
-            <button class="btn-back-phase" onclick="resetToPhase2()">← Kembali</button>
+            <button type="button" class="btn-back-phase text-xs" onclick="resetToPhase2()">← Kembali</button>
           </div>
         </section>
 
         <form id="formMonitoring" onsubmit="submitMonitoring(event)">
+
+          <!-- Card Kehadiran (Read-only) -->
+          <div id="attendanceCardContainer"></div>
 
           <section class="section-card">
             <label class="field-label" for="inputSistem">Sistem Utama Pasangan (Opsional)</label>
@@ -485,7 +488,7 @@
           <div id="penilaianContainer"></div>
 
           <section class="section-card">
-            <div class="section-title" style="margin-top:0;">C. Catatan Pelatih</div>
+            <div class="section-title m-0 mb-3">C. Catatan Pelatih</div>
             <div class="catatan-pelatih-wrap">
               <textarea id="inputCatatanPelatih" class="field" rows="3"
                 placeholder="Evaluasi keseluruhan atau saran untuk atlet…"
@@ -495,8 +498,8 @@
             </div>
           </section>
 
-          <div style="padding:0 0 16px;">
-            <button type="submit" class="btn-primary" style="width:100%;">Simpan Data Monitoring</button>
+          <div class="pb-4 mt-4">
+            <button type="submit" class="btn-primary w-full">Simpan Data Monitoring</button>
           </div>
         </form>
       </div>
@@ -732,6 +735,10 @@
           renderFormPenilaian(null, prev);
           if (prev) showToastMsg(`Nilai dari ${NAMA_BULAN[prev.bulan]} ${prev.tahun} diisi otomatis sebagai referensi.`, 'info');
         }
+
+        // Ambil dan tampilkan statistik kehadiran untuk periode ini
+        _fetchAndRenderAttendanceStats(_currentMember.id, bulan, tahun);
+
         showPhase(3);
 
       } catch (err) {
@@ -760,7 +767,7 @@
       let html = '';
       for (const [key, data] of Object.entries(INDIKATOR_DATA)) {
         const pilar = source ? (source[`data_${key}`] || {}) : {};
-        html += `<section class="section-card"><div class="section-title" style="margin-top:0;font-size:14px;">${data.title}</div>`;
+        html += `<section class="section-card"><div class="section-title m-0 mb-3 text-sm">${data.title}</div>`;
 
         data.items.forEach((indikator, idx) => {
           const i = idx + 1;
@@ -773,10 +780,10 @@
               <div class="indikator-label">${i}. ${indikator}</div>
               <div class="indikator-inputs">
                 <select id="${fid}_n" class="field" required>${nilaiOpts()}</select>
-                <div class="catatan-wrap">
+                <div class="catatan-wrap flex-1 relative">
                   <textarea id="${fid}_c" class="field" rows="1"
                     placeholder="Catatan (opsional)"
-                    style="padding-right:${hasCat ? '34px' : '8px'};"
+                    class="${hasCat ? 'pr-8' : ''}"
                     oninput="autoResizeTextarea(this);toggleClearBtn(this,'${fid}_clear')"
                   >${escHtml(catatan)}</textarea>
                   <button type="button" class="btn-clear-catatan" id="${fid}_clear"
@@ -820,6 +827,71 @@
       setTimeout(() => {
         container.querySelectorAll('textarea').forEach(ta => autoResizeTextarea(ta));
       }, 0);
+    }
+
+    /* =====================================================
+     * FETCH KEHADIRAN UNTUK FORM (PHASE 3)
+     * ===================================================== */
+    async function _fetchAndRenderAttendanceStats(memberId, bulan, tahun) {
+      const container = document.getElementById('attendanceCardContainer');
+      container.innerHTML = `
+        <section class="section-card bg-gray-50 mb-3" style="border-left: 4px solid #64748b;">
+          <div class="section-title m-0 text-muted font-bold text-sm">📊 Statistik Kehadiran</div>
+          <div class="text-xs text-muted mt-2">Memuat data presensi…</div>
+        </section>`;
+
+      try {
+        const tBulan = String(bulan).padStart(2, '0');
+        const lastDay = new Date(tahun, bulan, 0).getDate();
+        const dateFrom = `${tahun}-${tBulan}-01`;
+        const dateTo = `${tahun}-${tBulan}-${lastDay}`;
+
+        const { data: rows, error } = await supabaseClient
+          .from('attendance_detail')
+          .select('presence, attendance_header!inner(date)')
+          .eq('member_id', memberId)
+          .gte('attendance_header.date', dateFrom)
+          .lte('attendance_header.date', dateTo);
+
+        if (error) throw error;
+
+        let statusHtml = '';
+        if (!rows || rows.length === 0) {
+          statusHtml = `<div class="font-bold text-danger text-base">Belum tercatat</div>
+                        <div class="text-xs text-muted mt-1">Tidak ditemukan data presensi di periode ini.</div>`;
+        } else {
+          const total = rows.length;
+          const hadir = rows.filter(r => r.presence === 'Hadir').length;
+          const pct = Math.round((hadir / total) * 100);
+          statusHtml = `
+            <div class="flex items-baseline gap-2">
+              <div class="font-extrabold text-main text-xl">${hadir}/${total}</div>
+              <div class="text-xs text-muted font-bold">Sesi Terdiikuti</div>
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+              <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full" style="width:${pct}%; background:${pct >= 75 ? '#16a34a' : pct >= 50 ? '#ca8a04' : '#dc2626'};"></div>
+              </div>
+              <div class="font-bold text-sm" style="color:${pct >= 75 ? '#16a34a' : pct >= 50 ? '#ca8a04' : '#dc2626'};">${pct}%</div>
+            </div>`;
+        }
+
+        container.innerHTML = `
+          <section class="section-card bg-white shadow-sm mb-3" style="border-left: 4px solid #1590df;">
+            <div class="section-title m-0 text-main text-sm flex justify-between">
+              <span>📊 Statistik Kehadiran</span>
+            </div>
+            <div class="mt-3">${statusHtml}</div>
+          </section>`;
+
+      } catch (err) {
+        console.error('_fetchAndRenderAttendanceStats:', err);
+        container.innerHTML = `
+          <section class="section-card bg-red-50 mb-3" style="border-left: 4px solid #dc2626;">
+            <div class="section-title m-0 text-danger text-sm">📊 Statistik Kehadiran</div>
+            <div class="text-xs text-danger mt-2">Gagal memuat: ${err.message}</div>
+          </section>`;
+      }
     }
 
     /* =====================================================
@@ -938,14 +1010,64 @@
 
       _showPdfOverlay();
       try {
-        const response = await apiPost('generateMonitoringPDF', {
-          nama_atlet: namaAtlet, periode,
-          kehadiran: 'Lihat Rekap Absen',
-          sistem_utama: item.sistem_utama || '—',
-          rata_rata_total: item.rata_rata_total,
-          catatan_pelatih: item.catatan_pelatih || '—',
-          b1: item.data_b1, b2: item.data_b2, b3: item.data_b3, b4: item.data_b4
-        });
+        // Ambil data kehadiran aktual dari Supabase — filter bulan monitoring
+        let kehadiranStr = '—';
+        try {
+          const tBulan = String(item.bulan).padStart(2, '0');
+          const tTahun = item.tahun;
+          const lastDay = new Date(tTahun, item.bulan, 0).getDate();
+          const dateFrom = `${tTahun}-${tBulan}-01`;
+          const dateTo   = `${tTahun}-${tBulan}-${lastDay}`;
+
+          console.log('[generatePDF] Querying attendance for member_id:', _currentMember.id, 'periode:', dateFrom, '→', dateTo);
+
+          const { data: presRows, error: presErr } = await supabaseClient
+            .from('attendance_detail')
+            .select('presence, attendance_header!inner(date)')
+            .eq('member_id', _currentMember.id)
+            .gte('attendance_header.date', dateFrom)
+            .lte('attendance_header.date', dateTo);
+
+          console.log('[generatePDF] attendance_detail result:', { presRows, presErr });
+
+          if (presErr) {
+            console.warn('[generatePDF] attendance_detail error:', presErr.message);
+            kehadiranStr = 'Lihat Rekap Absen';
+          } else if (!presRows || presRows.length === 0) {
+            console.warn('[generatePDF] attendance_detail: 0 baris ditemukan');
+            kehadiranStr = 'Belum tercatat';
+          } else {
+            const total = presRows.length;
+            const hadir = presRows.filter(r => r.presence === 'Hadir').length;
+            const pct   = Math.round((hadir / total) * 100);
+            kehadiranStr = `${hadir}/${total} sesi (${pct}% hadir)`;
+            console.log('[generatePDF] kehadiran computed:', kehadiranStr);
+          }
+        } catch (presEx) {
+          console.error('[generatePDF] attendance fetch threw exception:', presEx);
+          kehadiranStr = 'Lihat Rekap Absen';
+        }
+
+
+
+
+        const payload = {
+          nama_atlet:      namaAtlet,
+          periode,
+          kehadiran:       kehadiranStr,
+          sistem_utama:    item.sistem_utama || '',
+          rata_rata_total: item.rata_rata_total ?? '',
+          catatan_pelatih: item.catatan_pelatih || '',
+          b1: item.data_b1 || null,
+          b2: item.data_b2 || null,
+          b3: item.data_b3 || null,
+          b4: item.data_b4 || null,
+        };
+
+        // Log payload ke console untuk memverifikasi data yg dikirim ke GAS
+        console.log('[generatePDF] payload →', JSON.stringify(payload, null, 2));
+
+        const response = await apiPost('generateMonitoringPDF', payload);
 
         const url = response?.pdfUrl || response?.pdf_url;
         if (!url) throw new Error('Gagal mendapatkan link PDF dari server.');
