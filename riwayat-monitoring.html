@@ -7,7 +7,10 @@
   <title>Riwayat Monitoring - Gabku App</title>
   <link rel="stylesheet" href="assets/css/app.css">
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
   <style>
     /* ── Period row ── */
     .period-row {
@@ -232,9 +235,8 @@
 
     .chart-inner {
       min-width: 100%;
-      /* Default 100% */
-      height: 380px;
-      /* Fixed height to ensure it's tall */
+      height: 200px;
+      /* Shortened preview */
     }
 
     .chart-wrap canvas {
@@ -430,6 +432,21 @@
       text-align: center;
     }
 
+    .row-has-note {
+      background-color: #fefce8 !important;
+      /* Yellow-ish background */
+    }
+
+    .detail-table tbody tr.row-has-note td {
+      border-bottom-color: #fef08a;
+    }
+
+    /* Force centering the second column (Nilai) */
+    .detail-table th:nth-child(2),
+    .detail-table td:nth-child(2) {
+      text-align: center !important;
+    }
+
     .note-box {
       background: #fefce8;
       border: 1px solid #fef08a;
@@ -614,8 +631,8 @@
     }
 
     .pilar-chart-area.open {
-      max-height: 450px;
-      /* Sesuaikan dengan tinggi canvas baru */
+      max-height: 300px;
+      /* Adjusted to fit 200px chart + labels/padding */
       opacity: 1;
     }
 
@@ -859,7 +876,7 @@
             </div>
             <div class="pilar-chart-area" id="pilarChartArea">
               <div class="chart-wrap" style="padding-top:0; border:none; box-shadow:none;">
-                <div class="chart-inner" id="pilarChartInner" style="height:300px;">
+                <div class="chart-inner" id="pilarChartInner" style="height:200px;">
                   <canvas id="pilarChart"></canvas>
                 </div>
               </div>
@@ -1231,12 +1248,9 @@
         return `${NB[parseInt(m)].slice(0, 3)} '${y.slice(2)}`;
       });
 
+      // Preview mode: always 100% width, no horizontal scroll needed
       const inner = document.getElementById('trendChartInner');
-      if (allP.length > 8) {
-        inner.style.width = (allP.length * 60) + 'px';
-      } else {
-        inner.style.width = '100%';
-      }
+      inner.style.width = '100%';
 
       const byAtlet = {};
       data.forEach(item => {
@@ -1263,7 +1277,7 @@
           responsive: true, maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { display: datasets.length > 1, position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            legend: { display: false }, // Hide legend in preview to save space
             tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw ?? '—'}` } }
           },
           scales: {
@@ -1309,12 +1323,9 @@
         return `${NB[parseInt(m)].slice(0, 3)} '${y.slice(2)}`;
       });
 
+      // Preview mode: always 100% width
       const inner = document.getElementById('pilarChartInner');
-      if (allP.length > 8) {
-        inner.style.width = (allP.length * 60) + 'px';
-      } else {
-        inner.style.width = '100%';
-      }
+      inner.style.width = '100%';
 
       const byAtlet = {};
       data.forEach(item => {
@@ -1347,7 +1358,7 @@
           responsive: true, maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { display: datasets.length > 1, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+            legend: { display: false }, // Hide legend in preview
             tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw ?? '—'}` } },
             title: {
               display: true,
@@ -1404,8 +1415,16 @@
             ...sourceConfig.options.plugins,
             legend: {
               ...sourceConfig.options.plugins.legend,
-              display: true, // Always show legend in FS
+              display: true,
               position: 'bottom'
+            },
+            zoom: {
+              pan: { enabled: true, mode: 'x', modifierKey: 'ctrl' },
+              zoom: {
+                wheel: { enabled: true },
+                pinch: { enabled: true },
+                mode: 'x'
+              }
             }
           }
         }
@@ -1468,10 +1487,12 @@
         const d = item[`data_${k}`] || {};
         const rows = PILAR_ITEMS[k].map((lbl, idx) => {
           const i = idx + 1;
-          return `<tr>
+          const note = escHtml(d[`c${i}`] || '');
+          const rowClass = note ? ' class="row-has-note"' : '';
+          return `<tr${rowClass}>
               <td>${i}. ${lbl}</td>
               <td class="font-bold text-center">${d[`n${i}`] ?? '—'}</td>
-              <td class="text-muted">${escHtml(d[`c${i}`] || '')}</td>
+              <td class="text-muted">${note}</td>
             </tr>`;
         }).join('');
         detailHtml += `<div class="pilar-section-title">B${k.slice(1)}. ${PILAR_LABEL[k]} — rata-rata ${d.rata_rata ?? '?'}</div>
