@@ -7,3 +7,10 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhOGtUzUSU6gnwrEpOT
 
 // Key Token (Pastikan sama dengan ACCESS_TOKEN di Script Properties GAS)
 const LS_KEY_TOKEN = "jendralgabku";
+
+// APP_CONFIG (Required by ui.js)
+const APP_CONFIG = {
+  name: "Gabku App",
+  defaultTitle: true,
+  toastDuration: 3000
+};

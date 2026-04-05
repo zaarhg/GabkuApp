@@ -1388,19 +1388,36 @@
       const ctx = document.getElementById('fsChart').getContext('2d');
       if (_fsChartInst) _fsChartInst.destroy();
 
-      // Clone configuration but tweak for fullscreen
-      const fsConfig = JSON.parse(JSON.stringify(sourceChart.config));
-      // Object functions/callbacks don't survive stringify, re-apply them:
-      fsConfig.options.maintainAspectRatio = false;
-      fsConfig.options.responsive = true;
+      // Manual CLONE to avoid JSON.stringify issues with internal objects
+      const sourceConfig = sourceChart.config;
+      const fsConfig = {
+        type: sourceConfig.type,
+        data: {
+          labels: [...sourceConfig.data.labels],
+          datasets: sourceConfig.data.datasets.map(ds => ({ ...ds }))
+        },
+        options: {
+          ...sourceConfig.options,
+          maintainAspectRatio: false,
+          responsive: true,
+          plugins: {
+            ...sourceConfig.options.plugins,
+            legend: {
+              ...sourceConfig.options.plugins.legend,
+              display: true, // Always show legend in FS
+              position: 'bottom'
+            }
+          }
+        }
+      };
 
-      // Customize FS scales
-      fsConfig.options.scales.x.ticks.font.size = 11;
-      fsConfig.options.scales.y.ticks.font.size = 11;
+      // Customize FS scales font size
+      if (fsConfig.options.scales.x) fsConfig.options.scales.x.ticks.font = { size: 11 };
+      if (fsConfig.options.scales.y) fsConfig.options.scales.y.ticks.font = { size: 11 };
 
       _fsChartInst = new Chart(ctx, fsConfig);
 
-      // Optional: Auto-request orientation if supported (mostly android chrome)
+      // Optional: Auto-request orientation if supported
       try {
         if (screen.orientation && screen.orientation.lock) {
           screen.orientation.lock('landscape').catch(() => { });
