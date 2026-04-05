@@ -222,12 +222,24 @@
     .chart-wrap {
       background: #fff;
       border-radius: 12px;
-      padding: 16px;
+      padding: 16px 12px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+      width: 100%;
+      overflow-x: auto;
+      /* Allow horizontal scroll if needed */
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .chart-inner {
+      min-width: 100%;
+      /* Default 100% */
+      height: 380px;
+      /* Fixed height to ensure it's tall */
     }
 
     .chart-wrap canvas {
-      max-height: 220px;
+      width: 100% !important;
+      height: 100% !important;
     }
 
     /* ── Mon card ── */
@@ -361,25 +373,61 @@
       margin: 10px 0 4px;
     }
 
+    .detail-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #f1f5f9;
+    }
+
     .detail-table {
       width: 100%;
+      min-width: 450px;
+      /* Minimum width for scroll on mobile */
       font-size: 11px;
       border-collapse: collapse;
+      table-layout: fixed;
+      /* Fixed layout for consistency */
     }
 
     .detail-table thead th {
-      background: #f1f5f9;
-      padding: 5px 6px;
+      background: #f8fafc;
+      padding: 8px 10px;
       text-align: left;
       font-weight: 700;
       color: #475569;
+      border-bottom: 2px solid #f1f5f9;
+    }
+
+    /* Column widths */
+    .col-ind {
+      width: 55%;
+    }
+
+    .col-val {
+      width: 15%;
+    }
+
+    .col-note {
+      width: 30%;
     }
 
     .detail-table tbody td {
-      padding: 5px 6px;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 8px 10px;
+      border-bottom: 1px solid #f8fafc;
       color: #334155;
       vertical-align: top;
+      word-wrap: break-word;
+    }
+
+    .detail-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .text-center {
+      text-align: center;
     }
 
     .note-box {
@@ -436,6 +484,29 @@
       background: #dcfce7;
       color: #16a34a;
       border-color: #bbf7d0;
+      cursor: pointer;
+    }
+
+    .btn-share-pdf {
+      flex: 1;
+      background: #fef9c3;
+      color: #854d0e;
+      border: 1px solid #fef08a;
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: not-allowed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .btn-share-pdf.ready {
+      background: #fef9c3;
+      color: #854d0e;
+      border-color: #fef08a;
       cursor: pointer;
     }
 
@@ -529,6 +600,11 @@
       border-color: #8b5cf6;
     }
 
+    .pilar-tab-btn.hadir.active {
+      background: #0891b2;
+      border-color: #0891b2;
+    }
+
     /* ── Collapsible pilar chart area ── */
     .pilar-chart-area {
       overflow: hidden;
@@ -538,7 +614,8 @@
     }
 
     .pilar-chart-area.open {
-      max-height: 300px;
+      max-height: 450px;
+      /* Sesuaikan dengan tinggi canvas baru */
       opacity: 1;
     }
 
@@ -560,6 +637,88 @@
       margin-left: 8px;
     }
 
+    /* ── Fullscreen Overlay ── */
+    #fsOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      z-index: 20000;
+      flex-direction: column;
+    }
+
+    #fsOverlay.show {
+      display: flex;
+    }
+
+    .fs-header {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #f1f5f9;
+      background: #fff;
+    }
+
+    .fs-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1e293b;
+    }
+
+    .fs-close {
+      background: #f1f5f9;
+      color: #64748b;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .fs-body {
+      flex: 1;
+      width: 100%;
+      overflow: auto;
+      background: #fff;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+    }
+
+    #fsChartWrapper {
+      min-width: 100%;
+      height: 90%;
+      /* For landscape feel */
+    }
+
+    .btn-fs {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-fs:hover {
+      background: #e2e8f0;
+    }
+
+    .chart-header-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    /* ── Mobile Toast ── */
     #toast {
       position: fixed;
       bottom: 30px;
@@ -671,27 +830,38 @@
       <!-- ── HASIL ── -->
       <div id="hasilSection" style="display:none;">
         <section class="section-card">
-          <div class="section-title m-0 mb-3 flex items-center">
-            Tren Perkembangan <span
-              class="count-pill flex items-center justify-center bg-blue-50 text-main text-xs font-bold py-0.5 px-2.5 rounded-full ml-2"
-              id="countPill"></span>
+          <div class="chart-header-flex">
+            <div class="section-title m-0 flex items-center">
+              Tren Perkembangan <span
+                class="count-pill flex items-center justify-center bg-blue-50 text-main text-xs font-bold py-0.5 px-2.5 rounded-full ml-2"
+                id="countPill"></span>
+            </div>
+            <button class="btn-fs" onclick="openFs('trend')">⛶ Layar Penuh</button>
           </div>
           <div class="chart-wrap">
-            <canvas id="trendChart"></canvas>
+            <div class="chart-inner" id="trendChartInner">
+              <canvas id="trendChart"></canvas>
+            </div>
           </div>
 
           <!-- Pilar tab charts -->
           <div class="mt-4">
-            <div class="text-[11px] font-bold text-muted uppercase tracking-wider mb-2">Tren Per Pilar</div>
+            <div class="chart-header-flex">
+              <div class="text-[11px] font-bold text-muted uppercase tracking-wider">Tren Per Pilar / Kehadiran</div>
+              <button class="btn-fs" onclick="openFs('pilar')">⛶ Layar Penuh</button>
+            </div>
             <div class="pilar-tab-row">
               <button class="pilar-tab-btn b1" onclick="togglePilarChart('b1',this)">🃏 B1<br>Bidding</button>
               <button class="pilar-tab-btn b2" onclick="togglePilarChart('b2',this)">🂡 B2<br>Play</button>
               <button class="pilar-tab-btn b3" onclick="togglePilarChart('b3',this)">🛡 B3<br>Defense</button>
               <button class="pilar-tab-btn b4" onclick="togglePilarChart('b4',this)">🧠 B4<br>Mental</button>
+              <button class="pilar-tab-btn hadir" onclick="togglePilarChart('hadir',this)">📅<br>Kehadiran</button>
             </div>
             <div class="pilar-chart-area" id="pilarChartArea">
-              <div class="chart-wrap" style="padding-top:0;">
-                <canvas id="pilarChart" style="max-height:200px;"></canvas>
+              <div class="chart-wrap" style="padding-top:0; border:none; box-shadow:none;">
+                <div class="chart-inner" id="pilarChartInner" style="height:300px;">
+                  <canvas id="pilarChart"></canvas>
+                </div>
               </div>
             </div>
           </div>
@@ -729,6 +899,22 @@
 
   <div id="toast" style="display:none;"></div>
 
+  <!-- Fullscreen Chart Overlay -->
+  <div id="fsOverlay">
+    <div class="fs-header">
+      <div class="fs-title" id="fsTitle">Grafik Fullscreen</div>
+      <button class="fs-close" onclick="closeFs()">Tutup</button>
+    </div>
+    <div class="fs-body" id="fsBody">
+      <div id="fsChartWrapper">
+        <canvas id="fsChart"></canvas>
+      </div>
+    </div>
+    <div style="padding:10px; background:#f8fafc; font-size:10px; color:#64748b; text-align:center;">
+      💡 Tip: Miringkan HP Anda (Landscape) untuk tampilan lebih luas. Bisa digeser ke samping.
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/config.js"></script>
   <script src="assets/js/supabase-client.js"></script>
@@ -740,7 +926,10 @@
     /* ── Konstanta ── */
     const NB = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
       "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-    const PILAR_LABEL = { b1: "Bidding", b2: "Play (Declarer)", b3: "Defense", b4: "Mental & Kemitraan" };
+    const PILAR_LABEL = {
+      b1: "Bidding", b2: "Play (Declarer)", b3: "Defense", b4: "Mental & Kemitraan",
+      hadir: "Persentase Kehadiran (%)"
+    };
     const PILAR_ITEMS = {
       b1: ["Akurasi Penentuan Kontrak", "Pemahaman Sistem & Konvensi", "Konsistensi Interpretasi Bid", "Kepatuhan Sistem & Kesepakatan", "Penanganan Bid Kompetitif & Preemp"],
       b2: ["Perencanaan Play Awal", "Teknik Declarer", "Analisis Peluang & Distribusi", "Timing & Entry Management", "Konsistensi Rencana Main (Line of Play)"],
@@ -759,6 +948,7 @@
     let _pilarChartInst = null;
     let _activePilarKey = null;
     let _lastData = [];       // cache hasil query untuk pilar chart
+    let _pointMultiplier = 10000; // default point per kehadiran
 
     /* ── localStorage PDF helpers ── */
     const _PDF = 'mon_pdf_';
@@ -775,7 +965,7 @@
 
       ['startTahun', 'endTahun'].forEach(id => {
         const sel = document.getElementById(id);
-        for (let y = curY; y >= curY - 5; y--)
+        for (let y = curY; y >= 2025; y--)
           sel.innerHTML += `<option value="${y}">${y}</option>`;
       });
       document.getElementById('startBulan').value = 1;
@@ -783,9 +973,10 @@
       document.getElementById('endBulan').value = curM;
       document.getElementById('endTahun').value = curY;
 
-      const [{ data: acts }, { data: mems }] = await Promise.all([
+      const [{ data: acts }, { data: mems }, { data: settings }] = await Promise.all([
         supabaseClient.from('activities').select('id,name,start_date,end_date,default_participants').eq('is_active', true).order('name'),
-        supabaseClient.from('members').select('id,name,role').eq('is_active', true).order('name')
+        supabaseClient.from('members').select('id,name,role').eq('is_active', true).order('name'),
+        supabaseClient.from('app_settings').select('*')
       ]);
       if (acts) {
         _allActivities = acts;
@@ -795,6 +986,10 @@
       if (mems) {
         _allMembers = mems;
         _pickerPool = [...mems]; // default: semua
+      }
+      if (settings) {
+        const pRow = settings.find(r => r.setting_key === 'attendance_points');
+        if (pRow) _pointMultiplier = parseInt(pRow.setting_value) || 10000;
       }
     })();
 
@@ -915,17 +1110,35 @@
       }
 
       try {
+        const actId = document.getElementById('filterEvent').value;
+        const act = actId ? _allActivities.find(a => a.id === actId) : null;
+        let participantIds = [];
+
+        if (act && act.default_participants && act.default_participants.length > 0) {
+          participantIds = act.default_participants.map(p => p.member_id);
+        }
+
         let query = supabaseClient
           .from('monitoring_atlet')
-          .select('id,member_id,bulan,tahun,rata_rata_total,sistem_utama,catatan_pelatih,data_b1,data_b2,data_b3,data_b4,members(name,role)')
+          .select('id,member_id,bulan,tahun,rata_rata_total,sistem_utama,catatan_pelatih,data_b1,data_b2,data_b3,data_b4,created_at,members(name,role)')
           .gte('tahun', startY)
           .lte('tahun', endY)
           .order('tahun', { ascending: true })
           .order('bulan', { ascending: true });
 
-        // Filter multi-atlet
-        if (_selectedAtlets.length > 0)
+        // Filter multi-atlet (Chip selection)
+        if (_selectedAtlets.length > 0) {
           query = query.in('member_id', _selectedAtlets.map(a => a.id));
+        }
+        // Filter by Event participants if event is selected but no specific atlets chosen
+        else if (participantIds.length > 0) {
+          query = query.in('member_id', participantIds);
+        }
+        // If event selected but has NO participants, and no specific atlets chosen, force empty result
+        else if (actId && (!participantIds || participantIds.length === 0)) {
+          // This will effectively return no results
+          query = query.eq('member_id', '00000000-0000-0000-0000-000000000000');
+        }
 
         const { data, error } = await query;
         if (error) throw error;
@@ -952,6 +1165,48 @@
           return;
         }
 
+        // Fetch Attendance Stats per month/per member from CORRECT TABLE
+        // Source of truth: attendance_detail + attendance_header(date)
+        const dateFrom = `${startY}-${String(startB).padStart(2, '0')}-01`;
+        const lastDay = new Date(endY, endB, 0).getDate();
+        const dateTo = `${endY}-${String(endB).padStart(2, '0')}-${lastDay}`;
+
+        const { data: attendanceData } = await supabaseClient
+          .from('attendance_detail')
+          .select('member_id, presence, attendance_header!inner(date)')
+          .gte('attendance_header.date', dateFrom)
+          .lte('attendance_header.date', dateTo);
+
+        let attendanceMap = {}; // { memberId: { monthYearKey: countHadir } }
+        let totalSessionsMap = {}; // { memberId: { monthYearKey: countTotal } }
+
+        if (attendanceData && attendanceData.length > 0) {
+          attendanceData.forEach(row => {
+            if (!row.attendance_header || !row.attendance_header.date) return;
+            const pts = row.attendance_header.date.split('-');
+            const y = parseInt(pts[0]);
+            const m = parseInt(pts[1]);
+            const key = `${y}-${m}`;
+            const mid = row.member_id;
+
+            if (!totalSessionsMap[mid]) totalSessionsMap[mid] = {};
+            totalSessionsMap[mid][key] = (totalSessionsMap[mid][key] || 0) + 1;
+
+            if (row.presence === 'Hadir') {
+              if (!attendanceMap[mid]) attendanceMap[mid] = {};
+              attendanceMap[mid][key] = (attendanceMap[mid][key] || 0) + 1;
+            }
+          });
+        }
+
+        // Attach attendance to filtered data
+        filtered.forEach(item => {
+          const key = `${item.tahun}-${item.bulan}`;
+          const mid = item.member_id;
+          item.hadir_count = (attendanceMap[mid] && attendanceMap[mid][key]) || 0;
+          item.total_sesi = (totalSessionsMap[mid] && totalSessionsMap[mid][key]) || 0;
+        });
+
         _lastData = filtered;
         pill.textContent = filtered.length + ' data';
         renderChart(filtered);
@@ -970,7 +1225,18 @@
       const periodeSet = new Set();
       data.forEach(i => periodeSet.add(`${i.tahun}-${String(i.bulan).padStart(2, '0')}`));
       const allP = [...periodeSet].sort();
-      const labels = allP.map(p => { const [y, m] = p.split('-'); return `${NB[parseInt(m)]} ${y}`; });
+
+      const labels = allP.map(p => {
+        const [y, m] = p.split('-');
+        return `${NB[parseInt(m)].slice(0, 3)} '${y.slice(2)}`;
+      });
+
+      const inner = document.getElementById('trendChartInner');
+      if (allP.length > 8) {
+        inner.style.width = (allP.length * 60) + 'px';
+      } else {
+        inner.style.width = '100%';
+      }
 
       const byAtlet = {};
       data.forEach(item => {
@@ -986,7 +1252,7 @@
         borderColor: CHART_COLORS[idx % CHART_COLORS.length],
         backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] + '22',
         borderWidth: 2, pointRadius: 5, pointHoverRadius: 7,
-        tension: 0.3, fill: false, spanGaps: false
+        tension: 0.3, fill: false, spanGaps: true
       }));
 
       const ctx = document.getElementById('trendChart').getContext('2d');
@@ -1002,14 +1268,14 @@
           },
           scales: {
             y: { min: 0, max: 5, ticks: { stepSize: 0.5, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
-            x: { ticks: { font: { size: 10 } } }
+            x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } }
           }
         }
       });
     }
 
     /* ── Pilar Chart (toggle) ── */
-    const PILAR_COLORS = { b1: '#1590df', b2: '#16a34a', b3: '#ca8a04', b4: '#8b5cf6' };
+    const PILAR_COLORS = { b1: '#1590df', b2: '#16a34a', b3: '#ca8a04', b4: '#8b5cf6', hadir: '#0891b2' };
 
     function togglePilarChart(key, btnEl) {
       const area = document.getElementById('pilarChartArea');
@@ -1035,29 +1301,42 @@
     function renderPilarChart(key, data) {
       if (_pilarChartInst) { _pilarChartInst.destroy(); _pilarChartInst = null; }
 
-      // Kumpulkan periode unik
       const periodeSet = new Set();
       data.forEach(i => periodeSet.add(`${i.tahun}-${String(i.bulan).padStart(2, '0')}`));
       const allP = [...periodeSet].sort();
-      const labels = allP.map(p => { const [y, m] = p.split('-'); return `${NB[parseInt(m)].slice(0, 3)} ${y}`; });
+      const labels = allP.map(p => {
+        const [y, m] = p.split('-');
+        return `${NB[parseInt(m)].slice(0, 3)} '${y.slice(2)}`;
+      });
 
-      // Kelompok per atlet, nilai = rata_rata pilar tersebut
+      const inner = document.getElementById('pilarChartInner');
+      if (allP.length > 8) {
+        inner.style.width = (allP.length * 60) + 'px';
+      } else {
+        inner.style.width = '100%';
+      }
+
       const byAtlet = {};
       data.forEach(item => {
         const name = item.members?.name || item.member_id;
         if (!byAtlet[name]) byAtlet[name] = {};
         const k = `${item.tahun}-${String(item.bulan).padStart(2, '0')}`;
-        byAtlet[name][k] = item[`data_${key}`]?.rata_rata ?? null;
+
+        if (key === 'hadir') {
+          const pct = item.total_sesi > 0 ? Math.round((item.hadir_count / item.total_sesi) * 100) : null;
+          byAtlet[name][k] = pct;
+        } else {
+          byAtlet[name][k] = item[`data_${key}`]?.rata_rata ?? null;
+        }
       });
 
-      const baseColor = PILAR_COLORS[key];
       const datasets = Object.entries(byAtlet).map(([name, pMap], idx) => ({
         label: name,
         data: allP.map(p => pMap[p] ?? null),
         borderColor: CHART_COLORS[idx % CHART_COLORS.length],
         backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] + '22',
         borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
-        tension: 0.3, fill: false, spanGaps: false
+        tension: 0.3, fill: false, spanGaps: true
       }));
 
       const ctx = document.getElementById('pilarChart').getContext('2d');
@@ -1077,11 +1356,69 @@
             }
           },
           scales: {
-            y: { min: 0, max: 5, ticks: { stepSize: 1, font: { size: 9 } }, grid: { color: '#f1f5f9' } },
-            x: { ticks: { font: { size: 9 }, maxRotation: 30 } }
+            y: {
+              min: 0,
+              max: key === 'hadir' ? 100 : 5,
+              ticks: { stepSize: key === 'hadir' ? 20 : 0.5, font: { size: 9 } },
+              grid: { color: '#f1f5f9' }
+            },
+            x: { ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 } }
           }
         }
       });
+    }
+
+    /* ── Fullscreen Logic ── */
+    let _fsChartInst = null;
+    function openFs(type) {
+      const sourceChart = (type === 'trend') ? _chartInst : _pilarChartInst;
+      if (!sourceChart) {
+        showToastMsg('Grafik belum dimuat atau tidak ada data.', 'info');
+        return;
+      }
+
+      document.getElementById('fsTitle').textContent = (type === 'trend') ? 'Tren Perkembangan Total' : PILAR_LABEL[_activePilarKey] || 'Tren Pilar';
+      document.getElementById('fsOverlay').classList.add('show');
+
+      // Setup wrapper width for scroll (approx 80px per point for clarity in FS)
+      const points = sourceChart.data.labels.length;
+      const wrap = document.getElementById('fsChartWrapper');
+      wrap.style.width = Math.max(window.innerWidth, points * 80) + 'px';
+
+      const ctx = document.getElementById('fsChart').getContext('2d');
+      if (_fsChartInst) _fsChartInst.destroy();
+
+      // Clone configuration but tweak for fullscreen
+      const fsConfig = JSON.parse(JSON.stringify(sourceChart.config));
+      // Object functions/callbacks don't survive stringify, re-apply them:
+      fsConfig.options.maintainAspectRatio = false;
+      fsConfig.options.responsive = true;
+
+      // Customize FS scales
+      fsConfig.options.scales.x.ticks.font.size = 11;
+      fsConfig.options.scales.y.ticks.font.size = 11;
+
+      _fsChartInst = new Chart(ctx, fsConfig);
+
+      // Optional: Auto-request orientation if supported (mostly android chrome)
+      try {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => { });
+        }
+      } catch (_) { }
+    }
+
+    function closeFs() {
+      document.getElementById('fsOverlay').classList.remove('show');
+      if (_fsChartInst) {
+        _fsChartInst.destroy();
+        _fsChartInst = null;
+      }
+      try {
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      } catch (_) { }
     }
 
     /* ── Render list ── */
@@ -1114,16 +1451,39 @@
         const d = item[`data_${k}`] || {};
         const rows = PILAR_ITEMS[k].map((lbl, idx) => {
           const i = idx + 1;
-          return `<tr><td>${i}. ${lbl}</td><td class="font-bold text-center w-9">${d[`n${i}`] ?? '—'}</td><td class="text-muted">${escHtml(d[`c${i}`] || '')}</td></tr>`;
+          return `<tr>
+              <td>${i}. ${lbl}</td>
+              <td class="font-bold text-center">${d[`n${i}`] ?? '—'}</td>
+              <td class="text-muted">${escHtml(d[`c${i}`] || '')}</td>
+            </tr>`;
         }).join('');
         detailHtml += `<div class="pilar-section-title">B${k.slice(1)}. ${PILAR_LABEL[k]} — rata-rata ${d.rata_rata ?? '?'}</div>
-          <table class="detail-table w-full"><thead><tr><th class="text-left">Indikator</th><th class="text-center">Nilai</th><th class="text-left">Catatan</th></tr></thead><tbody>${rows}</tbody></table>`;
+          <div class="detail-table-wrapper">
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th class="col-ind">Indikator</th>
+                  <th class="col-val text-center">Nilai</th>
+                  <th class="col-note">Catatan</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
       });
 
       const catBox = item.catatan_pelatih
         ? `<div class="note-box"><strong>💬 Catatan Pelatih:</strong>${escHtml(item.catatan_pelatih)}</div>` : '';
       const sysTag = item.sistem_utama
         ? `<div class="text-[11px] text-muted mt-2">Sistem: <strong class="text-main">${escHtml(item.sistem_utama)}</strong></div>` : '';
+
+      const attendanceTag = `<div class="text-[11px] text-muted mt-0.5">Kehadiran: <strong class="text-main">${item.hadir_count || 0} / ${item.total_sesi || 0} Sesi</strong></div>`;
+
+      const totalPoints = (item.hadir_count || 0) * _pointMultiplier;
+      const pointTag = `<div class="text-[11px] text-muted mt-0.5">Point: <strong class="text-main">${totalPoints.toLocaleString('id-ID')}</strong></div>`;
+
+      const createdDate = item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+      const timestampTag = `<div class="text-[10px] text-muted mt-0.5" style="opacity:0.8;">Dibuat: ${createdDate}</div>`;
 
       return `
         <div class="mon-card" id="card-${item.id}">
@@ -1138,13 +1498,18 @@
           </div>
           <div class="mon-card-body">
             ${sysTag}
+            ${attendanceTag}
+            ${pointTag}
+            ${timestampTag}
             <div class="pilar-grid">${pilarGrid}</div>
             ${detailHtml}
             ${catBox}
             <div class="pdf-actions">
               <button class="btn-gen-pdf" onclick="generatePDF('${dataStr}','${namaStr}','${periode}','${item.id}')">📄 Generate PDF</button>
               <button class="btn-view-pdf${savedUrl ? ' ready' : ''}" id="viewbtn-${item.id}"
-                ${savedUrl ? `onclick="viewPDF('${item.id}')"` : ' disabled title="Generate PDF terlebih dahulu"'}>👁 View PDF</button>
+                ${savedUrl ? `onclick="viewPDF('${item.id}')"` : ' disabled title="Generate PDF terlebih dahulu"'}>👁 View</button>
+              <button class="btn-share-pdf${savedUrl ? ' ready' : ''}" id="sharebtn-${item.id}"
+                ${savedUrl ? `onclick="sharePDF('${item.id}','${namaStr}','${periode}')"` : ' disabled title="Generate PDF terlebih dahulu"'}>🔗 Bagikan</button>
             </div>
           </div>
         </div>`;
@@ -1175,6 +1540,11 @@
           btn.classList.add('ready'); btn.removeAttribute('disabled');
           btn.setAttribute('onclick', `viewPDF('${itemId}')`); btn.title = '';
         }
+        const sbtn = document.getElementById(`sharebtn-${itemId}`);
+        if (sbtn) {
+          sbtn.classList.add('ready'); sbtn.removeAttribute('disabled');
+          sbtn.setAttribute('onclick', `sharePDF('${itemId}','${namaStr}','${periode}')`); sbtn.title = '';
+        }
         showToastMsg('PDF berhasil dibuat!', 'success');
       } catch (err) {
         showToastMsg('Gagal: ' + err.message, 'error');
@@ -1185,6 +1555,34 @@
       const url = _pdfLoad(itemId);
       if (url) window.open(url, '_blank');
       else showToastMsg('Generate ulang PDF terlebih dahulu.', 'error');
+    }
+
+    async function sharePDF(itemId, namaStr, periode) {
+      const url = _pdfLoad(itemId);
+      if (!url) return showToastMsg('Generate ulang PDF terlebih dahulu.', 'error');
+
+      const nama = decodeURIComponent(namaStr);
+      const text = `Halo, berikut adalah hasil Monitoring Gabku untuk ${nama} periode ${periode}.\n\nLihat PDF: ${url}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: `Monitoring Gabku - ${nama}`,
+            text: text,
+            url: url
+          });
+        } catch (err) {
+          if (err.name !== 'AbortError') showToastMsg('Gagal berbagi: ' + err.message, 'error');
+        }
+      } else {
+        // Fallback: Copy to clipboard
+        try {
+          await navigator.clipboard.writeText(text);
+          showToastMsg('Link disalin ke clipboard!', 'success');
+        } catch (err) {
+          showToastMsg('Gagal menyalin link.', 'error');
+        }
+      }
     }
 
     /* ── Helpers ── */

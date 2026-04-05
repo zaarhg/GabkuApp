@@ -74,6 +74,26 @@
           <div id="pengurusList" class="mt-2"></div>
         </section>
 
+        <section class="section-card">
+          <div class="section-title">Setelan Point Kehadiran</div>
+          <p class="hint text-xs text-muted mb-2">Besaran point yang didapat per 1 kali kehadiran latihan.</p>
+          <div class="flex gap-2">
+            <input id="pointInput" type="number" class="field flex-1" placeholder="Cth: 10000" />
+            <button id="savePointBtn" class="btn-primary px-4 w-auto flex-none" type="button">Simpan</button>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-title">Opsi Sistem Utama</div>
+          <p class="hint text-xs text-muted mb-2">Pilihan dropdown Sistem Utama di halaman Monitoring.</p>
+
+          <div class="flex gap-2 mb-3">
+            <input id="sysInput" type="text" class="field flex-1" placeholder="Cth: Precision" />
+            <button id="addSysBtn" class="btn-primary px-4 w-auto flex-none" type="button">Tambah</button>
+          </div>
+          <div id="sysList" class="mt-2"></div>
+        </section>
+
         <p id="msgEl" class="tool-msg text-center"></p>
     </main>
   </div>
@@ -100,11 +120,13 @@
     const timeListEl = document.getElementById("timeList");
     const locListEl = document.getElementById("locList");
     const pengurusListEl = document.getElementById("pengurusList");
+    const sysListEl = document.getElementById("sysList");
     const msgEl = document.getElementById("msgEl");
 
     let timeOptions = [];
     let locOptions = [];
     let pengurusOptions = [];
+    let sysOptions = [];
 
     function escapeHtml(s) { return String(s || '').replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"); }
 
@@ -112,6 +134,7 @@
       timeListEl.innerHTML = "<p class='muted'>Memuat...</p>";
       locListEl.innerHTML = "<p class='muted'>Memuat...</p>";
       pengurusListEl.innerHTML = "<p class='muted'>Memuat...</p>";
+      sysListEl.innerHTML = "<p class='muted'>Memuat...</p>";
       msgEl.textContent = "";
 
       try {
@@ -119,8 +142,8 @@
         if (error) throw error;
 
         const timeRow = data.find(r => r.setting_key === 'time_options');
-        const locRow = data.find(r => r.setting_key === 'location_options');
-        const pengRow = data.find(r => r.setting_key === 'pengurus_options');
+        const sysRow = data.find(r => r.setting_key === 'system_options');
+        const pointRow = data.find(r => r.setting_key === 'attendance_points');
 
         timeOptions = timeRow ? timeRow.setting_value : [];
         locOptions = locRow ? locRow.setting_value : [];
@@ -131,6 +154,9 @@
           pengurusOptions = ["Ketua", "Wakil Ketua", "Sekretaris", "Bendahara", "Anggota Divisi"];
         }
 
+        sysOptions = sysRow ? sysRow.setting_value : ["Standard American", "Precision", "Sistem Berdikari", "Two-over-one"];
+        document.getElementById('pointInput').value = pointRow ? pointRow.setting_value : 10000;
+
         // Sorting
         timeOptions.sort();
         locOptions.sort();
@@ -139,8 +165,9 @@
         renderTimeSettings();
         renderLocSettings();
         renderPengurusSettings();
+        renderSysSettings();
       } catch (e) {
-        timeListEl.innerHTML = ""; locListEl.innerHTML = ""; pengurusListEl.innerHTML = "";
+        timeListEl.innerHTML = ""; locListEl.innerHTML = ""; pengurusListEl.innerHTML = ""; sysListEl.innerHTML = "";
         msgEl.style.color = "red"; msgEl.textContent = "Error: " + e.message;
       }
     }
@@ -202,6 +229,21 @@
         <div class="item-card flex justify-between items-center mb-1.5 py-2.5 px-3">
           <div class="font-bold text-sm flex-1 pr-2.5 text-main">👤 ${escapeHtml(p)}</div>
           <button class="btn-delete flex items-center justify-center m-0" style="width:34px; height:34px; padding:0;" onclick="removePengurus(${i})" title="Hapus">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg>
+          </button>
+        </div>
+      `).join("");
+    }
+
+    function renderSysSettings() {
+      if (!sysOptions.length) {
+        sysListEl.innerHTML = "<p class='text-xs text-muted'>Belum ada opsi sistem.</p>";
+        return;
+      }
+      sysListEl.innerHTML = sysOptions.map((s, i) => `
+        <div class="item-card flex justify-between items-center mb-1.5 py-2.5 px-3">
+          <div class="font-bold text-sm flex-1 pr-2.5 text-main">⚙️ ${escapeHtml(s)}</div>
+          <button class="btn-delete flex items-center justify-center m-0" style="width:34px; height:34px; padding:0;" onclick="removeSys(${i})" title="Hapus">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg>
           </button>
         </div>
@@ -270,6 +312,33 @@
       pengurusOptions.splice(index, 1);
       renderPengurusSettings();
       await saveSettingToDb('pengurus_options', pengurusOptions);
+    };
+
+    document.getElementById("addSysBtn").onclick = async () => {
+      const val = document.getElementById("sysInput").value.trim();
+      if (!val) return;
+      if (sysOptions.map(l => l.toLowerCase()).includes(val.toLowerCase())) return alert("Sistem sudah ada dalam daftar.");
+
+      sysOptions.push(val);
+      sysOptions.sort();
+      renderSysSettings();
+      document.getElementById("sysInput").value = "";
+      await saveSettingToDb('system_options', sysOptions);
+    };
+
+    document.getElementById("savePointBtn").onclick = async () => {
+      const val = parseInt(document.getElementById("pointInput").value);
+      if (isNaN(val)) return alert("Masukkan angka point yang valid.");
+      await saveSettingToDb('attendance_points', val);
+      alert("Point berhasil disimpan.");
+    };
+
+    window.removeSys = async (index) => {
+      const sys = sysOptions[index];
+      if (!confirm("Hapus opsi sistem " + sys + "?")) return;
+      sysOptions.splice(index, 1);
+      renderSysSettings();
+      await saveSettingToDb('system_options', sysOptions);
     };
   </script>
 </body>

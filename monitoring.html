@@ -74,6 +74,37 @@
       font-weight: 700;
     }
 
+    /* Accordion Toggle */
+    .profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .profile-details {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, opacity 0.2s ease;
+      opacity: 0;
+      margin-top: 0;
+    }
+
+    .profile-details.open {
+      max-height: 500px;
+      /* Large enough to fit content */
+      opacity: 1;
+      margin-top: 14px;
+    }
+
+    .toggle-icon {
+      transition: transform 0.3s ease;
+    }
+
+    .toggle-icon.rotate {
+      transform: rotate(180deg);
+    }
+
     /* History cards */
     .history-card {
       background: #fff;
@@ -247,9 +278,12 @@
       flex: 1;
       resize: none;
       overflow: hidden;
-      min-height: 36px;
+      min-height: 44px;
+      /* Samakan dengan tinggi select/input field */
+      height: 44px;
+      /* Fix tinggi agar sejajar sempurna */
       border-radius: 8px;
-      padding: 8px;
+      padding: 10px 8px;
       font-size: 13px;
       line-height: 1.4;
     }
@@ -338,14 +372,140 @@
     .catatan-pelatih-wrap textarea {
       width: 100%;
       box-sizing: border-box;
-      resize: none;
+      resize: vertical;
+      /* Allow manual resize but set good default */
       overflow: hidden;
+      min-height: 120px;
+      /* Lebihtinggi agar jelas terlihat */
     }
 
     .catatan-pelatih-wrap .btn-clear-catatan {
       position: absolute;
       right: 6px;
       top: 6px;
+    }
+
+    /* Modal Picker */
+    #monMemberPickerModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #monMemberPickerModal.show {
+      display: flex;
+    }
+
+    .picker-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      width: 92%;
+      max-width: 400px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .picker-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .picker-search {
+      border-radius: 8px;
+      border: 1.5px solid #e2e8f0;
+      padding: 9px 12px;
+      font-size: 13px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .picker-search:focus {
+      outline: none;
+      border-color: #1590df;
+    }
+
+    .picker-list {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .picker-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      gap: 10px;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.15s;
+    }
+
+    .picker-item:hover {
+      background: #f0f9ff;
+    }
+
+    .picker-item.selected {
+      background: #eff6ff;
+    }
+
+    .picker-item-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .picker-item-role {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .picker-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #cbd5e1;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .picker-item.selected .picker-check {
+      background: #1590df;
+      border-color: #1590df;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .field-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 11px 14px;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #111827;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+      text-align: left;
+    }
+
+    .field-trigger:active {
+      border-color: #1590df;
+      transform: scale(0.98);
     }
   </style>
 </head>
@@ -376,19 +536,23 @@
         <div class="section-title m-0 mb-3">Pilih Atlet</div>
 
         <label class="field-label" for="filterKegiatan">Filter Kegiatan (Opsional)</label>
-        <select id="filterKegiatan" class="field mb-3">
+        <select id="filterKegiatan" class="field mb-4">
           <option value="">— Semua Kegiatan —</option>
         </select>
 
-        <label class="field-label mt-3" for="selectAtlet">Pilih Atlet *</label>
-        <select id="selectAtlet" class="field">
-          <option value="">— Memuat Data Atlet… —</option>
-        </select>
+        <label class="field-label" style="display: block; margin-bottom: 8px;">Pilih Atlet *</label>
+        <input type="hidden" id="selectAtlet" value="">
+        <button type="button" class="field-trigger" onclick="openMonPicker()">
+          <span id="selectAtletText" style="color:#94a3b8;">Pilih atlet...</span>
+          <svg viewBox="0 0 24 24" width="20" height="20" style="color:#64748b; margin-left:8px;">
+            <path fill="currentColor" d="M7 10l5 5 5-5H7z" />
+          </svg>
+        </button>
 
-        <button class="btn-primary w-full mt-4" onclick="onConfirmAthlete()">
+        <button class="btn-primary w-full mt-5" onclick="onConfirmAthlete()">
           Konfirmasi Pilihan
         </button>
-        <p id="phase1-msg" class="text-danger text-sm mt-2" style="min-height:18px;"></p>
+        <p id="phase1-msg" class="text-danger text-sm mt-3 text-center" style="min-height:18px;"></p>
       </section>
 
       <!-- ===== FASE 2: PROFIL + RIWAYAT ===== -->
@@ -397,20 +561,33 @@
         <!-- Profil singkat -->
         <section class="section-card p-0 overflow-hidden">
           <div class="profile-card">
-            <p class="profile-name" id="profName">—</p>
-            <span class="profile-role" id="profRole">—</span>
-            <div class="profile-stats">
-              <div class="profile-stat-box">
-                <div class="profile-stat-label">Gender</div>
-                <div class="profile-stat-value" id="profGender">—</div>
+            <div class="profile-header" onclick="toggleProfileDetails()">
+              <div class="flex-col">
+                <p class="profile-name" id="profName">—</p>
               </div>
-              <div class="profile-stat-box">
-                <div class="profile-stat-label">Tgl Lahir</div>
-                <div class="profile-stat-value" id="profBirth">—</div>
-              </div>
-              <div class="profile-stat-box" style="grid-column:span 2;">
-                <div class="profile-stat-label">No WhatsApp</div>
-                <div class="profile-stat-value" id="profPhone">—</div>
+              <svg class="toggle-icon" viewBox="0 0 24 24" width="24" height="24" fill="white">
+                <path d="M7 10l5 5 5-5H7z" />
+              </svg>
+            </div>
+
+            <div id="profileDetails" class="profile-details">
+              <div class="profile-stats">
+                <div class="profile-stat-box" style="grid-column:span 2;">
+                  <div class="profile-stat-label">Jabatan</div>
+                  <div class="profile-stat-value" id="profRole">—</div>
+                </div>
+                <div class="profile-stat-box">
+                  <div class="profile-stat-label">Gender</div>
+                  <div class="profile-stat-value" id="profGender">—</div>
+                </div>
+                <div class="profile-stat-box">
+                  <div class="profile-stat-label">Tgl Lahir</div>
+                  <div class="profile-stat-value" id="profBirth">—</div>
+                </div>
+                <div class="profile-stat-box" style="grid-column:span 2;">
+                  <div class="profile-stat-label">No WhatsApp</div>
+                  <div class="profile-stat-value" id="profPhone">—</div>
+                </div>
               </div>
             </div>
           </div>
@@ -436,7 +613,9 @@
               <option value="11">November</option>
               <option value="12">Desember</option>
             </select>
-            <input type="number" id="inputTahun" class="field" placeholder="Tahun" min="2020" max="2099">
+            <select id="inputTahun" class="field">
+              <!-- Dipopulasi via JS (2 tahun terakhir) -->
+            </select>
           </div>
           <button class="btn-primary w-full mt-3" onclick="onStartMonitoring()">
             Mulai Input Monitoring
@@ -482,7 +661,9 @@
 
           <section class="section-card">
             <label class="field-label" for="inputSistem">Sistem Utama Pasangan (Opsional)</label>
-            <input type="text" id="inputSistem" class="field" placeholder="Contoh: Standard American, Precision…">
+            <select id="inputSistem" class="field">
+              <option value="">— Pilih Sistem —</option>
+            </select>
           </section>
 
           <div id="penilaianContainer"></div>
@@ -490,7 +671,7 @@
           <section class="section-card">
             <div class="section-title m-0 mb-3">C. Catatan Pelatih</div>
             <div class="catatan-pelatih-wrap">
-              <textarea id="inputCatatanPelatih" class="field" rows="3"
+              <textarea id="inputCatatanPelatih" class="field" rows="5"
                 placeholder="Evaluasi keseluruhan atau saran untuk atlet…"
                 oninput="autoResizeTextarea(this); _updateCatatanPelatihClearBtn(this.value)"></textarea>
               <button type="button" class="btn-clear-catatan" id="btnClearCatatanPelatih" style="display:none;"
@@ -505,6 +686,21 @@
       </div>
 
     </main>
+
+    <!-- Picker Modal -->
+    <div id="monMemberPickerModal">
+      <div class="picker-box">
+        <div class="picker-title">Pilih Atlet</div>
+        <input id="monPickerSearch" class="picker-search" placeholder="Cari nama atlet…"
+          oninput="filterMonPicker(this.value)">
+        <div class="picker-list" id="monPickerList"></div>
+        <div class="picker-actions mt-3 pt-3" style="border-top: 1px solid #e2e8f0;">
+          <button class="btn-secondary"
+            style="width: 100%; height: 44px; background: #fee2e2 !important; color: #dc2626 !important; border: 1px solid #fecaca !important; font-weight: 800; border-radius: 10px; cursor: pointer;"
+            onclick="closeMonPicker()">Batal</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="toast" style="display:none;"></div>
@@ -545,8 +741,40 @@
     (async () => {
       await requireLogin();
       await loadDropdowns();
-      document.getElementById('inputBulan').value = new Date().getMonth() + 1;
-      document.getElementById('inputTahun').value = new Date().getFullYear();
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth() + 1;
+      const selTahun = document.getElementById('inputTahun');
+      const selBulan = document.getElementById('inputBulan');
+
+      selTahun.innerHTML = `
+        <option value="${currentYear - 1}">${currentYear - 1}</option>
+        <option value="${currentYear}" selected>${currentYear}</option>
+      `;
+
+      function updateMonthOptions() {
+        const selectedYear = parseInt(selTahun.value);
+        const maxMonth = (selectedYear === currentYear) ? currentMonth : 12;
+        const prevVal = parseInt(selBulan.value);
+
+        let html = '<option value="">— Bulan —</option>';
+        for (let i = 1; i <= 12; i++) {
+          const disabled = i > maxMonth ? 'disabled style="color:#ccc;"' : '';
+          html += `<option value="${i}" ${disabled}>${NAMA_BULAN[i]}</option>`;
+        }
+        selBulan.innerHTML = html;
+
+        // Restore previous selection if still valid, else use current month if valid, else empty
+        if (prevVal && prevVal <= maxMonth) {
+          selBulan.value = prevVal;
+        } else if (currentMonth <= maxMonth) {
+          selBulan.value = currentMonth;
+        } else {
+          selBulan.value = "";
+        }
+      }
+
+      selTahun.addEventListener('change', updateMonthOptions);
+      updateMonthOptions();
 
       // Restore atlet yang terakhir dipilih sebelum refresh
       const savedMemberId = localStorage.getItem('mon_last_member');
@@ -568,9 +796,10 @@
      * ===================================================== */
     async function loadDropdowns() {
       try {
-        const [{ data: members, error: errM }, { data: activities, error: errA }] = await Promise.all([
+        const [{ data: members, error: errM }, { data: activities, error: errA }, { data: settings, error: errS }] = await Promise.all([
           supabaseClient.from('members').select('id,name,role,gender,birth_date,phone').eq('is_active', true).order('name'),
-          supabaseClient.from('activities').select('id,name,default_participants').eq('is_active', true).order('name')
+          supabaseClient.from('activities').select('id,name,default_participants').eq('is_active', true).order('name'),
+          supabaseClient.from('app_settings').select('*')
         ]);
 
         if (!errM && members) {
@@ -582,13 +811,95 @@
           const selK = document.getElementById('filterKegiatan');
           activities.forEach(a => { selK.innerHTML += `<option value="${a.id}">${escHtml(a.name)}</option>`; });
         }
+        if (!errS && settings) {
+          const sysRow = settings.find(r => r.setting_key === 'system_options');
+          const sysOptions = sysRow ? sysRow.setting_value : ["Standard American", "Precision", "Sistem Berdikari", "Two-over-one"];
+          const selS = document.getElementById('inputSistem');
+          selS.innerHTML = '<option value="">— Pilih Sistem —</option>';
+          sysOptions.sort().forEach(s => {
+            selS.innerHTML += `<option value="${escHtml(s)}">${escHtml(s)}</option>`;
+          });
+        }
       } catch (err) { console.error('loadDropdowns:', err); }
     }
 
     function _populateAtletDropdown(members) {
-      const sel = document.getElementById('selectAtlet');
-      sel.innerHTML = '<option value="">— Pilih Atlet —</option>';
-      members.forEach(m => { sel.innerHTML += `<option value="${m.id}">${escHtml(m.name)} (${m.role || '-'})</option>`; });
+      _currentPickerPool = members || [];
+      // If modal is currently open, we might want to refresh it
+      if (document.getElementById('monMemberPickerModal').classList.contains('show')) {
+        filterMonPicker(document.getElementById('monPickerSearch').value);
+      }
+    }
+
+    /* Modern Picker Logic */
+    let _currentPickerPool = [];
+    function openMonPicker() {
+      document.getElementById('monPickerSearch').value = '';
+      filterMonPicker('');
+      document.getElementById('monMemberPickerModal').classList.add('show');
+      document.getElementById('monPickerSearch').focus();
+    }
+    function closeMonPicker() {
+      document.getElementById('monMemberPickerModal').classList.remove('show');
+    }
+    function filterMonPicker(q) {
+      const pool = q.trim()
+        ? _currentPickerPool.filter(m => m.name.toLowerCase().includes(q.toLowerCase()))
+        : _currentPickerPool;
+
+      const currentId = document.getElementById('selectAtlet').value;
+      const listEl = document.getElementById('monPickerList');
+
+      if (!pool.length) {
+        listEl.innerHTML = '<div class="empty-state">Data tidak ditemukan.</div>';
+        return;
+      }
+
+      listEl.innerHTML = pool.map(m => {
+        const sel = m.id === currentId;
+        return `
+          <div class="picker-item${sel ? ' selected' : ''}" onclick="selectMonMember('${m.id}','${escHtml(m.name)}',${sel})">
+            <div class="picker-check">${sel ? '✓' : ''}</div>
+            <div class="flex-1">
+              <div class="picker-item-name">${escHtml(m.name)}</div>
+              <div class="picker-item-role">${escHtml(m.role || '-')}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+    function selectMonMember(id, name, isAlreadySelected) {
+      const input = document.getElementById('selectAtlet');
+      const text = document.getElementById('selectAtletText');
+
+      if (isAlreadySelected) {
+        input.value = '';
+        text.textContent = 'Pilih atlet...';
+        text.style.color = '#94a3b8';
+      } else {
+        input.value = id;
+        text.textContent = name;
+        text.style.color = '#111827';
+      }
+      closeMonPicker();
+    }
+
+    document.getElementById('monMemberPickerModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('monMemberPickerModal')) closeMonPicker();
+    });
+
+    function toggleProfileDetails() {
+      const details = document.getElementById('profileDetails');
+      const icon = document.querySelector('.toggle-icon');
+
+      const isOpen = details.classList.contains('open');
+
+      if (isOpen) {
+        details.classList.remove('open');
+        icon.classList.remove('rotate');
+      } else {
+        details.classList.add('open');
+        icon.classList.add('rotate');
+      }
     }
 
     /* FIX #1: Filter atlet berdasarkan peserta kegiatan */
@@ -678,7 +989,7 @@
             <div class="history-card" id="hcard-${item.id}">
               <div class="history-card-info">
                 <h4>${periode}</h4>
-                <p>Rata-rata: <strong>${item.rata_rata_total || '—'}</strong> | Sistem: ${escHtml(item.sistem_utama || '—')}</p>
+                <p>Rata-rata: <strong>${item.rata_rata_total || '—'}</strong></p>
               </div>
               <div class="history-card-actions">
                 <button class="btn-gen-pdf"
@@ -813,19 +1124,22 @@
 
         // catatan pelatih: hanya isi saat edit mode (bukan prefill)
         const catPelatih = existingData ? (existingData.catatan_pelatih || '') : '';
-        document.getElementById('inputCatatanPelatih').value = catPelatih;
-        autoResizeTextarea(document.getElementById('inputCatatanPelatih'));
+        const elCat = document.getElementById('inputCatatanPelatih');
+        elCat.value = catPelatih;
+        autoResizeTextarea(elCat);
         _updateCatatanPelatihClearBtn(catPelatih);
       } else {
         document.getElementById('inputSistem').value = '';
-        document.getElementById('inputCatatanPelatih').value = '';
-        autoResizeTextarea(document.getElementById('inputCatatanPelatih'));
+        const elCat = document.getElementById('inputCatatanPelatih');
+        elCat.value = '';
+        autoResizeTextarea(elCat);
         _updateCatatanPelatihClearBtn('');
       }
 
       // Auto-resize semua textarea catatan
       setTimeout(() => {
         container.querySelectorAll('textarea').forEach(ta => autoResizeTextarea(ta));
+        autoResizeTextarea(document.getElementById('inputCatatanPelatih'));
       }, 0);
     }
 
