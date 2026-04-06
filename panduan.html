@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Panduan Monitoring - Gabku App</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
+  <style>
+    .guide-section {
+      animation: fadeInUp 0.3s ease;
+      margin-bottom: 20px;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .guide-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--brand-600);
+      margin-bottom: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 18px;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+    }
+
+    /* Table Header (Level 2) - Slate Black to distinguish from main blue sections */
+    .table-header .guide-title {
+      color: #0f172a;
+      font-size: 15px;
+      background: #f8fafc;
+    }
+
+    .guide-section.static .guide-title {
+      cursor: default;
+      padding-bottom: 12px;
+    }
+
+    .guide-section.static .guide-content {
+      padding: 0 18px 18px;
+      max-height: none;
+      opacity: 1;
+    }
+
+    .guide-content {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-main);
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: all 0.3s ease;
+      padding: 0 18px;
+    }
+
+    .guide-section.open>.guide-content {
+      max-height: 10000px;
+      /* Allow enough space for nested content */
+      opacity: 1;
+      padding-bottom: 20px;
+    }
+
+    /* Nested Levels (padding & border) */
+    .guide-content .guide-section {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border-light);
+    }
+
+    .sub-indicator-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Sub-Indicator (Nested Accordion) */
+    .indicator-item {
+      background: #f8fafc;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .indicator-header {
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      background: #fff;
+    }
+
+    .indicator-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+      padding-right: 14px;
+    }
+
+    .indicator-body {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: all 0.3s ease;
+      padding: 0 14px;
+      font-size: 13px;
+      background: #f8fafc;
+    }
+
+    .indicator-item.open>.indicator-body {
+      max-height: 2000px;
+      opacity: 1;
+      padding-bottom: 14px;
+      padding-top: 8px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .indicator-item.open .indicator-chevron {
+      transform: rotate(180deg);
+    }
+
+    .indicator-chevron {
+      transition: transform 0.2s;
+      color: var(--text-muted);
+    }
+
+    .guide-section:not(.static) .guide-title {
+      justify-content: space-between;
+    }
+
+    .guide-title-text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chevron-icon {
+      transition: transform 0.3s ease;
+      color: var(--text-muted);
+    }
+
+    .guide-section.open>.guide-title .chevron-icon {
+      transform: rotate(180deg);
+    }
+
+    /* Override section card padding because we handle it in title/content */
+    .section-card.guide-section {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .guide-list {
+      padding-left: 20px;
+      margin: 10px 0;
+    }
+
+    .guide-list li {
+      margin-bottom: 6px;
+    }
+
+    /* Skor Style */
+    .skor-grid {
+      display: grid;
+      grid-template-columns: 50px 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .skor-badge {
+      background: var(--brand-50);
+      color: var(--brand-600);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      flex-shrink: 0;
+      border: 1px solid var(--brand-100);
+    }
+
+    /* Range Table (A/B/C/D) */
+    .range-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 13px;
+    }
+
+    .range-table th {
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 700;
+      text-align: left;
+      padding: 10px;
+      border: 1px solid var(--border-light);
+    }
+
+    .range-table td {
+      padding: 10px;
+      border: 1px solid var(--border-light);
+      vertical-align: top;
+    }
+
+    .grade-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .grade-a {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .grade-b {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .grade-c {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+
+    .grade-d {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .skor-desc {
+      padding-top: 4px;
+    }
+
+    .skor-label {
+      font-weight: 700;
+      color: var(--text-main);
+      display: block;
+    }
+
+    .skor-subdesc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .highlight-box {
+      background: #f1f5f9;
+      border-left: 4px solid var(--brand-500);
+      padding: 12px 16px;
+      border-radius: 0 12px 12px 0;
+      margin: 14px 0;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="header-bar">
+        <div class="header-left">
+          <button class="icon-back" onclick="window.location.href='index.html'" aria-label="Kembali">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <path fill="currentColor"
+                d="M15.5 19a1 1 0 0 1-.7-.29l-6-6a1 1 0 0 1 0-1.42l6-6a1 1 0 1 1 1.4 1.42L11.62 12l4.58 4.58A1 1 0 0 1 15.5 19z" />
+            </svg>
+          </button>
+          <div class="header-text">
+            <div class="app-name">Panduan Monitoring</div>
+            <div class="app-subtitle">Petunjuk pengisian form</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main">
+
+      <!-- A. Tujuan Form Monitoring -->
+      <section class="section-card guide-section mt-0 static">
+        <div class="guide-title">
+          <div class="guide-title-text">
+            <span>A.</span> Tujuan Form Monitoring
+          </div>
+        </div>
+        <div class="guide-content">
+          <p>Form monitoring atlet bridge ini digunakan untuk mengevaluasi perkembangan atlet secara berkala pada aspek:
+            <b>Bidding, Play, Defense, dan Mental & Kemitraan</b>.
+          </p>
+
+          <p class="mt-3">Penilaian ini bertujuan untuk:</p>
+          <ul class="guide-list text-sm">
+            <li>Memantau perkembangan atlet dari bulan ke bulan.</li>
+            <li>Mengidentifikasi kekuatan dan area yang masih perlu ditingkatkan.</li>
+            <li>Menjadi dasar penyusunan fokus latihan berikutnya.</li>
+            <li>Membantu pelatih membuat evaluasi yang lebih objektif dan konsisten.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- B. Periode dan Dasar Penilaian -->
+      <section class="section-card guide-section">
+        <div class="guide-title" onclick="toggleSection(this)">
+          <div class="guide-title-text">
+            <span>B.</span> Periode dan Dasar Penilaian
+          </div>
+          <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+          </svg>
+        </div>
+        <div class="guide-content">
+          <p>Form diisi <b>1 (satu) kali setiap bulan</b>. Penilaian dilakukan berdasarkan pengamatan performa atlet
+            selama <b>1 bulan terakhir</b>.</p>
+
+          <div class="highlight-box mt-3 text-xs">
+            Penting: Penilaian bukan hanya dari 1 sesi latihan, 1 pertandingan, atau 1 papan tertentu, melainkan
+            gambaran menyeluruh.
+          </div>
+
+          <p class="mt-3 text-sm">Sumber pengamatan meliputi:</p>
+          <ul class="guide-list text-sm">
+            <li>Latihan rutin & simulasi pertandingan.</li>
+            <li>Sparring & turnamen.</li>
+            <li>Evaluasi dan diskusi pasca latihan.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- C. Prinsip Umum Penilaian -->
+      <section class="section-card guide-section">
+        <div class="guide-title" onclick="toggleSection(this)">
+          <div class="guide-title-text">
+            <span>C.</span> Prinsip Umum Penilaian
+          </div>
+          <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+          </svg>
+        </div>
+        <div class="guide-content">
+          <p>Penilaian dilakukan untuk setiap indikator yang tersedia pada form. Penilai diharapkan memberi skor secara:
+          </p>
+          <ul class="guide-list text-sm">
+            <li><b>Objektif</b>: Sesuai fakta yang teramati di meja.</li>
+            <li><b>Konsisten</b>: Menggunakan standar yang sama di setiap sesi.</li>
+            <li><b>Berdasarkan performa nyata</b>: Bukan berdasarkan asumsi atau potensi semata.</li>
+            <li>Tidak dipengaruhi oleh penilaian pribadi di luar performa atlet.</li>
+          </ul>
+
+          <p class="mt-3">Nilai diberikan pada rentang <b>0,5 sampai 5</b>. Nilai utama adalah angka bulat (1, 2, 3, 4,
+            5).</p>
+
+          <div class="highlight-box mt-3">
+            <b>Penggunaan Nilai Pecahan:</b><br>
+            Nilai pecahan (1,5 / 2,5 / 3,5 / 4,5) digunakan apabila atlet dinilai sudah melampaui level sebelumnya,
+            tetapi belum cukup konsisten untuk mencapai level berikutnya.
+          </div>
+          <p class="text-xs text-muted mt-2">Nilai <b>0,5</b> diberikan bila kemampuan pada indikator tersebut masih
+            sangat awal, belum stabil, atau baru sesekali terlihat.</p>
+        </div>
+      </section>
+
+      <!-- D. Pedoman Umum Rentang Nilai -->
+      <section class="section-card guide-section">
+        <div class="guide-title" onclick="toggleSection(this)">
+          <div class="guide-title-text">
+            <span>D.</span> Pedoman Umum Rentang Nilai
+          </div>
+          <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+          </svg>
+        </div>
+        <div class="guide-content">
+          <div class="skor-grid">
+            <!-- Skor 5 -->
+            <div class="skor-badge">5</div>
+            <div class="skor-desc">
+              <span class="skor-label">Sangat Baik / Unggul</span>
+              <ul class="guide-list text-xs mt-1" style="margin-left: -5px;">
+                <li>Sangat konsisten & sangat tepat.</li>
+                <li>Mampu diterapkan dalam situasi kompleks.</li>
+                <li>Menjadi kekuatan utama atlet.</li>
+              </ul>
+            </div>
+
+            <!-- Skor 4 -->
+            <div class="skor-badge">4</div>
+            <div class="skor-desc">
+              <span class="skor-label">Baik</span>
+              <ul class="guide-list text-xs mt-1" style="margin-left: -5px;">
+                <li>Umumnya tepat dan stabil.</li>
+                <li>Hanya sesekali terjadi kekurangan kecil.</li>
+                <li>Mampu diterapkan pada mayoritas situasi.</li>
+              </ul>
+            </div>
+
+            <!-- Skor 3 -->
+            <div class="skor-badge">3</div>
+            <div class="skor-desc">
+              <span class="skor-label">Cukup / Berkembang</span>
+              <ul class="guide-list text-xs mt-1" style="margin-left: -5px;">
+                <li>Kemampuan dasar sudah terlihat.</li>
+                <li>Pelaksanaan kadang benar, kadang belum stabil.</li>
+                <li>Masih membutuhkan penguatan.</li>
+              </ul>
+            </div>
+
+            <!-- Skor 2 -->
+            <div class="skor-badge">2</div>
+            <div class="skor-desc">
+              <span class="skor-label">Kurang</span>
+              <ul class="guide-list text-xs mt-1" style="margin-left: -5px;">
+                <li>Pemahaman atau penerapan masih lemah.</li>
+                <li>Cukup sering terjadi kesalahan.</li>
+                <li>Belum stabil dalam situasi permainan.</li>
+              </ul>
+            </div>
+
+            <!-- Skor 1 -->
+            <div class="skor-badge">1</div>
+            <div class="skor-desc">
+              <span class="skor-label">Sangat Kurang</span>
+              <ul class="guide-list text-xs mt-1" style="margin-left: -5px;">
+                <li>Belum memahami/mampu menerapkan indikator.</li>
+                <li>Kesalahan masih dominan.</li>
+                <li>Membutuhkan pembinaan intensif.</li>
+              </ul>
+            </div>
+
+            <!-- Skor 0.5 -->
+            <div class="skor-badge" style="font-size: 11px;">0.5</div>
+            <div class="skor-desc">
+              <span class="skor-label">Sangat Awal</span>
+              <ul class="guide-list text-xs mt-1" style="margin-left: -5px;">
+                <li>Kemampuan baru mulai terlihat.</li>
+                <li>Belum dapat dinilai stabil.</li>
+                <li>Hanya sesekali menunjukkan tanda penguasaan dasar.</li>
+              </ul>
+            </div>
+          </div>
+
+          <p class="mt-4"><b>Nilai Pecahan (1,5 / 2,5 / 3,5 / 4,5):</b></p>
+          <div class="highlight-box mt-2 text-xs">
+            Digunakan bila atlet berada di antara dua level utama.<br>
+            <b>Contoh:</b><br>
+            - <b>2,5</b> = sudah lebih baik dari level 2, tetapi belum cukup konsisten untuk level 3.<br>
+            - <b>3,5</b> = sudah cukup baik, tetapi belum stabil untuk mencapai level 4.
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card guide-section">
+        <div class="guide-title" onclick="toggleSection(this)">
+          <div class="guide-title-text">
+            <span>E.</span> Penjelasan Tiap Indikator
+          </div>
+          <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+          </svg>
+        </div>
+        <div class="guide-content">
+          <p class="text-xs text-muted mb-3">Klik pada tabel di bawah untuk melihat detail indikator.</p>
+
+          <!-- B1. Tabel Bidding (Level 2) -->
+          <div class="guide-section table-header">
+            <div class="guide-title" onclick="toggleSection(this)">
+              <div class="guide-title-text">
+                <span>B1.</span> Tabel Bidding
+              </div>
+              <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+              </svg>
+            </div>
+            <div class="guide-content">
+
+              <div class="sub-indicator-list">
+                <!-- B1.1 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B1.1 Akurasi Penentuan Kontrak</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai ketepatan atlet dalam mencapai kontrak terbaik berdasarkan kekuatan kartu, distribusi,
+                      fit, dan jalannya auction.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>ketepatan menilai strength,</li>
+                      <li>ketepatan memilih strain,</li>
+                      <li>ketepatan menentukan level kontrak,</li>
+                      <li>kemampuan menghindari underbid dan overbid.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = sering salah menentukan kontrak</li>
+                      <li><b>2</b> = kadang tepat, tetapi masih banyak underbid/overbid</li>
+                      <li><b>3</b> = cukup sering mencapai kontrak wajar</li>
+                      <li><b>4</b> = umumnya mencapai kontrak tepat</li>
+                      <li><b>5</b> = sangat akurat dan konsisten, termasuk dalam auction kompleks</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B1.2 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B1.2 Pemahaman Sistem & Konvensi</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai pemahaman atlet terhadap sistem bidding dan konvensi yang digunakan bersama partner.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>memahami arti bid sesuai sistem,</li>
+                      <li>memahami penggunaan konvensi,</li>
+                      <li>tidak salah memakai bid artifisial,</li>
+                      <li>mampu menjelaskan makna bid yang dipakai.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = belum memahami sistem dengan baik</li>
+                      <li><b>2</b> = memahami sebagian, tetapi masih sering keliru</li>
+                      <li><b>3</b> = cukup memahami sistem dasar dan sebagian konvensi</li>
+                      <li><b>4</b> = memahami sistem dengan baik dan jarang salah</li>
+                      <li><b>5</b> = sangat paham, termasuk detail dan pengecualian sistem</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B1.3 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B1.3 Konsistensi Interpretasi Bid</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kemampuan atlet membaca dan menafsirkan bid partner maupun lawan secara tepat dan
+                      konsisten.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>ketepatan membaca sequence bidding,</li>
+                      <li>konsistensi dalam menafsirkan makna bid,</li>
+                      <li>kemampuan menarik kesimpulan logis dari auction,</li>
+                      <li>kesesuaian antara pemahaman teori dan praktik di meja.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = sering salah menafsirkan bid</li>
+                      <li><b>2</b> = interpretasi masih berubah-ubah</li>
+                      <li><b>3</b> = cukup bisa membaca bid, meski belum stabil</li>
+                      <li><b>4</b> = interpretasi umumnya benar dan konsisten</li>
+                      <li><b>5</b> = sangat akurat membaca auction, termasuk situasi rumit</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B1.4 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B1.4 Kepatuhan Sistem & Kesepakatan</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai disiplin atlet dalam mengikuti sistem dan agreement yang telah disepakati pasangan.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>tidak menyimpang dari agreement tanpa alasan yang jelas,</li>
+                      <li>menjaga konsistensi makna bid,</li>
+                      <li>meminimalkan bid berbasis feeling yang mengganggu partnership,</li>
+                      <li>menunjukkan kedisiplinan sistem.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = sering keluar dari sistem</li>
+                      <li><b>2</b> = masih cukup sering menyimpang</li>
+                      <li><b>3</b> = cukup patuh, tetapi kadang masih tidak disiplin</li>
+                      <li><b>4</b> = patuh dan disiplin dalam sebagian besar situasi</li>
+                      <li><b>5</b> = sangat disiplin, konsisten, dan dapat dipercaya partner</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B1.5 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B1.5 Penanganan Bid Kompetitif & Preempt</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kemampuan atlet menghadapi interference lawan, overcall, double, redouble, dan preemptive
+                      bidding.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>ketenangan dalam auction kompetitif,</li>
+                      <li>pemahaman tindakan setelah gangguan lawan,</li>
+                      <li>kemampuan menjaga arah auction,</li>
+                      <li>kemampuan menilai risiko dan level kompetisi.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = sangat sering bingung dalam auction kompetitif</li>
+                      <li><b>2</b> = masih lemah menghadapi interference lawan</li>
+                      <li><b>3</b> = cukup mampu bertahan dalam situasi kompetitif</li>
+                      <li><b>4</b> = baik dalam menangani overcall/preempt</li>
+                      <li><b>5</b> = sangat matang dan akurat dalam bidding kompetitif</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- B2. Tabel Play (Level 2) -->
+          <div class="guide-section table-header">
+            <div class="guide-title" onclick="toggleSection(this)">
+              <div class="guide-title-text">
+                <span>B2.</span> Tabel Play (Declarer Play)
+              </div>
+              <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+              </svg>
+            </div>
+            <div class="guide-content">
+
+              <div class="sub-indicator-list">
+                <!-- B2.1 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B2.1 Perencanaan Play Awal</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai ketangkasan atlet dalam menghitung winner/loser, mengidentifikasi ancaman, dan menyusun
+                      rencana permainan sebelum memainkan trik pertama.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>ketepatan menghitung target trik,</li>
+                      <li>mampu mengenali ancaman utama permainan,</li>
+                      <li>mampu menyusun rencana cadangan,</li>
+                      <li>ketenangan dalam berpikir sebelum trik pertama.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = bermain tanpa rencana yang jelas</li>
+                      <li><b>2</b> = rencana seringkali kurang matang atau salah</li>
+                      <li><b>3</b> = cukup mampu membuat rencana dasar pada board standar</li>
+                      <li><b>4</b> = rencana umumnya akurat dan sistematis</li>
+                      <li><b>5</b> = sangat sistematis, akurat, dan matang sejak awal sesi</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B2.2 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B2.2 Teknik Declarer</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai penggunaan teknik permainan oleh atlet sebagai declarer, seperti finesse, ducking,
+                      hold-up, elimination, endplay, dan ruffing management.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>kualitas penggunaan teknik dasar,</li>
+                      <li>penggunaan teknik lanjutan (endplay/safety play),</li>
+                      <li>efektivitas teknik dalam mencapai kontrak,</li>
+                      <li>kemampuan meminimalkan error teknis.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = teknik dasar masih sangat lemah</li>
+                      <li><b>2</b> = sudah mengenal teknik dasar, tetapi sering salah penerapan</li>
+                      <li><b>3</b> = cukup mampu menggunakan teknik dasar secara tepat</li>
+                      <li><b>4</b> = teknik sangat baik dan efektif pada board kompetitif</li>
+                      <li><b>5</b> = penguasaan teknik sangat matang, efektif, dan fleksibel</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B2.3 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B2.3 Analisis Peluang & Distribusi</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kemampuan atlet dalam membandingkan peluang berbagai line of play dan memperkirakan
+                      distribusi suit lawan berdasarkan bidding serta play.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>kemampuan membandingkan line of play secara logis,</li>
+                      <li>ketepatan memperkirakan distribusi suit,</li>
+                      <li>ketepatan memperkirakan letak honor lawan,</li>
+                      <li>kemampuan melakukan perhitungan peluang sederhana.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = analisis peluang dan distribusi sangat lemah</li>
+                      <li><b>2</b> = sering salah dalam memperkirakan distribusi</li>
+                      <li><b>3</b> = cukup memahami peluang sederhana dan distribusi standar</li>
+                      <li><b>4</b> = analisis umumnya tajam dan mendekati kenyataan</li>
+                      <li><b>5</b> = sangat tajam membaca peluang, distribusi, dan posisi honor</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B2.4 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B2.4 Timing & Entry Management</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kemampuan atlet dalam mengatur urutan permainan (timing) dan mengelola entry (tangan
+                      declarer dan dummy) secara efektif.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>mampu menjaga entry penting,</li>
+                      <li>ketepatan timing dalam melakukan draw trump,</li>
+                      <li>ketepatan urutan permainan suit,</li>
+                      <li>mencegah terjadinya block suit.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = sering salah timing dan kehilangan entry</li>
+                      <li><b>2</b> = pengelolaan entry masih sering bermasalah</li>
+                      <li><b>3</b> = cukup memahami dasar timing dan entry</li>
+                      <li><b>4</b> = pengelolaan timing dan entry umumnya efektif</li>
+                      <li><b>5</b> = sangat matang dalam pengelolaan entry dan timing rumit</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B2.5 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B2.5 Konsistensi Rencana Main</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kedisiplinan atlet dalam menjalankan rencana yang telah disusun dan kemampuannya
+                      menyesuaikan rencana berdasarkan informasi baru (informasi kartu lawan).</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>disiplin mengikuti line of play yang dipilih,</li>
+                      <li>mampu menyesuaikan rencana bila ada informasi baru,</li>
+                      <li>tidak mudah berubah rencana tanpa dasar logis,</li>
+                      <li>tidak kehilangan arah di tengah permainan.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = sangat tidak konsisten dalam menjalankan rencana</li>
+                      <li><b>2</b> = sering kehilangan arah di tengah permainan</li>
+                      <li><b>3</b> = cukup konsisten, meski kadang masih goyah</li>
+                      <li><b>4</b> = umumnya konsisten dan disiplin mengikuti rencana</li>
+                      <li><b>5</b> = sangat konsisten, disiplin, namun tetap adaptif</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- B3. Tabel Defense (Level 2) -->
+          <div class="guide-section table-header">
+            <div class="guide-title" onclick="toggleSection(this)">
+              <div class="guide-title-text">
+                <span>B3.</span> Tabel Defense
+              </div>
+              <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+              </svg>
+            </div>
+            <div class="guide-content">
+
+              <div class="sub-indicator-list">
+                <!-- B3.1 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B3.1 Ketepatan Opening Lead</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kualitas pilihan kartu pertama yang dimainkan atlet saat menjadi defender berdasarkan
+                      bidding dan pegangan kartu sendiri.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>ketepatan memilih suit untuk lead (aktif vs pasif),</li>
+                      <li>lead sesuai dengan agreement pasangan,</li>
+                      <li>lead tidak memberikan "free-finesse" bagi declarer,</li>
+                      <li>mampu menganalisis auction untuk menentukan lead.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = opening lead sangat sering merugikan defense</li>
+                      <li><b>2</b> = pilihan lead seringkali kurang logis</li>
+                      <li><b>3</b> = cukup baik dalam memilih lead pada situasi standar</li>
+                      <li><b>4</b> = lead umumnya akurat dan membantu target defense</li>
+                      <li><b>5</b> = opening lead sangat tajam, akurat, dan sangat membantu defense</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B3.2 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B3.2 Kejelasan Signaling</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kedisiplinan dan kejelasan pemberian sinyal (Attitude, Count, dan Suit Preference) kepada
+                      partner selama defense.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>kejelasan pesan melalui kartu yang dimainkan,</li>
+                      <li>ketepatan waktu pemberian sinyal,</li>
+                      <li>kesesuaian sinyal dengan sistem yang disepakati,</li>
+                      <li>keakuratan dalam memberikan Suit Preference Signal.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = sinyal tidak jelas atau sangat sering salah</li>
+                      <li><b>2</b> = sinyal seringkali membingungkan partner</li>
+                      <li><b>3</b> = cukup jelas dalam memberikan sinyal dasar</li>
+                      <li><b>4</b> = sinyal umumnya akurat dan mudah dibaca partner</li>
+                      <li><b>5</b> = pemberian sinyal sangat baik, akurat, disiplin, dan mudah dibaca</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B3.3 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B3.3 Akurasi Switching & Discard</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai ketepatan atlet dalam memutuskan kapan harus berpindah suit (switch) dan kualitas kartu
+                      yang dibuang (discard).</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>ketepatan waktu melakukan switch suit,</li>
+                      <li>pilihan suit yang tepat saat switch,</li>
+                      <li>discard memberikan informasi yang benar kepada partner,</li>
+                      <li>discard tidak membuang kartu pemenang atau guard.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = switch/discard sangat sering salah dan merugikan</li>
+                      <li><b>2</b> = switch seringkali terlambat atau salah suit</li>
+                      <li><b>3</b> = cukup baik dalam melakukan switch/discard dasar</li>
+                      <li><b>4</b> = akurasi switch dan discard umumnya baik</li>
+                      <li><b>5</b> = sangat akurat, tajam, dan disiplin dalam switch serta discard</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B3.4 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B3.4 Membaca Permainan Partner</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kemampuan atlet dalam menangkap sinyal partner dan menggunakannya untuk menyeleksi
+                      pertahanan yang efektif.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>mampu menangkap pesan dari sinyal/lead partner,</li>
+                      <li>koordinasi pertahanan yang baik dengan partner,</li>
+                      <li>memahami maksud perpindahan suit partner,</li>
+                      <li>kepercayaan terhadap sinyal partner.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = sangat sering gagal memahami sinyal partner</li>
+                      <li><b>2</b> = seringkali salah menafsirkan maksud partner</li>
+                      <li><b>3</b> = cukup bisa membaca arah defense partner secara umum</li>
+                      <li><b>4</b> = umumnya sinkron dan paham akan maksud partner</li>
+                      <li><b>5</b> = sangat peka, sinkron, dan akurat membaca pesan defense partner</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B3.5 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B3.5 Defense Planning (2 trik awal)</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kemampuan atlet dalam memprediksi target trik yang bisa didapat defense dan menyusun
+                      strategi pertahanan sejak awal permainan.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>sudah memiliki gambaran target set sejak trik 1-2,</li>
+                      <li>mengetahui suit mana yang harus dikejar/dipotong,</li>
+                      <li>mampu mempertimbangkan entry partner untuk defense,</li>
+                      <li>kecepatan dalam menyusun rencana pertahanan.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = tidak terlihat ada rencana defense sama sekali</li>
+                      <li><b>2</b> = rencana defense seringkali keliru sejak awal</li>
+                      <li><b>3</b> = cukup mampu menyusun rencana dasar pada board standar</li>
+                      <li><b>4</b> = rencana defense umumnya akurat dan sistematis</li>
+                      <li><b>5</b> = sangat cepat dan akurat dalam membaca peluang set dan menyusun strategi</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- B4. Tabel Mental & Kemitraan (Level 2) -->
+          <div class="guide-section table-header">
+            <div class="guide-title" onclick="toggleSection(this)">
+              <div class="guide-title-text">
+                <span>B4.</span> Tabel Mental & Kemitraan
+              </div>
+              <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+              </svg>
+            </div>
+            <div class="guide-content">
+
+              <div class="sub-indicator-list">
+                <!-- B4.1 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B4.1 Konsistensi Fokus & Stamina</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kemampuan atlet dalam menjaga konsentrasi, fokus, dan stamina mental selama sesi latihan
+                      atau pertandingan berlangsung.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>fokus dari awal sampai akhir sesi,</li>
+                      <li>tidak drop setelah papan yang sulit/lelah,</li>
+                      <li>stabilitas kualitas pengambilan keputusan,</li>
+                      <li>daya tahan kompetitif.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = fokus sangat mudah pecah sepanjang sesi</li>
+                      <li><b>2</b> = fokus sering menurun di pertengahan sesi</li>
+                      <li><b>3</b> = cukup stabil, tetapi belum konsisten penuh</li>
+                      <li><b>4</b> = fokus baik dan terjaga hampir di seluruh sesi</li>
+                      <li><b>5</b> = sangat stabil, fokus, dan tahan banting di sesi panjang</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B4.2 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B4.2 Respon Papan Buruk</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai reaksi mental atlet setelah melakukan kesalahan atau mendapatkan hasil buruk (bad board).
+                    </p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>ketenangan setelah bad board (kesalahan),</li>
+                      <li>cepat pulih (recovery) dan tidak terbawa emosi,</li>
+                      <li>tetap objektif di papan berikutnya,</li>
+                      <li>mampu memutus rantai kesalahan berturut-turut (tilt).</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = sangat terpengaruh dan sulit pulih dari papan buruk</li>
+                      <li><b>2</b> = respon emosional masih sering mengganggu permainan</li>
+                      <li><b>3</b> = cukup mampu pulih, meski terkadang masih terganggu</li>
+                      <li><b>4</b> = respon mental baik dan cepat kembali fokus</li>
+                      <li><b>5</b> = sangat matang, stabil, dan tidak tertekan hasil buruk</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B4.3 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B4.3 Komunikasi & Harmonisasi</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kualitas interaksi non-teknis antara atlet dengan partner selama di meja pertandingan.
+                    </p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>saling memahami kondisi mental partner,</li>
+                      <li>tidak saling menyalahkan di meja (blaming),</li>
+                      <li>memberikan dukungan positif kepada partner,</li>
+                      <li>harmonisasi dalam kerja sama pasangan.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = kerja sama dan komunikasi pasangan sangat buruk</li>
+                      <li><b>2</b> = sering terjadi gesekan yang merugikan partnership</li>
+                      <li><b>3</b> = cukup harmonis, namun belum stabil sepenuhnya</li>
+                      <li><b>4</b> = partnership solid dan saling mendukung</li>
+                      <li><b>5</b> = sangat kompak, terbuka, dan sinkron secara mental</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B4.4 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B4.4 Manajemen Waktu (Tempo)</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai efisiensi atlet dalam menggunakan waktu berpikir secara proporsional sesuai tingkat
+                      kesulitan papan.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>efisiensi waktu berpikir (tidak terlalu lambat/cepat),</li>
+                      <li>mampu berpikir keras pada momen yang tepat,</li>
+                      <li>menjaga ritme permainan tetap terjaga,</li>
+                      <li>tidak terburu-buru (rush) pada situasi krusial.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = sering bermasalah dengan tempo (lambat/rush)</li>
+                      <li><b>2</b> = manajemen waktu masih sering tidak efisien</li>
+                      <li><b>3</b> = cukup wajar, meski kadang masih belum tepat</li>
+                      <li><b>4</b> = manajemen waktu umumnya baik dan efisien</li>
+                      <li><b>5</b> = sangat efisien, matang, dan tepat dalam manajemen waktu</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- B4.5 -->
+                <div class="indicator-item">
+                  <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                    <span class="indicator-title">B4.5 Diskusi & Awareness</span>
+                    <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                    </svg>
+                  </div>
+                  <div class="indicator-body">
+                    <p>Menilai kesadaran atlet akan kesalahan sendiri dan keterbukaannya dalam menerima masukan selama
+                      diskusi pasca latihan.</p>
+                    <p class="mt-3"><b>Hal yang dinilai:</b></p>
+                    <ul class="guide-list">
+                      <li>keterbukaan menerima masukan pelatih/partner,</li>
+                      <li>kemampuan mengenali kesalahan sendiri (self-awareness),</li>
+                      <li>aktif dalam diskusi evaluasi,</li>
+                      <li>refleksi diri atas proses belajar.</li>
+                    </ul>
+                    <p class="mt-3"><b>Panduan skor:</b></p>
+                    <ul class="guide-list text-xs">
+                      <li><b>1</b> = pasif dan kurang menyadari kesalahan sendiri</li>
+                      <li><b>2</b> = menyadari kesalahan, tetapi kurang terbuka terhadap masukan</li>
+                      <li><b>3</b> = cukup terbuka dan mulai menunjukkan self-awareness</li>
+                      <li><b>4</b> = aktif dalam diskusi dan menyadari area perbaikan</li>
+                      <li><b>5</b> = sangat proaktif, sadar proses, dan terbuka terhadap evaluasi</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- F. Cara Pemberian Nilai Akhir -->
+      <section class="section-card guide-section">
+        <div class="guide-title" onclick="toggleSection(this)">
+          <div class="guide-title-text">
+            <span>F.</span> Cara Pemberian Nilai Akhir
+          </div>
+          <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+          </svg>
+        </div>
+        <div class="guide-content">
+          <p>Nilai akhir atlet ditentukan dari kombinasi antara <b>Monitoring (Bobot 70%)</b> dan <b>Kehadiran (Bobot
+              30%)</b>.</p>
+
+          <div class="highlight-box mt-3" style="background: #f0fdf4; border-color: #bbf7d0; color: #166534;">
+            <b>Formula:</b><br>
+            Nilai Akhir = (Rata-rata Skor Monitoring × 0,7) + (Skor Kehadiran × 0,3)
+          </div>
+
+          <p class="mt-4"><b>1. Nilai Rata-Rata Monitoring (Bobot 70%)</b></p>
+          <p class="text-xs text-muted">Diambil dari rata-rata 20 indikator pada Tabel B1 sampai B4.</p>
+
+          <p class="mt-4"><b>2. Nilai Kehadiran (Bobot 30%)</b></p>
+          <div class="skor-grid mt-2">
+            <div class="skor-badge">5</div>
+            <div class="skor-desc">
+              <span class="skor-label">Kehadiran 100%</span>
+            </div>
+            <div class="skor-badge">4</div>
+            <div class="skor-desc">
+              <span class="skor-label">Kehadiran 80% - 99%</span>
+            </div>
+            <div class="skor-badge">3</div>
+            <div class="skor-desc">
+              <span class="skor-label">Kehadiran 60% - 79%</span>
+            </div>
+            <div class="skor-badge">2</div>
+            <div class="skor-desc">
+              <span class="skor-label">Kehadiran 40% - 59%</span>
+            </div>
+            <div class="skor-badge">1</div>
+            <div class="skor-desc">
+              <span class="skor-label">Kehadiran &lt; 40%</span>
+            </div>
+          </div>
+
+          <p class="mt-4"><b>Contoh Perhitungan:</b></p>
+          <div class="highlight-box mt-2 text-xs" style="background: #fafafa;">
+            - Rata-rata 20 indikator atlet: <b>3.50</b><br>
+            - Tingkat kehadiran (Misal 90%): <b>4.00</b><br><br>
+            <b>Perhitungan:</b><br>
+            (3.50 × 0,7) = 2.45<br>
+            (4.00 × 0,3) = 1.20<br>
+            <b>Nilai Akhir: 2.45 + 1.20 = 3.65</b>
+          </div>
+
+          <p class="mt-4"><b>Rentang Nilai Akhir & Rekomendasi:</b></p>
+          <div class="table-responsive">
+            <table class="range-table">
+              <thead>
+                <tr>
+                  <th>Skor</th>
+                  <th>Predikat</th>
+                  <th>Rekomendasi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>4.01 - 5.00</td>
+                  <td><span class="grade-badge grade-a">A</span></td>
+                  <td>Pertahankan performa, siap untuk level kompetisi yang lebih tinggi.</td>
+                </tr>
+                <tr>
+                  <td>3.01 - 4.00</td>
+                  <td><span class="grade-badge grade-b">B</span></td>
+                  <td>Tingkatkan konsistensi pada indikator yang masih di bawah rata-rata.</td>
+                </tr>
+                <tr>
+                  <td>2.01 - 3.00</td>
+                  <td><span class="grade-badge grade-c">C</span></td>
+                  <td>Perlu evaluasi intensif pada pemahaman dasar dan kedisiplinan.</td>
+                </tr>
+                <tr>
+                  <td>0.00 - 2.00</td>
+                  <td><span class="grade-badge grade-d">D</span></td>
+                  <td>Memerlukan bimbingan khusus dan perbaikan menyeluruh secara teknis.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- G. Petunjuk Pengisian Catatan Per Indikator -->
+      <section class="section-card guide-section">
+        <div class="guide-title" onclick="toggleSection(this)">
+          <div class="guide-title-text">
+            <span>G.</span> Petunjuk Pengisian Catatan Per Indikator
+          </div>
+          <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+          </svg>
+        </div>
+        <div class="guide-content">
+          <p>Pada setiap indikator tersedia kolom catatan yang tidak wajib diisi, namun sangat dianjurkan apabila ada
+            temuan khusus.</p>
+          <p class="mt-3"><b>Catatan per indikator dapat digunakan untuk menuliskan:</b></p>
+          <ul class="guide-list">
+            <li>Contoh kekuatan atlet pada indikator tersebut.</li>
+            <li>Bentuk kesalahan yang sering muncul.</li>
+            <li>Situasi khusus yang memengaruhi nilai.</li>
+            <li>Fokus perbaikan yang lebih spesifik.</li>
+          </ul>
+          <p class="mt-3"><b>Contoh isi catatan per indikator:</b></p>
+          <div class="highlight-box text-xs">
+            - “Masih sering overbid pada distribusi 5-4”<br>
+            - “Sudah mulai konsisten memberi count signal”<br>
+            - “Timing cukup baik, tetapi entry dummy masih sering hilang”<br>
+            - “Mulai lebih tenang setelah bad board, meski belum stabil”
+          </div>
+          <div class="highlight-box" style="background: #fffbeb; border-color: #fcd34d; color: #92400e;">
+            Kolom ini bertujuan agar angka penilaian memiliki konteks dan dapat dipakai sebagai bahan evaluasi latihan
+            berikutnya.
+          </div>
+        </div>
+      </section>
+
+      <!-- H. Penjelasan Bagian C. Catatan Pelatih -->
+      <section class="section-card guide-section">
+        <div class="guide-title" onclick="toggleSection(this)">
+          <div class="guide-title-text">
+            <span>H.</span> Penjelasan Bagian C. Catatan Pelatih
+          </div>
+          <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+          </svg>
+        </div>
+        <div class="guide-content">
+          <p>Bagian C. CATATAN PELATIH digunakan untuk memberikan rangkuman umum hasil monitoring atlet selama 1 bulan.
+            Bagian ini bersifat naratif dan menjadi ruang pelatih untuk menuliskan evaluasi yang tidak selalu tercakup
+            sepenuhnya oleh skor angka.</p>
+
+          <p class="mt-3"><b>Isi yang dapat dituliskan pada bagian ini antara lain:</b></p>
+          <ul class="guide-list">
+            <li>Gambaran umum performa atlet selama bulan berjalan.</li>
+            <li>Perkembangan yang menonjol.</li>
+            <li>Kelemahan utama yang perlu diperbaiki.</li>
+            <li>Masalah yang berulang.</li>
+            <li>Rekomendasi fokus latihan bulan berikutnya.</li>
+            <li>Catatan khusus terkait partnership, disiplin, kesiapan tanding, atau mental bertanding.</li>
+          </ul>
+
+          <p class="mt-3"><b>Contoh isi Catatan Pelatih:</b></p>
+          <div class="highlight-box text-xs">
+            - “Perkembangan bidding kompetitif menunjukkan peningkatan, namun akurasi penentuan kontrak masih belum
+            stabil pada board dengan distribusi ekstrem.”<br>
+            - “Secara mental lebih tenang dibanding bulan sebelumnya, tetapi respon terhadap hasil buruk masih
+            memengaruhi 1–2 papan berikutnya.”<br>
+            - “Defense planning membaik, terutama pada 2 trik awal, namun kerja sama signaling dengan partner masih
+            perlu diperjelas.”<br>
+            - “Fokus latihan bulan depan diarahkan pada declarer play, khususnya timing, entry management, dan pembacaan
+            distribusi.”
+          </div>
+        </div>
+      </section>
+
+      <!-- I. Petunjuk Umum Program Latihan -->
+      <section class="section-card guide-section">
+        <div class="guide-title" onclick="toggleSection(this)">
+          <div class="guide-title-text">
+            <span>I.</span> Petunjuk Umum Program Latihan
+          </div>
+          <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+          </svg>
+        </div>
+        <div class="guide-content">
+          <p>Agar hasil monitoring dapat diikuti dengan perbaikan yang terukur, disarankan setiap atlet memiliki target
+            latihan bulanan dan mingguan.</p>
+
+          <div class="sub-indicator-list">
+            <!-- I.1 -->
+            <div class="indicator-item">
+              <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                <span class="indicator-title">1. Saran Frekuensi Latihan</span>
+                <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                  <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                </svg>
+              </div>
+              <div class="indicator-body">
+                <p><b>Latihan Standar:</b> Minimal 3 kali per minggu atau 12–16 sesi per bulan.</p>
+                <p><b>Pembinaan Prestasi:</b> 4–5 kali per minggu atau 16–20 sesi per bulan.</p>
+                <p class="mt-2 text-xs text-muted">Frekuensi dapat disesuaikan dengan program tim dan kalender turnamen.
+                </p>
+              </div>
+            </div>
+
+            <!-- I.2 -->
+            <div class="indicator-item">
+              <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                <span class="indicator-title">2. Saran Volume Board</span>
+                <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                  <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                </svg>
+              </div>
+              <div class="indicator-body">
+                <p><b>Rekomendasi Minimum:</b> 24–36 board/minggu atau 96–144 board/bulan.</p>
+                <p><b>Pembinaan Prestasi:</b> 40–60 board/minggu atau 160–240 board/bulan.</p>
+                <p class="mt-2 text-xs text-muted">Meliputi latihan meja, simulasi, sparring, dan analisis board.</p>
+              </div>
+            </div>
+
+            <!-- I.3 -->
+            <div class="indicator-item">
+              <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                <span class="indicator-title">3. Komposisi Latihan</span>
+                <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                  <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                </svg>
+              </div>
+              <div class="indicator-body">
+                <ul class="guide-list text-xs">
+                  <li><b>40%</b> Bermain/Simulasi board</li>
+                  <li><b>25%</b> Review bidding dan agreement</li>
+                  <li><b>20%</b> Analisis declarer play dan defense</li>
+                  <li><b>15%</b> Evaluasi mental, partnership, dan diskusi error</li>
+                </ul>
+                <p class="mt-2 text-xs text-muted">Disesuaikan dengan hasil monitoring (misal: porsi Bidding ditambah
+                  jika nilai rendah).</p>
+              </div>
+            </div>
+
+            <!-- I.4 -->
+            <div class="indicator-item">
+              <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                <span class="indicator-title">4. Target Latihan Mingguan</span>
+                <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                  <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                </svg>
+              </div>
+              <div class="indicator-body">
+                <p>Contoh pembagian fokus mingguan:</p>
+                <ul class="guide-list text-xs">
+                  <li>1 sesi fokus Bidding</li>
+                  <li>1 sesi fokus Declarer Play</li>
+                  <li>1 sesi fokus Defense</li>
+                  <li>1 sesi Sparring/Simulasi penuh</li>
+                  <li>1 sesi Evaluasi Pasangan/Review board</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- I.5 -->
+            <div class="indicator-item">
+              <div class="indicator-header" onclick="toggleIndicator(event, this)">
+                <span class="indicator-title">5. Penyesuaian Berdasarkan Monitoring</span>
+                <svg class="indicator-chevron" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                  <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+                </svg>
+              </div>
+              <div class="indicator-body">
+                <ul class="guide-list text-xs">
+                  <li><b>Bidding rendah:</b> Tambah latihan auction & agreement.</li>
+                  <li><b>Declarer rendah:</b> Tambah latihan planning & timing.</li>
+                  <li><b>Defense rendah:</b> Tambah latihan signaling & lead.</li>
+                  <li><b>Mental rendah:</b> Evaluasi tempo & respon tekanan.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- J. Penutup -->
+      <section class="section-card guide-section">
+        <div class="guide-title" onclick="toggleSection(this)">
+          <div class="guide-title-text">
+            <span>J.</span> Penutup
+          </div>
+          <svg class="chevron-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z" />
+          </svg>
+        </div>
+        <div class="guide-content">
+          <p>Form monitoring ini diharapkan menjadi alat evaluasi bulanan yang objektif, konsisten, dan bermanfaat dalam
+            proses pembinaan atlet bridge.</p>
+          <div class="highlight-box" style="background: #f0fdfa; border-color: #5eead4; color: #0d9488;">
+            Nilai angka harus dipahami bersama dengan catatan indikator dan catatan pelatih agar hasil evaluasi dapat
+            merancang perbaikan yang terarah.
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="assets/js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (typeof requireLogin === 'function') {
+        await requireLogin();
+      }
+    });
+
+    function toggleSection(element) {
+      const section = element.parentElement;
+      section.classList.toggle('open');
+      // Auto-open children removed as requested (2 level tertutup default)
+    }
+
+    function toggleIndicator(event, element) {
+      event.stopPropagation();
+      element.parentElement.classList.toggle('open');
+    }
+  </script>
+</body>
+
+</html>
