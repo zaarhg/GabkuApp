@@ -94,6 +94,18 @@
           <div id="sysList" class="mt-2"></div>
         </section>
 
+        <section class="section-card">
+          <div class="section-title">Kegiatan Unggulan (Dashboard)</div>
+          <p class="hint text-xs text-muted mb-2">Pilih kegiatan yang ingin ditampilkan statistiknya di halaman
+            Dashboard utama.</p>
+          <div class="flex gap-2">
+            <select id="dashActivitySel" class="field flex-1">
+              <option value="">-- Pilih Kegiatan --</option>
+            </select>
+            <button id="saveDashActivityBtn" class="btn-primary px-4 w-auto flex-none" type="button">Simpan</button>
+          </div>
+        </section>
+
         <p id="msgEl" class="tool-msg text-center"></p>
     </main>
   </div>
@@ -142,8 +154,11 @@
         if (error) throw error;
 
         const timeRow = data.find(r => r.setting_key === 'time_options');
+        const locRow = data.find(r => r.setting_key === 'location_options');
+        const pengRow = data.find(r => r.setting_key === 'pengurus_options');
         const sysRow = data.find(r => r.setting_key === 'system_options');
         const pointRow = data.find(r => r.setting_key === 'attendance_points');
+        const dashActRow = data.find(r => r.setting_key === 'dashboard_activity');
 
         timeOptions = timeRow ? timeRow.setting_value : [];
         locOptions = locRow ? locRow.setting_value : [];
@@ -166,6 +181,14 @@
         renderLocSettings();
         renderPengurusSettings();
         renderSysSettings();
+
+        // Load Activities for Dashboard Selector
+        const { data: acts } = await supabaseClient.from('activities').select('name').eq('is_active', true).order('name');
+        if (acts) {
+          const sel = document.getElementById('dashActivitySel');
+          sel.innerHTML = '<option value="">-- Semua Kegiatan --</option>' +
+            acts.map(a => `<option value="${escapeHtml(a.name)}" ${dashActRow && dashActRow.setting_value === a.name ? 'selected' : ''}>${escapeHtml(a.name)}</option>`).join('');
+        }
       } catch (e) {
         timeListEl.innerHTML = ""; locListEl.innerHTML = ""; pengurusListEl.innerHTML = ""; sysListEl.innerHTML = "";
         msgEl.style.color = "red"; msgEl.textContent = "Error: " + e.message;
@@ -331,6 +354,12 @@
       if (isNaN(val)) return alert("Masukkan angka point yang valid.");
       await saveSettingToDb('attendance_points', val);
       alert("Point berhasil disimpan.");
+    };
+
+    document.getElementById("saveDashActivityBtn").onclick = async () => {
+      const val = document.getElementById("dashActivitySel").value;
+      await saveSettingToDb('dashboard_activity', val);
+      alert("Pilihan kegiatan dashboard berhasil disimpan.");
     };
 
     window.removeSys = async (index) => {
