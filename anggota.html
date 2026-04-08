@@ -37,8 +37,9 @@
     </header>
 
     <main class="app-main">
-      <section class="section-card mt-0 flex justify-center items-center text-primary font-bold" id="toggleAddMemberBtn"
-        style="padding:14px; background:#f8fafc; cursor:pointer; border:1px dashed #cbd5e1; transition:background 0.2s;">
+      <section class="section-card mt-0 flex justify-center items-center text-primary font-bold coach-hidden"
+        id="toggleAddMemberBtn"
+        style="padding:16px; background:var(--brand-50); cursor:pointer; border:1.5px solid var(--brand-100); border-radius:12px; transition:all 0.2s; box-shadow:0 4px 12px rgba(37, 99, 235, 0.08);">
         <span class="text-sm">+ Tambah Anggota Baru</span>
       </section>
 
@@ -227,8 +228,8 @@
             <div class="list-subtitle">${escapeHtml(m.role)} ${m.pengurus_status ? ` - <span class="font-semibold">${escapeHtml(m.pengurus_status)}</span>` : ''}</div>
           </div>
           <div class="flex gap-2">
-            <button class="btn-secondary" style="padding:6px 12px; height:auto; width:auto; font-size:12px; border-radius:6px;" onclick="editMember('${m.id}')">Edit</button>
-            <button class="btn-delete" style="padding:6px 12px; height:auto; width:auto; font-size:12px; border-radius:6px;" onclick="deleteMember('${m.id}', '${escapeHtml(m.name)}')">Hapus</button>
+            <button class="btn-secondary admin-only" style="padding:6px 12px; height:auto; width:auto; font-size:12px; border-radius:6px;" onclick="editMember('${m.id}')">Edit</button>
+            <button class="btn-delete admin-only" style="padding:6px 12px; height:auto; width:auto; font-size:12px; border-radius:6px;" onclick="deleteMember('${m.id}', '${escapeHtml(m.name)}')">Hapus</button>
           </div>
         </div>
       `).join("");

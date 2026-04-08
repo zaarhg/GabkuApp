@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gabku App – Menunggu Persetujuan</title>
+
+  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1590df">
+  <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+  <div class="app">
+    <main class="app-main login-clean">
+      <section class="section-card login-card text-center">
+        <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+        <div class="login-title mb-4">Menunggu Persetujuan</div>
+
+        <h3 class="mb-3">Akun Belum Aktif</h3>
+        <p class="text-sm text-muted mb-5" style="line-height: 1.6;">
+          Terima kasih telah mendaftar. Akun Anda sedang dalam antrean untuk diverifikasi oleh Admin.
+          Silakan hubungi pengurus organisasi untuk mempercepat proses ini.
+        </p>
+
+        <a id="waButton"
+          href="https://wa.me/6285848477782?text=Halo%20Admin,%20saya%20sudah%20mendaftar%20di%20Gabku%20App.%20Mohon%20bantuannya%20untuk%20aktivasi%20akun%20saya.%20Terima%20kasih!"
+          class="btn-primary btn-wide mb-3"
+          style="background: #25D366 !important; border-color: #25D366 !important; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path
+              d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+          </svg>
+          <span>Hubungi Admin via WA</span>
+        </a>
+
+        <button onclick="logout()" class="btn-secondary btn-wide" type="button">
+          Keluar & Coba Lagi
+        </button>
+      </section>
+
+      <p class="login-desc">
+        <em>Status pendaftaran saat ini: <strong>Menunggu Admin</strong></em>
+      </p>
+    </main>
+  </div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/auth.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const { data } = await supabaseClient.auth.getSession();
+      if (!data.session) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      // Cek status terbaru
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('status')
+        .eq('id', data.session.user.id)
+        .maybeSingle();
+
+      if (profile && (profile.status === 'Aktif' || profile.status === 'approved')) {
+        window.location.href = "index.html";
+      }
+
+      // --- FETCH DYNAMIC WA NUMBER ---
+      try {
+        const { data: settings } = await supabaseClient
+          .from('app_settings')
+          .select('setting_value')
+          .eq('setting_key', 'admin_wa_number')
+          .maybeSingle();
+
+        if (settings && settings.setting_value) {
+          let num = settings.setting_value.replace(/[^0-9]/g, '');
+          if (num.startsWith('0')) num = '62' + num.slice(1);
+          const btn = document.getElementById('waButton');
+          const text = encodeURIComponent("Halo Admin, saya sudah mendaftar di Gabku App. Mohon bantuannya untuk aktivasi akun saya. Terima kasih!");
+          btn.href = `https://wa.me/${num}?text=${text}`;
+        }
+      } catch (e) {
+        console.error("Gagal ambil nomor WA:", e);
+      }
+    });
+
+    function asyncConfirm(msg, title = "Peringatan") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        document.getElementById("confirmBtnNo").style.display = 'block';
+        modal.style.display = 'flex';
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+        document.getElementById("confirmBtnNo").onclick = () => { modal.style.display = 'none'; resolve(false); };
+      });
+    }
+
+    function asyncAlert(msg, title = "Informasi") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        document.getElementById("confirmBtnNo").style.display = 'none';
+        modal.style.display = 'flex';
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+      });
+    }
+  </script>
+
+  <!-- Custom Confirm Modal -->
+  <div id="customConfirm" class="modal-overlay" style="display:none;">
+    <div class="modal-card text-center">
+      <h3 class="mt-0 text-base font-bold" id="confirmTitle">Peringatan</h3>
+      <p id="confirmMsg" class="text-sm text-muted mb-5"></p>
+      <div class="flex justify-center gap-3">
+        <button id="confirmBtnNo" class="btn-secondary">Batal</button>
+        <button id="confirmBtnYes" class="btn-primary">Ya, Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>

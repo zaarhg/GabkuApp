@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gabku App – Persetujuan Akun</title>
+
+  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1590df">
+  <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .pending-row {
+      background: white;
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pending-name {
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--text-main);
+    }
+
+    .pending-email {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .form-approve {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app">
+    <header class="app-header">
+      <div class="header-bar">
+        <div class="header-left">
+          <a class="icon-back" href="index.html" aria-label="Kembali">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <path fill="currentColor"
+                d="M15.5 19a1 1 0 0 1-.7-.29l-6-6a1 1 0 0 1 0-1.42l6-6a1 1 0 1 1 1.4 1.42L11.62 12l4.58 4.58A1 1 0 0 1 15.5 19z" />
+            </svg>
+          </a>
+          <div class="header-text">
+            <div class="app-name">Persetujuan Akun</div>
+            <div class="app-subtitle">Kelola pendaftaran user baru</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main" style="padding-bottom: 40px;">
+      <div id="loading" class="text-center py-5">
+        <p class="text-muted">Memuat antrean...</p>
+      </div>
+
+      <div id="emptyState" class="text-center py-5" style="display: none;">
+        <div style="font-size: 48px;">✨</div>
+        <p class="text-muted mt-3">Tidak ada akun yang menunggu persetujuan.</p>
+      </div>
+
+      <div id="pendingList"></div>
+    </main>
+  </div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/auth.js"></script>
+
+  <script>
+    let members = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await requireLogin();
+
+      // Keamanan: Hanya Admin yang boleh di sini
+      const userMeta = JSON.parse(localStorage.getItem('gabku_user_meta') || '{}');
+      if (userMeta.role !== 'admin') {
+        await asyncAlert("Akses ditolak. Anda bukan Admin.", "Akses Ditolak");
+        window.location.href = "index.html";
+        return;
+      }
+
+      await loadMembers();
+      await loadPendingUsers();
+    });
+
+    async function loadMembers() {
+      const { data } = await supabaseClient.from('members').select('id, name').eq('is_active', true).order('name');
+      members = data || [];
+    }
+
+    async function loadPendingUsers() {
+      const loading = document.getElementById('loading');
+      const list = document.getElementById('pendingList');
+      const empty = document.getElementById('emptyState');
+
+      loading.style.display = 'block';
+      list.innerHTML = '';
+      empty.style.display = 'none';
+
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('status', 'Menunggu')
+        .order('created_at', { ascending: true });
+
+      loading.style.display = 'none';
+
+      if (error) {
+        asyncAlert("Gagal memuat data: " + error.message, "Error");
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        empty.style.display = 'block';
+        return;
+      }
+
+      data.forEach(user => {
+        const row = document.createElement('div');
+        row.className = 'pending-row';
+        row.innerHTML = `
+          <div class="pending-name">${user.full_name}</div>
+          <div class="pending-email">${user.email || 'No Email'}</div>
+          
+          <div class="form-approve">
+            <div>
+              <label class="text-xs font-bold text-muted uppercase">Pilih Role</label>
+              <select class="field mt-1" id="role-${user.id}" onchange="toggleMemberSelect('${user.id}')">
+                <option value="atlet">Atlet</option>
+                <option value="pelatih">Pelatih</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div id="member-box-${user.id}">
+              <label class="text-xs font-bold text-muted uppercase">Link ke Data Anggota</label>
+              <select class="field mt-1" id="member-${user.id}">
+                <option value="">-- Pilih Nama Atlet --</option>
+                ${members.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="flex gap-2 mt-2">
+              <button onclick="approveUser('${user.id}')" class="btn-primary" style="flex: 2">Setujui Akun</button>
+              <button onclick="rejectUser('${user.id}')" class="btn-danger" style="flex: 1">Tolak</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function toggleMemberSelect(userId) {
+      const role = document.getElementById(`role-${userId}`).value;
+      const box = document.getElementById(`member-box-${userId}`);
+      box.style.display = (role === 'atlet') ? 'block' : 'none';
+    }
+
+    async function approveUser(userId) {
+      const role = document.getElementById(`role-${userId}`).value;
+      const memberId = document.getElementById(`member-${userId}`).value;
+
+      if (role === 'atlet' && !memberId) {
+        asyncAlert("Silakan pilih data anggota untuk atlet ini.", "Data Belum Lengkap");
+        return;
+      }
+
+      const proceed = await asyncConfirm("Setujui akun ini?", "Konfirmasi Persetujuan");
+      if (!proceed) return;
+
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({
+          role: role,
+          member_id: role === 'atlet' ? memberId : null,
+          status: 'Aktif'
+        })
+        .eq('id', userId);
+
+      if (error) {
+        asyncAlert("Gagal menyetujui: " + error.message, "Gagal");
+      } else {
+        await asyncAlert("Akun berhasil disetujui!", "Berhasil");
+        await loadPendingUsers();
+      }
+    }
+
+    async function rejectUser(userId) {
+      const proceed = await asyncConfirm("Tolak dan hapus permintaan ini?", "Konfirmasi Penolakan");
+      if (!proceed) return;
+
+      const { error } = await supabaseClient
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        asyncAlert("Gagal menghapus: " + error.message, "Gagal");
+      } else {
+        await asyncAlert("Permintaan ditolak.", "Update");
+        await loadPendingUsers();
+      }
+    }
+
+    function asyncConfirm(msg, title = "Peringatan") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        document.getElementById("confirmBtnNo").style.display = 'block';
+        modal.style.display = 'flex';
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+        document.getElementById("confirmBtnNo").onclick = () => { modal.style.display = 'none'; resolve(false); };
+      });
+    }
+
+    function asyncAlert(msg, title = "Informasi") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        document.getElementById("confirmBtnNo").style.display = 'none';
+        modal.style.display = 'flex';
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+      });
+    }
+  </script>
+
+  <!-- Custom Confirm Modal -->
+  <div id="customConfirm" class="modal-overlay" style="display:none;">
+    <div class="modal-card text-center">
+      <h3 class="mt-0 text-base font-bold" id="confirmTitle">Peringatan</h3>
+      <p id="confirmMsg" class="text-sm text-muted mb-5"></p>
+      <div class="flex justify-center gap-3">
+        <button id="confirmBtnNo" class="btn-secondary">Batal</button>
+        <button id="confirmBtnYes" class="btn-primary">Ya, Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>

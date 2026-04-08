@@ -28,6 +28,26 @@
             <div class="app-subtitle">Dashboard Monitoring Tim</div>
           </div>
         </div>
+        <nav class="desktop-nav">
+          <a href="anggota.html">Anggota</a>
+          <a href="monitoring.html">Monitoring</a>
+          <a href="presensi.html" class="nav-accent">Presensi</a>
+
+          <div class="nav-dropdown">
+            <button class="nav-btn">Menu Utama ↓</button>
+            <div class="dropdown-content">
+              <a href="rekap.html">📊 Rekap Absen</a>
+              <a href="riwayat-monitoring.html">📜 Rekap Monitoring</a>
+              <hr class="menu-divider">
+              <a href="kegiatan.html">📅 Kegiatan</a>
+              <a href="manajemen-user.html" class="admin-only">👥 Manajemen User</a>
+              <a href="panduan.html">📖 Panduan</a>
+              <a href="pengaturan.html">⚙️ Seting</a>
+            </div>
+          </div>
+
+          <a href="profil.html">Profil</a>
+        </nav>
 
         <button class="icon-logout" onclick="logout()" aria-label="Keluar" title="Keluar">
           <svg viewBox="0 0 24 24" width="20" height="20">
@@ -40,14 +60,14 @@
 
     <main class="app-main" style="padding-bottom: 100px;">
 
-      <!-- WELCOME CARD -->
-      <section class="section-card mt-0">
-        <div class="welcome-title" id="welcomeUser">Selamat datang 👋</div>
-        <div id="todayDate" class="dash-date">...</div>
-        <div class="welcome-desc mt-2">
-          Ringkasan performa tim Gabku periode bulan ini.
+      <div class="dash-header">
+        <div class="dash-welcome">
+          <div class="welcome-title m-0" id="welcomeUser">Selamat datang 👋</div>
+          <div class="welcome-desc">Ringkasan performa tim saat ini.</div>
         </div>
-      </section>
+        <div id="todayDate" class="dash-date">...</div>
+      </div>
+
 
       <!-- FEATURED ACTIVITY CARD (NEW) -->
       <div id="featuredCard" class="featured-card" style="display: none;">
@@ -75,7 +95,39 @@
           <div class="kpi-label">Skor Monitoring</div>
           <div id="statMonitoring" class="kpi-val">...</div>
         </div>
+        <!-- CARD 3: Jumlah Latihan (Target vs Actual) -->
+        <div id="cardSessions" class="kpi-card">
+          <div class="kpi-label">Latihan Bulan Ini</div>
+          <div id="statSessions" class="kpi-val" style="display: flex; align-items: baseline; gap: 4px;">0 <small
+              id="targetSessionsText" style="font-size: 12px; opacity: 0.6; font-weight: 600;">(dari target 0)</small>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Monitoring</div>
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <div id="statMonLastMonth" class="kpi-val">0</div>
+            <div class="text-xs text-muted">Belum Dimonitoring</div>
+          </div>
+        </div>
       </div>
+
+      <!-- KEGIATAN TERAKHIR (NEW) -->
+      <section id="lastActivityCard" class="section-card"
+        style="display: none; border-left: 4px solid var(--brand-500);">
+        <div class="section-title m-0 mb-3" style="font-size: 13px; color: var(--text-muted);">Kegiatan Terakhir</div>
+        <div class="flex-col gap-1">
+          <div id="lastActName" class="text-base font-extrabold text-main">...</div>
+          <div class="flex items-center gap-2 text-xs text-muted">
+            <span id="lastActDate">...</span>
+            <span>•</span>
+            <span id="lastActLoc">...</span>
+          </div>
+          <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
+            <div class="text-xs font-bold text-muted uppercase">Kehadiran</div>
+            <div id="lastActPresence" class="text-sm font-black text-primary">...%</div>
+          </div>
+        </div>
+      </section>
 
       <!-- PILLAR PROGRESS -->
       <section class="section-card">
@@ -170,7 +222,7 @@
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </a>
-      <button onclick="openManajemen()">
+      <button onclick="openManajemen()" style="position:relative;">
         <svg viewBox="0 0 24 24">
           <rect x="3" y="3" width="7" height="7" />
           <rect x="14" y="3" width="7" height="7" />
@@ -178,6 +230,7 @@
           <rect x="3" y="14" width="7" height="7" />
         </svg>
         <span>Manajemen</span>
+        <div id="navBadge" class="btn-badge" style="display:none;">0</div>
       </button>
       <a href="profil.html">
         <svg viewBox="0 0 24 24">
@@ -192,16 +245,8 @@
     <div id="modalManajemen" class="modal-overlay modal-manajemen" onclick="closeManajemen()">
       <div class="modal-card" onclick="event.stopPropagation()">
         <div class="modal-handle"></div>
-        <div class="section-title m-0 mb-4 text-center">Menu Manajemen</div>
+        <div class="section-title text-center" style="margin-top: 10px; margin-bottom: 32px;">Menu Utama</div>
         <div class="menu-list">
-          <a href="kegiatan.html" class="menu-row">
-            <div class="mr-icon">📅</div>
-            <div class="mr-text">
-              <div class="mr-title">Kegiatan</div>
-              <div class="mr-desc">Atur jadwal & sesi latihan</div>
-            </div>
-            <div class="mr-arrow">›</div>
-          </a>
           <a href="rekap.html" class="menu-row">
             <div class="mr-icon">📊</div>
             <div class="mr-text">
@@ -213,9 +258,27 @@
           <a href="riwayat-monitoring.html" class="menu-row">
             <div class="mr-icon">📜</div>
             <div class="mr-text">
-              <div class="mr-title">Riwayat</div>
+              <div class="mr-title">Rekap Monitoring</div>
               <div class="mr-desc">Arsip hasil penilaian atlet</div>
             </div>
+            <div class="mr-arrow">›</div>
+          </a>
+          <hr class="menu-divider">
+          <a href="kegiatan.html" class="menu-row">
+            <div class="mr-icon">📅</div>
+            <div class="mr-text">
+              <div class="mr-title">Kegiatan</div>
+              <div class="mr-desc">Atur jadwal & sesi latihan</div>
+            </div>
+            <div class="mr-arrow">›</div>
+          </a>
+          <a href="manajemen-user.html" class="menu-row admin-only">
+            <div class="mr-icon">👥</div>
+            <div class="mr-text">
+              <div class="mr-title">Manajemen User</div>
+              <div class="mr-desc">Kelola role, akses, & reset password</div>
+            </div>
+            <div id="userMenuBadge" class="menu-badge" style="display:none;">0</div>
             <div class="mr-arrow">›</div>
           </a>
           <a href="panduan.html" class="menu-row">
@@ -248,15 +311,86 @@
     document.addEventListener('DOMContentLoaded', async () => {
       await requireLogin();
       initDashboard();
+      updateBadges(); // Cek badge saat load
     });
+
+    async function updateBadges() {
+      const userMeta = JSON.parse(localStorage.getItem('gabku_user_meta') || '{}');
+      if (userMeta.role !== 'admin') return;
+
+      try {
+        const { count, error } = await supabaseClient
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'Menunggu');
+
+        if (error) throw error;
+
+        const navB = document.getElementById('navBadge');
+        const menuB = document.getElementById('userMenuBadge');
+
+        if (count > 0) {
+          if (navB) { navB.textContent = count; navB.style.display = 'flex'; }
+          if (menuB) { menuB.textContent = count; menuB.style.display = 'flex'; }
+        } else {
+          if (navB) navB.style.display = 'none';
+          if (menuB) menuB.style.display = 'none';
+        }
+      } catch (e) {
+        console.error("Gagal update badge:", e);
+      }
+    }
 
     function openManajemen() {
       document.getElementById('modalManajemen').classList.add('show');
     }
 
     function closeManajemen() {
-      document.getElementById('modalManajemen').classList.remove('show');
+      const modal = document.getElementById('modalManajemen');
+      const card = modal.querySelector('.modal-card');
+      card.style.transform = ''; // Reset transform for next open
+      modal.classList.remove('show');
     }
+
+    // --- SWIPE TO DISMISS LOGIC ---
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('modalManajemen');
+      const card = modal.querySelector('.modal-card');
+
+      card.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        card.style.transition = 'none'; // Disable transition during drag
+      }, { passive: true });
+
+      card.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+        if (diff > 0) { // Only drag down
+          card.style.transform = `translateY(${diff}px)`;
+        }
+      }, { passive: true });
+
+      card.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        const diff = currentY - startY;
+        card.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+
+        if (diff > 120) { // Trigger pull-down distance
+          closeManajemen();
+        } else {
+          card.style.transform = 'translateY(0)'; // Snap back
+        }
+        startY = 0;
+        currentY = 0;
+      });
+    });
 
     async function initDashboard() {
       // 0. Update Date
@@ -271,9 +405,15 @@
       }
 
       const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-
       try {
+        // Date Calcs (Current & Last Month)
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lmBulan = lastMonthDate.getMonth() + 1;
+        const lmTahun = lastMonthDate.getFullYear();
+        const lmFirst = lastMonthDate.toISOString().split('T')[0];
+        const lmLast = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+
         // Fetch Members for Name Mapping
         const { data: memberList } = await supabaseClient.from('members').select('id, name');
         const memberMap = {};
@@ -286,7 +426,7 @@
         // 1. Team Presence & Featured Activity
         const { data: presRows } = await supabaseClient
           .from('attendance_detail')
-          .select('member_id, presence, attendance_header!inner(date, activity_name_snapshot)')
+          .select('member_id, presence, attendance_header!inner(id, date, activity_name_snapshot, location_snapshot)')
           .gte('attendance_header.date', firstDay);
 
         if (presRows && presRows.length > 0) {
@@ -320,16 +460,76 @@
               document.getElementById('featuredPct').textContent = Math.round((featHadir / featRows.length) * 100) + '%';
             }
           }
+
+          // 1a. Sesi Latihan: Actual vs Target
+          const allSessionDates = [...new Set(presRows.map(r => r.attendance_header.date))];
+          const actualSessions = allSessionDates.length;
+          const targetSessions = Math.floor(now.getDate() / 2);
+          document.getElementById('statSessions').innerHTML = `${actualSessions} <small style="font-size: 12px; opacity: 0.6; font-weight: 600;">(dari target ${targetSessions})</small>`;
+
+          // --- NEW: KEGIATAN TERAKHIR ---
+          const headers = [...new Set(presRows.map(r => r.attendance_header.id))];
+          const lastHeaderId = headers.sort((a, b) => {
+            const dateA = presRows.find(r => r.attendance_header.id === a).attendance_header.date;
+            const dateB = presRows.find(r => r.attendance_header.id === b).attendance_header.date;
+            return new Date(dateB) - new Date(dateA);
+          })[0];
+
+          if (lastHeaderId) {
+            const lastRowSmp = presRows.filter(r => r.attendance_header.id === lastHeaderId);
+            const headerInfo = lastRowSmp[0].attendance_header;
+            const totalL = lastRowSmp.length;
+            const hadirL = lastRowSmp.filter(r => r.presence === 'Hadir').length;
+
+            document.getElementById('lastActivityCard').style.display = 'block';
+            document.getElementById('lastActName').textContent = headerInfo.activity_name_snapshot || 'Kegiatan';
+            document.getElementById('lastActDate').textContent = new Date(headerInfo.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+            document.getElementById('lastActLoc').innerHTML = `<em>${headerInfo.location_snapshot || 'Tanpa Lokasi'}</em>`;
+            document.getElementById('lastActPresence').textContent = `${hadirL}/${totalL} (${Math.round((hadirL / totalL) * 100)}%)`;
+          }
+
+          const sessionCard = document.getElementById('cardSessions');
+          if (actualSessions >= targetSessions) {
+            sessionCard.style.borderColor = "#86efac";
+            sessionCard.style.backgroundColor = "#f0fdf4";
+          } else {
+            sessionCard.style.borderColor = "#fca5a5";
+            sessionCard.style.backgroundColor = "#fef2f2";
+          }
         } else {
           document.getElementById('listTopPresensi').innerHTML = '<p class="text-xs text-muted">Belum ada data bulan ini.</p>';
         }
 
-        // 2. Monitoring Stats (Pilar & Top Monitoring)
+        // 1b. Monitoring Bulan Lalu (Belum Dimonitoring) - RUN INDEPENDENTLY
+        // Ambil daftar yang PERNAH hadir bulan lalu
+        const { data: lmPres } = await supabaseClient
+          .from('attendance_detail')
+          .select('member_id')
+          .eq('presence', 'Hadir')
+          .gte('attendance_header.date', lmFirst)
+          .lte('attendance_header.date', lmLast);
+
+        const attendedLM = [...new Set(lmPres?.map(r => r.member_id) || [])];
+
+        // Ambil daftar yang SUDAH dimonitoring bulan lalu
+        const { data: lmMonCount } = await supabaseClient
+          .from('monitoring_atlet')
+          .select('member_id')
+          .eq('bulan', lmBulan)
+          .eq('tahun', lmTahun);
+
+        const monitoredLMCount = [...new Set(lmMonCount?.map(r => r.member_id) || [])];
+
+        // Hitung yang BELUM dimonitoring
+        const notMonitored = attendedLM.filter(id => !monitoredLMCount.includes(id));
+        document.getElementById('statMonLastMonth').textContent = notMonitored.length;
+
+        // 2. Monitoring Stats (Pilar & Top Monitoring) - MENGGUNAKAN BULAN LALU (Last Month)
         const { data: monRows } = await supabaseClient
           .from('monitoring_atlet')
           .select('member_id, rata_rata_total, data_b1, data_b2, data_b3, data_b4')
-          .eq('bulan', now.getMonth() + 1)
-          .eq('tahun', now.getFullYear());
+          .eq('bulan', lmBulan)
+          .eq('tahun', lmTahun);
 
         if (monRows && monRows.length > 0) {
           let sumTotal = 0, sumB1 = 0, sumB2 = 0, sumB3 = 0, sumB4 = 0;

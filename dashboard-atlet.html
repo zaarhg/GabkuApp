@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gabku – Dashboard Atlet</title>
+
+  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1590df">
+  <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+  <div class="app">
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-bar">
+        <div class="header-left">
+          <div class="logo-badge">
+            <img src="assets/img/logo.png" alt="Gabku Logo" class="app-logo-img" />
+          </div>
+          <div class="header-text">
+            <div class="app-name" id="athleteName">Memuat...</div>
+            <div class="app-subtitle">Dashboard Perkembangan</div>
+          </div>
+        </div>
+        <button class="icon-logout" onclick="logout()" title="Keluar">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor"
+              d="M12 2a1 1 0 0 1 1 1v9a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm-6.36 3.64a1 1 0 0 1 1.41 0 1 1 0 0 1 0 1.41A8 8 0 1 0 17 7.05a1 1 0 1 1 1.41-1.41A10 10 0 1 1 5.64 5.64z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <!-- WELCOME -->
+      <section class="section-card welcome-card">
+        <div class="welcome-text">
+          <p class="text-xs uppercase tracking-widest font-bold opacity-70">Selamat Datang</p>
+          <h2 id="welcomeMsg" class="text-2xl font-black">Halo, Atlet!</h2>
+          <p id="todayDate" class="text-xs mt-1 font-semibold opacity-80">--</p>
+        </div>
+      </section>
+
+      <!-- STATS GRID -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-body">
+            <div class="stat-label">Kehadiran Saya</div>
+            <div class="stat-value" id="myAttendance">0%</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💎</div>
+          <div class="stat-body">
+            <div class="stat-label">Skor Monitoring</div>
+            <div class="stat-value" id="myScore">0.0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHART SECTION -->
+      <section class="section-card">
+        <div class="section-header">
+          <h3 class="section-title">📈 Perkembangan Saya</h3>
+        </div>
+        <div style="height: 200px; width: 100%;">
+          <canvas id="growthChart"></canvas>
+        </div>
+      </section>
+
+      <!-- PILLAR DETAIL -->
+      <section class="section-card">
+        <div class="section-header">
+          <h3 class="section-title">🏆 Statistik Pilar</h3>
+        </div>
+        <div id="pillarStats" class="grid-2 mt-2 gap-3">
+          <div class="pillar-mini">
+            <div class="text-xs font-bold text-muted">B1. Bidding</div>
+            <div class="pillar-bar">
+              <div id="p-b1" class="pillar-fill" style="width: 0%"></div>
+            </div>
+            <div id="v-b1" class="text-sm font-bold mt-1">0.0</div>
+          </div>
+          <div class="pillar-mini">
+            <div class="text-xs font-bold text-muted">B2. Play</div>
+            <div class="pillar-bar">
+              <div id="p-b2" class="pillar-fill" style="width: 0%"></div>
+            </div>
+            <div id="v-b2" class="text-sm font-bold mt-1">0.0</div>
+          </div>
+          <div class="pillar-mini">
+            <div class="text-xs font-bold text-muted">B3. Defense</div>
+            <div class="pillar-bar">
+              <div id="p-b3" class="pillar-fill" style="width: 0%"></div>
+            </div>
+            <div id="v-b3" class="text-sm font-bold mt-1">0.0</div>
+          </div>
+          <div class="pillar-mini">
+            <div class="text-xs font-bold text-muted">B4. Mental</div>
+            <div class="pillar-bar">
+              <div id="p-b4" class="pillar-fill" style="width: 0%"></div>
+            </div>
+            <div id="v-b4" class="text-sm font-bold mt-1">0.0</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/auth.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await requireLogin();
+      initAthleteDashboard();
+    });
+
+    async function initAthleteDashboard() {
+      const userMeta = JSON.parse(localStorage.getItem('gabku_user_meta') || '{}');
+      if (!userMeta.member_id) {
+        alert("Akun Anda belum dihubungkan ke data anggota. Silakan hubungi Admin.");
+        return;
+      }
+
+      document.getElementById('athleteName').textContent = userMeta.full_name;
+      document.getElementById('welcomeMsg').textContent = `Halo, ${userMeta.full_name.split(' ')[0]}!`;
+      document.getElementById('todayDate').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+      try {
+        const memberId = userMeta.member_id;
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+
+        // 1. Fetch Presence
+        const { data: presence } = await supabaseClient
+          .from('attendance_detail')
+          .select('presence')
+          .eq('member_id', memberId)
+          .gte('attendance_header.date', firstDay);
+
+        if (presence && presence.length > 0) {
+          const total = presence.length;
+          const hadir = presence.filter(p => p.presence === 'Hadir').length;
+          document.getElementById('myAttendance').textContent = Math.round((hadir / total) * 100) + '%';
+        }
+
+        // 2. Fetch Monitoring Trends
+        const { data: monData } = await supabaseClient
+          .from('monitoring_atlet')
+          .select('*')
+          .eq('member_id', memberId)
+          .order('tahun', { ascending: true })
+          .order('bulan', { ascending: true })
+          .limit(6);
+
+        if (monData && monData.length > 0) {
+          const last = monData[monData.length - 1];
+          document.getElementById('myScore').textContent = (last.rata_rata_total || 0).toFixed(1);
+
+          // Update Pillars
+          updatePillar('b1', last.data_b1?.rata_rata || 0);
+          updatePillar('b2', last.data_b2?.rata_rata || 0);
+          updatePillar('b3', last.data_b3?.rata_rata || 0);
+          updatePillar('b4', last.data_b4?.rata_rata || 0);
+
+          renderGrowthChart(monData);
+        }
+
+      } catch (e) {
+        console.error("Athlete Dashboard Error:", e);
+      }
+    }
+
+    function updatePillar(id, val) {
+      const pct = Math.min((val / 5) * 100, 100);
+      document.getElementById(`p-${id}`).style.width = pct + '%';
+      document.getElementById(`v-${id}`).textContent = val.toFixed(1);
+    }
+
+    function renderGrowthChart(data) {
+      const ctx = document.getElementById('growthChart').getContext('2d');
+      const labels = data.map(d => `${d.bulan}/${String(d.tahun).slice(-2)}`);
+      const scores = data.map(d => d.rata_rata_total);
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Skor Total',
+            data: scores,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#3b82f6'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { min: 0, max: 5, ticks: { stepSize: 1 } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+  </script>
+
+  <style>
+    .pillar-mini {
+      margin-bottom: 12px;
+    }
+
+    .pillar-bar {
+      height: 8px;
+      background: #f1f5f9;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .pillar-fill {
+      height: 100%;
+      background: var(--brand-600);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  </style>
+
+</body>
+
+</html>

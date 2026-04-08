@@ -170,9 +170,9 @@
     </header>
 
     <main class="app-main">
-      <section class="section-card mt-0 flex justify-center items-center text-primary font-bold"
+      <section class="section-card mt-0 flex justify-center items-center text-primary font-bold admin-only"
         id="toggleAddActivityBtn"
-        style="padding:14px; background:#f8fafc; cursor:pointer; border:1px dashed #cbd5e1; transition:background 0.2s;">
+        style="padding:16px; background:var(--brand-50); cursor:pointer; border:1.5px solid var(--brand-100); border-radius:12px; transition:all 0.2s; box-shadow:0 4px 12px rgba(37, 99, 235, 0.08);">
         <span class="text-sm">+ Tambah Kegiatan Baru</span>
       </section>
 
@@ -497,8 +497,8 @@
               ${r.default_participants && r.default_participants.length ? `<div class="text-xs text-muted mt-1">👥 ${r.default_participants.length} peserta default</div>` : ''}
             </div>
             <div class="flex gap-2">
-              <button class="btn-secondary" style="padding:6px 12px; height:auto; width:auto; font-size:12px; border-radius:6px;" onclick="editActivity('${r.id}')">Edit</button>
-              <button class="btn-delete" style="padding:6px 12px; height:auto; width:auto; font-size:12px; border-radius:6px;" onclick="deleteActivity('${r.id}', '${escapeHtml(r.name)}')">Hapus</button>
+              <button class="btn-secondary admin-only" style="padding:6px 12px; height:auto; width:auto; font-size:12px; border-radius:6px;" onclick="editActivity('${r.id}')">Edit</button>
+              <button class="btn-delete admin-only" style="padding:6px 12px; height:auto; width:auto; font-size:12px; border-radius:6px;" onclick="deleteActivity('${r.id}', '${escapeHtml(r.name)}')">Hapus</button>
             </div>
           </div>
         `).join("");

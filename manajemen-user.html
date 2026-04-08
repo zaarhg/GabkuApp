@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gabku App – Manajemen User</title>
+  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1590df">
+  <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .section-header {
+      margin: 24px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title-text {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--brand-600);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* PENDING CARDS */
+    .pending-card {
+      background: #fdf2f2;
+      /* Subtle red bg for attention */
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1.5px dashed #fca5a5;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pending-info {
+      margin-bottom: 12px;
+    }
+
+    .pending-name {
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--text-main);
+    }
+
+    .pending-email {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .pending-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    /* USER LIST CARDS */
+    .user-card {
+      background: white;
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: start;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .user-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .user-badges {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-role {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
+    .badge-status {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+
+    .badge-status.aktif {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-status.nonaktif {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .actions-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="header-bar">
+        <div class="header-left">
+          <a class="icon-back" href="index.html" aria-label="Kembali">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <path fill="currentColor"
+                d="M15.5 19a1 1 0 0 1-.7-.29l-6-6a1 1 0 0 1 0-1.42l6-6a1 1 0 1 1 1.4 1.42L11.62 12l4.58 4.58A1 1 0 0 1 15.5 19z" />
+            </svg>
+          </a>
+          <div class="header-text">
+            <div class="app-name">Manajemen User</div>
+            <div class="app-subtitle">Kelola akses & verifikasi pendaftar</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main" style="padding-bottom: 60px;">
+
+      <!-- SECTION: PENDING APPROVAL -->
+      <div id="pendingSection" style="display:none;">
+        <div class="section-header">
+          <div class="section-title-text">⏳ Antrean Persetujuan</div>
+        </div>
+        <div id="pendingList"></div>
+      </div>
+
+      <!-- SECTION: ALL USERS -->
+      <div class="section-header">
+        <div class="section-title-text">👥 Semua Pengguna</div>
+      </div>
+
+      <div class="search-bar mb-4">
+        <input type="text" id="searchInput" class="field" placeholder="Cari nama atau email..." />
+      </div>
+
+      <div id="loading" class="text-center py-5">
+        <p class="text-muted">Memuat data pengguna...</p>
+      </div>
+
+      <div id="userList"></div>
+    </main>
+
+    <!-- Modal Edit User -->
+    <div id="editModal" class="modal-overlay" onclick="closeEditModal()">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3 class="mt-0 text-base font-bold">Edit Akses User</h3>
+        <p class="text-xs text-muted mb-4" id="editEmail"></p>
+
+        <input type="hidden" id="editUserId" />
+
+        <div class="mb-4">
+          <label class="text-xs font-bold text-muted uppercase">Role</label>
+          <select class="field mt-1" id="editRole" onchange="toggleMemberSelect('editRole', 'memberBox')">
+            <option value="atlet">Atlet</option>
+            <option value="pelatih">Pelatih</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div id="memberBox" class="mb-5">
+          <label class="text-xs font-bold text-muted uppercase">Link ke Data Anggota</label>
+          <select class="field mt-1" id="editMemberId">
+            <option value="">-- Pilih Nama Atlet --</option>
+          </select>
+        </div>
+
+        <button class="btn-primary btn-wide mb-3" onclick="saveAkses()">Simpan Perubahan</button>
+        <button class="btn-secondary btn-wide" onclick="closeEditModal()">Batal</button>
+      </div>
+    </div>
+
+    <!-- Modal Reset Password -->
+    <div id="passwordModal" class="modal-overlay" onclick="closePasswordModal()">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3 class="mt-0 text-base font-bold">Setel Sandi Baru</h3>
+        <p class="text-xs text-muted mb-4" id="pwEmail"></p>
+
+        <div class="mb-5">
+          <label class="text-xs font-bold text-muted uppercase">Password Baru</label>
+          <input type="text" class="field mt-1" id="newPassword" placeholder="Masukkan sandi baru..." />
+        </div>
+
+        <button class="btn-primary btn-wide mb-3" onclick="submitResetPassword()">Update Sandi Sekarang</button>
+        <button class="btn-secondary btn-wide" onclick="closePasswordModal()">Batal</button>
+      </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="customConfirm" class="modal-overlay" style="display:none;">
+      <div class="modal-card text-center">
+        <h3 class="mt-0 text-base font-bold" id="confirmTitle">Peringatan</h3>
+        <p id="confirmMsg" class="text-sm text-muted mb-5"></p>
+        <div class="flex justify-center gap-3">
+          <button id="confirmBtnNo" class="btn-secondary">Batal</button>
+          <button id="confirmBtnYes" class="btn-primary">Ya, Lanjutkan</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/auth.js"></script>
+
+  <script>
+    let _allUsers = [];
+    let _allMembers = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await requireLogin();
+
+      const userMeta = JSON.parse(localStorage.getItem('gabku_user_meta') || '{}');
+      if (userMeta.role !== 'admin') {
+        await asyncAlert("Akses ditolak. Anda bukan Admin.", "Akses Terbatas");
+        window.location.href = "index.html";
+        return;
+      }
+
+      await loadInitialData();
+    });
+
+    async function loadInitialData() {
+      // Fetch Members for dropdowns
+      const { data: members } = await supabaseClient.from('members').select('id, name').eq('is_active', true).order('name');
+      _allMembers = members || [];
+
+      const mSel = document.getElementById('editMemberId');
+      mSel.innerHTML = '<option value="">-- Pilih Nama Atlet --</option>' +
+        _allMembers.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+
+      await loadAllData();
+    }
+
+    async function loadAllData() {
+      const loading = document.getElementById('loading');
+      const list = document.getElementById('userList');
+      const pendingSection = document.getElementById('pendingSection');
+      const pendingList = document.getElementById('pendingList');
+
+      loading.style.display = 'block';
+      list.innerHTML = '';
+      pendingSection.style.display = 'none';
+
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .order('full_name', { ascending: true });
+
+      loading.style.display = 'none';
+
+      if (error) {
+        asyncAlert("Gagal memuat: " + error.message, "Error");
+        return;
+      }
+
+      _allUsers = data || [];
+
+      // Filter Pending
+      const waiting = _allUsers.filter(u => u.status === 'Menunggu');
+      const approved = _allUsers.filter(u => u.status !== 'Menunggu');
+
+      // Render Pending if exists
+      if (waiting.length > 0) {
+        pendingSection.style.display = 'block';
+        renderPending(waiting);
+      }
+
+      // Render All Approved Users
+      renderUsers(approved);
+    }
+
+    function renderPending(users) {
+      const list = document.getElementById('pendingList');
+      list.innerHTML = users.map(u => `
+        <div class="pending-card">
+          <div class="pending-info">
+            <div class="pending-name">${escapeHtml(u.full_name)}</div>
+            <div class="pending-email">${escapeHtml(u.email)}</div>
+          </div>
+          
+          <div class="pending-form">
+            <div>
+              <label class="text-[10px] font-bold text-muted uppercase">Setel Role</label>
+              <select class="field mt-1" id="role-${u.id}" onchange="toggleMemberSelect('role-${u.id}', 'mbox-${u.id}')">
+                <option value="atlet">Atlet</option>
+                <option value="pelatih">Pelatih</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div id="mbox-${u.id}">
+              <label class="text-[10px] font-bold text-muted uppercase">Link ke Data Anggota</label>
+              <select class="field mt-1" id="member-${u.id}">
+                <option value="">-- Pilih Nama Atlet --</option>
+                ${_allMembers.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="flex gap-2 mt-2">
+              <button onclick="approveUser('${u.id}')" class="btn-primary" style="flex: 2; height:38px;">Setujui Akun</button>
+              <button onclick="rejectUser('${u.id}')" class="btn-danger" style="flex: 1; height:38px; border:1px solid #fee2e2; background:transparent !important; color:#dc2626 !important;">Tolak</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderUsers(users) {
+      const list = document.getElementById('userList');
+      if (!users.length) {
+        list.innerHTML = '<p class="text-center text-muted py-10">Tidak ada user terdaftar.</p>';
+        return;
+      }
+
+      list.innerHTML = users.map(u => {
+        const statusClass = (u.status || '').toLowerCase() === 'aktif' ? 'aktif' : ((u.status || '').toLowerCase() === 'nonaktif' ? 'nonaktif' : '');
+        return `
+          <div class="user-card">
+            <div class="user-info">
+              <div class="user-avatar">${(u.full_name || 'U').charAt(0)}</div>
+              <div class="user-details">
+                <div class="user-name">${escapeHtml(u.full_name)}</div>
+                <div class="user-email">${escapeHtml(u.email)}</div>
+                <div class="user-badges">
+                  <span class="badge badge-role">${escapeHtml(u.role)}</span>
+                  <span class="badge badge-status ${statusClass}">${escapeHtml(u.status)}</span>
+                  ${u.member_id ? `<span class="badge" style="background:#f1f5f9;color:#475569;">Linked</span>` : ''}
+                </div>
+              </div>
+            </div>
+            
+            <div class="actions-row">
+              <button onclick="openEditModal('${u.id}')" class="btn-secondary" style="font-size:11px; padding:8px;">Ubah Akses</button>
+              <button onclick="openPasswordModal('${u.id}', '${u.email}')" class="btn-secondary" style="font-size:11px; padding:8px;">Set Sandi Baru</button>
+            </div>
+            <div class="actions-row">
+              ${u.status === 'Nonaktif'
+            ? `<button onclick="toggleStatus('${u.id}', 'Aktif')" class="btn-primary" style="font-size:11px; padding:8px; background:#16a34a !important;">Aktifkan</button>`
+            : `<button onclick="toggleStatus('${u.id}', 'Nonaktif')" class="btn-danger" style="font-size:11px; padding:8px;">Banned</button>`
+          }
+              <button onclick="hapusUser('${u.id}', '${escapeHtml(u.full_name)}')" class="btn-danger" style="font-size:11px; padding:8px; border:1px solid #fee2e2; background:transparent !important; color:#dc2626 !important;">Hapus</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- APPROVAL LOGIC ---
+    window.approveUser = async (userId) => {
+      const role = document.getElementById(`role-${userId}`).value;
+      const mId = document.getElementById(`member-${userId}`).value;
+
+      if (role === 'atlet' && !mId) return asyncAlert("Silakan pilih data anggota.", "Data Kurang");
+
+      const proceed = await asyncConfirm("Setujui akun ini?", "Konfirmasi");
+      if (!proceed) return;
+
+      try {
+        const { error } = await supabaseClient.from('profiles').update({
+          role: role,
+          member_id: role === 'atlet' ? mId : null,
+          status: 'Aktif'
+        }).eq('id', userId);
+
+        if (error) throw error;
+        await loadAllData();
+      } catch (err) { asyncAlert("Gagal: " + err.message); }
+    };
+
+    window.rejectUser = async (userId) => {
+      const proceed = await asyncConfirm("Tolak & hapus permintaan pendaftaran ini?", "Konfirmasi");
+      if (!proceed) return;
+
+      try {
+        const { error } = await supabaseClient.from('profiles').delete().eq('id', userId);
+        if (error) throw error;
+        await loadAllData();
+      } catch (err) { asyncAlert("Gagal: " + err.message); }
+    };
+
+    // --- SEARCH ---
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      const approved = _allUsers.filter(u => u.status !== 'Menunggu');
+      const filtered = approved.filter(u =>
+        (u.full_name || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q)
+      );
+      renderUsers(filtered);
+    });
+
+    // --- MODALS ---
+    window.openEditModal = (userId) => {
+      const u = _allUsers.find(x => x.id === userId);
+      if (!u) return;
+      document.getElementById('editUserId').value = u.id;
+      document.getElementById('editEmail').textContent = u.email;
+      document.getElementById('editRole').value = u.role || 'atlet';
+      document.getElementById('editMemberId').value = u.member_id || '';
+      toggleMemberSelect('editRole', 'memberBox');
+      document.getElementById('editModal').classList.add('show');
+    };
+    window.closeEditModal = () => document.getElementById('editModal').classList.remove('show');
+
+    window.toggleMemberSelect = (roleId, boxId) => {
+      const role = document.getElementById(roleId).value;
+      document.getElementById(boxId).style.display = (role === 'atlet') ? 'block' : 'none';
+    };
+
+    window.saveAkses = async () => {
+      const userId = document.getElementById('editUserId').value;
+      const role = document.getElementById('editRole').value;
+      const mId = document.getElementById('editMemberId').value;
+      if (role === 'atlet' && !mId) return asyncAlert("Data Kurang.");
+      try {
+        const { error } = await supabaseClient.from('profiles').update({ role, member_id: role === 'atlet' ? mId : null }).eq('id', userId);
+        if (error) throw error;
+        closeEditModal();
+        await loadAllData();
+      } catch (err) { asyncAlert("Gagal: " + err.message); }
+    };
+
+    window.openPasswordModal = (userId, email) => {
+      document.getElementById('editUserId').value = userId;
+      document.getElementById('pwEmail').textContent = email;
+      document.getElementById('newPassword').value = '';
+      document.getElementById('passwordModal').classList.add('show');
+    };
+    window.closePasswordModal = () => document.getElementById('passwordModal').classList.remove('show');
+
+    window.submitResetPassword = async () => {
+      const userId = document.getElementById('editUserId').value;
+      const newPw = document.getElementById('newPassword').value.trim();
+      if (newPw.length < 6) return asyncAlert("Sandi minimal 6 karakter.");
+
+      try {
+        const btn = document.querySelector('#passwordModal .btn-primary');
+        btn.textContent = 'Memproses...'; btn.disabled = true;
+        await apiPost("resetPasswordAdmin", { userId, newPassword: newPw });
+        await asyncAlert("Sandi berhasil diubah!", "Berhasil");
+        closePasswordModal();
+      } catch (err) { asyncAlert("Gagal: " + err.message); }
+      finally {
+        const btn = document.querySelector('#passwordModal .btn-primary');
+        btn.textContent = 'Update Sandi Sekarang'; btn.disabled = false;
+      }
+    };
+
+    // --- MGMT ---
+    window.toggleStatus = async (userId, newStatus) => {
+      const proceed = await asyncConfirm(`Yakin ingin mengubah status?`);
+      if (!proceed) return;
+      try {
+        const { error } = await supabaseClient.from('profiles').update({ status: newStatus }).eq('id', userId);
+        if (error) throw error;
+        await loadAllData();
+      } catch (err) { asyncAlert("Gagal: " + err.message); }
+    };
+
+    window.hapusUser = async (userId, name) => {
+      const proceed = await asyncConfirm(`Hapus permanent akun ${name}?`);
+      if (!proceed) return;
+      try {
+        const { error } = await supabaseClient.from('profiles').delete().eq('id', userId);
+        if (error) throw error;
+        await loadAllData();
+      } catch (err) { asyncAlert("Gagal: " + err.message); }
+    };
+
+    function escapeHtml(s) { return String(s || '').replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"); }
+
+    function asyncConfirm(msg, title = "Peringatan") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        modal.style.display = 'flex';
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+        document.getElementById("confirmBtnNo").onclick = () => { modal.style.display = 'none'; resolve(false); };
+      });
+    }
+
+    function asyncAlert(msg, title = "Informasi") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        document.getElementById("confirmBtnNo").style.display = 'none';
+        modal.style.display = 'flex';
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+      });
+    }
+  </script>
+</body>
+
+</html>
