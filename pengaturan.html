@@ -118,6 +118,17 @@
           </div>
         </section>
 
+        <section class="section-card">
+          <div class="section-title">Bobot Kehadiran Monitoring (%)</div>
+          <p class="hint text-xs text-muted mb-2">Porsi nilai kehadiran atlet (0-100) terhadap Skor Performa Total.
+            Sisanya adalah nilai rata-rata pilar b1-b4.</p>
+          <div class="flex gap-2">
+            <input id="monWeightInput" type="number" class="field flex-1" placeholder="Default: 30" min="0" max="100" />
+            <button id="saveMonWeightBtn" class="btn-primary px-4 w-auto flex-none admin-only"
+              type="button">Simpan</button>
+          </div>
+        </section>
+
         <p id="msgEl" class="tool-msg text-center"></p>
     </main>
   </div>
@@ -186,6 +197,9 @@
 
         const waRow = data.find(r => r.setting_key === 'admin_wa_number');
         document.getElementById('waInput').value = waRow ? waRow.setting_value : '085848477782';
+
+        const monWeightRow = data.find(r => r.setting_key === 'monitoring_weight_absensi');
+        document.getElementById('monWeightInput').value = monWeightRow ? monWeightRow.setting_value : 30;
 
         // Sorting
         timeOptions.sort();
@@ -382,6 +396,13 @@
       if (!val) return alert("Masukkan nomor WA yang valid.");
       await saveSettingToDb('admin_wa_number', val);
       alert("Nomor WA Admin berhasil disimpan.");
+    };
+
+    document.getElementById("saveMonWeightBtn").onclick = async () => {
+      const val = parseInt(document.getElementById("monWeightInput").value);
+      if (isNaN(val) || val < 0 || val > 100) return alert("Masukkan angka bobot antara 0 - 100.");
+      await saveSettingToDb('monitoring_weight_absensi', val);
+      alert("Bobot monitoring berhasil disimpan.");
     };
 
     window.removeSys = async (index) => {

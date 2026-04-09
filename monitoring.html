@@ -240,6 +240,27 @@
       color: #64748b;
     }
 
+    /* Picker All Option */
+    .picker-item.all-option {
+      background: #f0fdf4;
+      border: 1px dashed #22c55e;
+      margin-bottom: 8px;
+    }
+
+    .picker-item.all-option .picker-item-name {
+      color: #15803d;
+      font-weight: 800;
+    }
+
+    .picker-item.all-option .picker-check {
+      border-color: #22c55e;
+    }
+
+    .picker-item.all-option.selected .picker-check {
+      background: #22c55e;
+      border-color: #22c55e;
+    }
+
     /* Indikator form rows */
     .indikator-row {
       background: #f8fafc;
@@ -247,6 +268,98 @@
       border-radius: 10px;
       padding: 12px;
       margin-bottom: 10px;
+    }
+
+    /* Status Monitoring Table (Recap) */
+    .recap-container {
+      margin-top: 15px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .recap-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .recap-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .recap-table th,
+    .recap-table td {
+      border: 1px solid #f1f5f9;
+      padding: 10px 6px;
+      text-align: center;
+      min-width: 32px;
+    }
+
+    .recap-table th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    /* Sticky first column (Nama Atlet) */
+    .recap-table th:first-child,
+    .recap-table td:first-child {
+      position: sticky;
+      left: 0;
+      background: #fff;
+      z-index: 10;
+      text-align: left;
+      min-width: 110px;
+      max-width: 110px;
+      border-right: 2px solid #e2e8f0;
+      padding-left: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .recap-table th:first-child {
+      background: #f8fafc;
+    }
+
+    .recap-table tr:hover td {
+      background: #f1f5f9;
+    }
+
+    .recap-table tr:hover td:first-child {
+      background: #f1f5f9;
+    }
+
+    .status-ok {
+      color: #16a34a;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .status-empty {
+      color: #cbd5e1;
+      font-size: 14px;
+    }
+
+    .status-future {
+      background-color: #f1f5f9 !important;
+      color: #cbd5e1;
+      cursor: not-allowed !important;
+    }
+
+    .recap-name {
+      color: #1e293b;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .recap-name:hover {
+      color: #1590df;
+      text-decoration: underline;
     }
 
     .indikator-label {
@@ -554,6 +667,9 @@
           Konfirmasi Pilihan
         </button>
         <p id="phase1-msg" class="text-danger text-sm mt-3 text-center" style="min-height:18px;"></p>
+
+        <!-- Container Rekap Status -->
+        <div id="monStatusArea"></div>
       </section>
 
       <!-- ===== FASE 2: PROFIL + RIWAYAT ===== -->
@@ -662,9 +778,12 @@
 
           <section class="section-card">
             <label class="field-label" for="inputSistem">Sistem Utama Pasangan (Opsional)</label>
-            <select id="inputSistem" class="field">
+            <select id="inputSistem" class="field mb-3">
               <option value="">— Pilih Sistem —</option>
             </select>
+
+            <label class="field-label" for="inputVo2max">Nilai VO₂max (Opsional)</label>
+            <input type="number" id="inputVo2max" class="field" step="0.1" placeholder="Cth: 45.5" />
           </section>
 
           <div id="penilaianContainer"></div>
@@ -735,6 +854,7 @@
     let _allMembers = [];
     let _allActivities = [];
     let _historyCache = [];
+    let _monWeightAbsensi = 30; // % bobot kehadiran
 
     /* =====================================================
      * INIT
@@ -777,6 +897,16 @@
       selTahun.addEventListener('change', updateMonthOptions);
       updateMonthOptions();
 
+      // Restore activity selection
+      const savedActId = localStorage.getItem('mon_last_activity');
+      if (savedActId) {
+        const selK = document.getElementById('filterKegiatan');
+        if (selK) {
+          selK.value = savedActId;
+          selK.dispatchEvent(new Event('change'));
+        }
+      }
+
       // Restore atlet yang terakhir dipilih sebelum refresh
       const savedMemberId = localStorage.getItem('mon_last_member');
       if (savedMemberId && _allMembers.length) {
@@ -786,6 +916,7 @@
           _renderProfile(member);
           await loadMonitoringHistory(member.id);
           showPhase(2);
+          updateMonStatusTable(); // Sembunyikan jika masuk phase 2
         } else {
           localStorage.removeItem('mon_last_member'); // ID sudah tidak valid, hapus
         }
@@ -799,7 +930,7 @@
       try {
         const [{ data: members, error: errM }, { data: activities, error: errA }, { data: settings, error: errS }] = await Promise.all([
           supabaseClient.from('members').select('id,name,role,gender,birth_date,phone').eq('is_active', true).order('name'),
-          supabaseClient.from('activities').select('id,name,default_participants').eq('is_active', true).order('name'),
+          supabaseClient.from('activities').select('id,name,default_participants,start_date,end_date').eq('is_active', true).order('name'),
           supabaseClient.from('app_settings').select('*')
         ]);
 
@@ -820,6 +951,8 @@
           sysOptions.sort().forEach(s => {
             selS.innerHTML += `<option value="${escHtml(s)}">${escHtml(s)}</option>`;
           });
+          const wRow = settings.find(r => r.setting_key === 'monitoring_weight_absensi');
+          if (wRow) _monWeightAbsensi = parseInt(wRow.setting_value) ?? 30;
         }
       } catch (err) { console.error('loadDropdowns:', err); }
     }
@@ -856,7 +989,22 @@
         return;
       }
 
-      listEl.innerHTML = pool.map(m => {
+      let html = '';
+
+      // Tambahkan opsi "Semua Atlet" jika tidak sedang mencari
+      if (!q.trim()) {
+        const isAllSelected = !currentId;
+        html += `
+          <div class="picker-item all-option${isAllSelected ? ' selected' : ''}" onclick="selectMonMember('','',true)">
+            <div class="picker-check">${isAllSelected ? '✓' : ''}</div>
+            <div class="flex-1">
+              <div class="picker-item-name">🔄 Pilih Seluruh Atlet</div>
+              <div class="picker-item-role">Recap status kegiatan</div>
+            </div>
+          </div>`;
+      }
+
+      html += pool.map(m => {
         const sel = m.id === currentId;
         return `
           <div class="picker-item${sel ? ' selected' : ''}" onclick="selectMonMember('${m.id}','${escHtml(m.name)}',${sel})">
@@ -867,21 +1015,165 @@
             </div>
           </div>`;
       }).join('');
+
+      listEl.innerHTML = html;
     }
     function selectMonMember(id, name, isAlreadySelected) {
       const input = document.getElementById('selectAtlet');
       const text = document.getElementById('selectAtletText');
+      const actId = document.getElementById('filterKegiatan').value;
 
       if (isAlreadySelected) {
         input.value = '';
-        text.textContent = 'Pilih atlet...';
-        text.style.color = '#94a3b8';
+        if (actId) {
+          text.textContent = 'Keseluruhan atlet';
+        } else {
+          text.textContent = 'Pilih atlet...';
+          text.style.color = '#94a3b8';
+        }
       } else {
         input.value = id;
         text.textContent = name;
         text.style.color = '#111827';
       }
       closeMonPicker();
+      document.getElementById('monStatusArea').innerHTML = ''; // Sembunyikan jika atlet terpilih
+    }
+
+    async function updateMonStatusTable() {
+      const actId = document.getElementById('filterKegiatan').value;
+      const atletId = document.getElementById('selectAtlet').value;
+      const area = document.getElementById('monStatusArea');
+
+      const act = _allActivities.find(a => a.id === actId);
+      if (!act || !act.default_participants || act.default_participants.length === 0) {
+        area.innerHTML = '<div class="empty-state">Kegiatan ini belum memiliki daftar peserta.</div>';
+        return;
+      }
+
+      area.innerHTML = '<div class="empty-state">Memuat status…</div>';
+
+      try {
+        const now = new Date();
+        const curM = now.getMonth() + 1;
+        const curY = now.getFullYear();
+        const curOrd = curY * 100 + curM;
+
+        // Tentukan Rentang Bulan dari Template
+        let colPeriods = [];
+        if (act.start_date && act.end_date) {
+          const [sy, sm] = act.start_date.split('-').map(Number);
+          const [ey, em] = act.end_date.split('-').map(Number);
+
+          let ty = sy, tm = sm;
+          while (ty < ey || (ty === ey && tm <= em)) {
+            colPeriods.push({ m: tm, y: ty });
+            tm++;
+            if (tm > 12) { tm = 1; ty++; }
+            if (colPeriods.length > 24) break; // Limit 2 tahun max biar tidak meledak
+          }
+        }
+
+        // Jika tidak ada tanggal di template, default 12 bulan tahun berjalan
+        if (colPeriods.length === 0) {
+          for (let m = 1; m <= 12; m++) colPeriods.push({ m, y: curY });
+        }
+
+        const { data: records, error } = await supabaseClient
+          .from('monitoring_atlet')
+          .select('member_id, bulan, tahun')
+          .eq('activity_id', actId); // Fetch semua untuk kegiatan ini
+
+        if (error) throw error;
+
+        const statusMap = {};
+        records.forEach(r => {
+          const key = `${r.y}-${r.m}`; // note: data in DB uses tahun, bulan
+          if (!statusMap[r.member_id]) statusMap[r.member_id] = {};
+          statusMap[r.member_id][`${r.tahun}-${r.bulan}`] = true;
+        });
+
+        const mNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        const participants = act.default_participants;
+        const rows = participants.map(p => {
+          const m = _allMembers.find(mem => mem.id === p.member_id);
+          return { id: p.member_id, name: m ? m.name : 'Unknown' };
+        }).sort((a, b) => a.name.localeCompare(b.name));
+
+        let html = `
+          <div class="recap-container">
+            <div class="header-text px-3 pt-3" style="font-size:12px; font-weight:700; color:#475569;">
+              Status Pengisian (${act.name})
+            </div>
+            <div class="recap-scroll">
+              <table class="recap-table">
+                <thead>
+                  <tr>
+                    <th>Nama Atlet</th>
+                    ${colPeriods.map(p => `<th>${mNames[p.m - 1]}<br><small style="font-weight:400; font-size:9px;">${p.y}</small></th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+        `;
+
+        // (now, curM, curY, curOrd sudah dideklarasikan di atas)
+
+        rows.forEach(row => {
+          html += `<tr>`;
+          html += `<td class="recap-name" onclick="selectMonMember('${row.id}','${escHtml(row.name)}',false)">${escHtml(row.name)}</td>`;
+          colPeriods.forEach(p => {
+            const pOrd = p.y * 100 + p.m;
+            const isFuture = pOrd > curOrd;
+            const ok = statusMap[row.id] && statusMap[row.id][`${p.y}-${p.m}`];
+
+            if (isFuture) {
+              html += `<td class="status-future" title="Bulan depan belum tersedia">•</td>`;
+            } else {
+              html += `<td onclick="quickEditMonitoring('${row.id}','${escHtml(row.name)}',${p.m},${p.y})" style="cursor:pointer">
+                ${ok ? '<span class="status-ok">✓</span>' : '<span class="status-empty">•</span>'}
+              </td>`;
+            }
+          });
+          html += `</tr>`;
+        });
+
+        html += `
+                </tbody>
+              </table>
+            </div>
+            <p class="text-xs text-slate-500 mt-2 italic px-3 pb-3">
+              💡 Tip: Klik pada titik (•) atau centang (✓) untuk mengisi data secara cepat.
+            </p>
+          </div>
+        `;
+        area.innerHTML = html;
+      } catch (err) {
+        console.error(err);
+        area.innerHTML = '<div class="empty-state text-danger">Gagal memuat rekap.</div>';
+      }
+    }
+
+    function quickEditMonitoring(id, name, bulan, tahun) {
+      const now = new Date();
+      const curM = now.getMonth() + 1;
+      const curY = now.getFullYear();
+      if ((tahun > curY) || (tahun === curY && bulan > curM)) {
+        showToastMsg('Tidak bisa mengisi monitoring untuk bulan depan.', 'info');
+        return;
+      }
+
+      // 1. Pilih Atlet
+      selectMonMember(id, name, false);
+
+      // 2. Set Bulan & Tahun di form Phase 2 (sesuai id elemen di HTML)
+      const bSel = document.getElementById('inputBulan');
+      const tSel = document.getElementById('inputTahun');
+
+      if (tSel) tSel.value = tahun;
+      if (bSel) bSel.value = bulan;
+
+      // 3. Konfirmasi untuk masuk ke Phase 2
+      onConfirmAthlete();
     }
 
     document.getElementById('monMemberPickerModal').addEventListener('click', e => {
@@ -906,7 +1198,22 @@
     /* FIX #1: Filter atlet berdasarkan peserta kegiatan */
     document.getElementById('filterKegiatan').addEventListener('change', function () {
       const actId = this.value;
-      if (!actId) { _populateAtletDropdown(_allMembers); return; }
+      const text = document.getElementById('selectAtletText');
+      document.getElementById('monStatusArea').innerHTML = ''; // Clear rekap
+
+      // Save state
+      if (actId) localStorage.setItem('mon_last_activity', actId);
+      else localStorage.removeItem('mon_last_activity');
+
+      if (!actId) {
+        _populateAtletDropdown(_allMembers);
+        text.textContent = 'Pilih atlet...';
+        text.style.color = '#94a3b8';
+        return;
+      }
+
+      text.textContent = 'Keseluruhan atlet';
+      text.style.color = '#111827';
 
       const act = _allActivities.find(a => a.id === actId);
       if (!act || !act.default_participants || !act.default_participants.length) {
@@ -926,7 +1233,17 @@
     function onConfirmAthlete() {
       const msgEl = document.getElementById('phase1-msg');
       const memberId = document.getElementById('selectAtlet').value;
-      if (!memberId) { msgEl.textContent = 'Pilih atlet terlebih dahulu!'; return; }
+      const actId = document.getElementById('filterKegiatan').value;
+
+      if (!memberId) {
+        if (actId) {
+          msgEl.textContent = '';
+          updateMonStatusTable();
+        } else {
+          msgEl.textContent = 'Pilih kegiatan atau atlet terlebih dahulu!';
+        }
+        return;
+      }
       msgEl.textContent = '';
 
       const member = _allMembers.find(m => m.id === memberId);
@@ -968,7 +1285,7 @@
       try {
         const { data, error } = await supabaseClient
           .from('monitoring_atlet')
-          .select('id,bulan,tahun,rata_rata_total,sistem_utama,catatan_pelatih,data_b1,data_b2,data_b3,data_b4')
+          .select('id,bulan,tahun,rata_rata_total,sistem_utama,vo2max,catatan_pelatih,data_b1,data_b2,data_b3,data_b4')
           .eq('member_id', memberId)
           .order('tahun', { ascending: false })
           .order('bulan', { ascending: false });
@@ -981,16 +1298,49 @@
           return;
         }
 
+        // Fetch attendance summaries for calculation
+        const { data: presRows } = await supabaseClient
+          .from('attendance_detail')
+          .select('presence, attendance_header(date)')
+          .eq('member_id', memberId);
+
+        const attendanceMap = {};
+        if (presRows) {
+          presRows.forEach(r => {
+            if (!r.attendance_header || !r.attendance_header.date) return;
+            const d = new Date(r.attendance_header.date);
+            const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+            if (!attendanceMap[key]) attendanceMap[key] = { hadir: 0, total: 0 };
+            attendanceMap[key].total++;
+            if (r.presence === 'Hadir') attendanceMap[key].hadir++;
+          });
+        }
+
         container.innerHTML = _historyCache.map(item => {
           const periode = `${NAMA_BULAN[item.bulan]} ${item.tahun}`;
+          const key = `${item.tahun}-${item.bulan}`;
+          const att = attendanceMap[key] || { hadir: 0, total: 0 };
+          const attPct = att.total > 0 ? (att.hadir / att.total) * 100 : 0;
+
+          // Recalculate Score (Scale 0-100)
+          const pAvg = item.rata_rata_total || 0;
+          const wAbs = _monWeightAbsensi / 100;
+          const wPil = 1 - wAbs;
+          const score = parseFloat(((pAvg * 20 * wPil) + (attPct * wAbs)).toFixed(1));
+
           const dataStr = encodeURIComponent(JSON.stringify(item));
           const namaStr = encodeURIComponent(_currentMember.name);
-          const savedUrl = _pdfLoad(item.id); // Cek localStorage
+          const savedUrl = _pdfLoad(item.id);
           return `
             <div class="history-card" id="hcard-${item.id}">
               <div class="history-card-info">
                 <h4>${periode}</h4>
-                <p>Rata-rata: <strong>${item.rata_rata_total || '—'}</strong></p>
+                <p>Skor Performa: <strong>${score}</strong> | VO₂max: <strong>${item.vo2max || '—'}</strong></p>
+                <div class="text-xs text-muted mt-1">
+                   <span>Pilar: ${pAvg}</span>
+                   <span class="mx-1">•</span>
+                   <span>Hadir: ${Math.round(attPct)}%</span>
+                </div>
               </div>
               <div class="history-card-actions">
                 <button class="btn-gen-pdf"
@@ -1122,6 +1472,7 @@
           }
         }
         document.getElementById('inputSistem').value = source.sistem_utama || '';
+        document.getElementById('inputVo2max').value = source.vo2max || '';
 
         // catatan pelatih: hanya isi saat edit mode (bukan prefill)
         const catPelatih = existingData ? (existingData.catatan_pelatih || '') : '';
@@ -1269,13 +1620,38 @@
       const data_b1 = extractPilar('b1'), data_b2 = extractPilar('b2'),
         data_b3 = extractPilar('b3'), data_b4 = extractPilar('b4');
 
-      const rata_rata_total = parseFloat(
+      const pAvg = parseFloat(
         ((data_b1.rata_rata + data_b2.rata_rata + data_b3.rata_rata + data_b4.rata_rata) / 4).toFixed(2)
       );
+
+      // Fetch current month attendance for Score 100 saving
+      let rata_rata_total = pAvg;
+      try {
+        const dStart = `${tahun}-${String(bulan).padStart(2, '0')}-01`;
+        const dEnd = `${tahun}-${String(bulan).padStart(2, '0')}-31`;
+        const { data: prs } = await supabaseClient.from('attendance_detail')
+          .select('presence, attendance_header(date)')
+          .eq('member_id', _currentMember.id)
+          .gte('attendance_header.date', dStart)
+          .lte('attendance_header.date', dEnd);
+
+        if (prs && prs.length > 0) {
+          const total = prs.length;
+          const hadir = prs.filter(r => r.presence === 'Hadir').length;
+          const pct = (hadir / total) * 100;
+          const wAbs = _monWeightAbsensi / 100;
+          const wPil = 1 - wAbs;
+          rata_rata_total = parseFloat(((pAvg * 20 * wPil) + (pct * wAbs)).toFixed(1));
+        } else {
+          // If no attendance, just scale 0-5 pAvg to 0-100 pAvg? No, follow formula (pct=0)
+          rata_rata_total = parseFloat((pAvg * 20 * (1 - _monWeightAbsensi / 100)).toFixed(1));
+        }
+      } catch (_) { }
 
       const payload = {
         member_id: _currentMember.id, activity_id, bulan, tahun,
         sistem_utama: document.getElementById('inputSistem').value.trim(),
+        vo2max: parseFloat(document.getElementById('inputVo2max').value) || null,
         catatan_pelatih: document.getElementById('inputCatatanPelatih').value.trim(),
         data_b1, data_b2, data_b3, data_b4, rata_rata_total
       };
@@ -1294,8 +1670,9 @@
         showToastMsg('Data monitoring berhasil disimpan! 🎉', 'success');
         // Hapus URL PDF dari localStorage agar user generate ulang dengan data terbaru
         if (_existingId) _pdfDel(_existingId);
-        await loadMonitoringHistory(_currentMember.id);
-        resetToPhase2();
+
+        // Kembali ke Phase 1 agar tabel rekap terupdate dan memperlihatkan progres
+        resetToPhase1();
       } catch (err) {
         console.error('submitMonitoring:', err);
         showToastMsg(err.message || 'Gagal menyimpan data.', 'error');
@@ -1326,7 +1703,7 @@
       _showPdfOverlay();
       try {
         // Ambil data kehadiran aktual dari Supabase — filter bulan monitoring
-        let kehadiranStr = '—';
+        let kompositScore = item.rata_rata_total || 0;
         try {
           const tBulan = String(item.bulan).padStart(2, '0');
           const tTahun = item.tahun;
@@ -1334,16 +1711,12 @@
           const dateFrom = `${tTahun}-${tBulan}-01`;
           const dateTo = `${tTahun}-${tBulan}-${lastDay}`;
 
-          console.log('[generatePDF] Querying attendance for member_id:', _currentMember.id, 'periode:', dateFrom, '→', dateTo);
-
           const { data: presRows, error: presErr } = await supabaseClient
             .from('attendance_detail')
             .select('presence, attendance_header!inner(date)')
             .eq('member_id', _currentMember.id)
             .gte('attendance_header.date', dateFrom)
             .lte('attendance_header.date', dateTo);
-
-          console.log('[generatePDF] attendance_detail result:', { presRows, presErr });
 
           if (presErr) {
             console.warn('[generatePDF] attendance_detail error:', presErr.message);
@@ -1356,22 +1729,24 @@
             const hadir = presRows.filter(r => r.presence === 'Hadir').length;
             const pct = Math.round((hadir / total) * 100);
             kehadiranStr = `${hadir}/${total} sesi (${pct}% hadir)`;
-            console.log('[generatePDF] kehadiran computed:', kehadiranStr);
+
+            // Re-calc Total Score for PDF header (Scale 100)
+            const pAvg = item.rata_rata_total || 0;
+            const wAbs = _monWeightAbsensi / 100;
+            const wPil = 1 - wAbs;
+            kompositScore = parseFloat(((pAvg * 20 * wPil) + (pct * wAbs)).toFixed(1));
           }
         } catch (presEx) {
           console.error('[generatePDF] attendance fetch threw exception:', presEx);
           kehadiranStr = 'Lihat Rekap Absen';
         }
 
-
-
-
         const payload = {
           nama_atlet: namaAtlet,
           periode,
           kehadiran: kehadiranStr,
           sistem_utama: item.sistem_utama || '',
-          rata_rata_total: item.rata_rata_total ?? '',
+          rata_rata_total: kompositScore,
           catatan_pelatih: item.catatan_pelatih || '',
           b1: item.data_b1 || null,
           b2: item.data_b2 || null,
@@ -1433,6 +1808,7 @@
       _currentMember = null; _existingId = null; _historyCache = [];
       localStorage.removeItem('mon_last_member'); // Hapus pilihan atlet
       showPhase(1);
+      updateMonStatusTable(); // Tampilkan rekap jika ada kegiatan terpilih
     }
 
     function resetToPhase2() {
