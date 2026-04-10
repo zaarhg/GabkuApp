@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="id">
+<html lang="id" class="login-page-body">
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gabku App – Daftar Akun</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Daftar Akun - Gabku App</title>
 
   <link rel="stylesheet" href="assets/css/app.css" />
   <link rel="manifest" href="manifest.webmanifest">
@@ -14,39 +14,65 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
-<body>
+<body class="login-page-body">
 
-  <div class="app">
-    <main class="app-main login-clean">
-      <img src="assets/img/logo.png" alt="Gabku" class="login-logo" />
-      <div class="login-title">Daftar Akun Baru</div>
+  <div class="login-wrapper">
+    <div class="login-header">
+      <div class="login-logo-circle">
+        <img src="assets/img/logo.png" alt="Gabku" style="width:100%; height:100%; object-fit:contain;" />
+      </div>
+      <div class="login-brand">Daftar Akun</div>
+      <div class="login-subtitle">Bergabung dengan Gabku App</div>
+    </div>
 
-      <section class="section-card login-card">
-        <label class="field-label" for="full_name">Nama Lengkap</label>
-        <input id="full_name" type="text" class="field" placeholder="Masukkan nama lengkap Anda..." />
+    <form class="login-card-premium" onsubmit="return false;">
+      <div class="login-input-group">
+        <div class="login-input-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+        <input id="full_name" type="text" class="field" placeholder="Nama Lengkap Anda" />
+      </div>
 
-        <label class="field-label" for="email">Email</label>
-        <input id="email" type="email" class="field" placeholder="nama@email.com" autocomplete="email" />
+      <div class="login-input-group">
+        <div class="login-input-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+        </div>
+        <input id="email" type="email" class="field" placeholder="Email (nama@email.com)" autocomplete="email" />
+      </div>
 
-        <label class="field-label" for="password">Password</label>
-        <input id="password" type="password" class="field" placeholder="Minimal 6 karakter..."
+      <div class="login-input-group">
+        <div class="login-input-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </div>
+        <input id="password" type="password" class="field" placeholder="Kata Sandi (Min. 6 karakter)"
           autocomplete="new-password" />
+      </div>
 
-        <button id="btn" class="btn-primary btn-wide" type="button">
-          Daftar Sekarang
-        </button>
+      <button id="btn" class="btn-primary btn-auth" type="button" onclick="doRegister()">
+        Daftar Sekarang
+      </button>
 
-        <p id="msg" class="tool-msg text-center mt-3 font-bold"></p>
+      <p id="msg" class="tool-msg text-center mt-4 font-bold"></p>
+    </form>
 
-        <p class="login-help text-center">
-          Sudah punya akun? <a href="login.html" style="color: var(--brand-600); font-weight: 800;">Masuk di sini</a>
-        </p>
-      </section>
-
-      <p class="login-desc text-center">
-        Pendaftaran ini akan melalui proses verifikasi oleh Admin sebelum Anda dapat masuk ke aplikasi.
-      </p>
-    </main>
+    <div class="login-footer">
+      Sudah punya akun? <a href="login.html">Masuk di sini</a>
+      <div style="margin-top: 15px; opacity: 0.7; font-style: italic; font-size: 11px;">
+        Pendaftaran akan diverifikasi oleh Admin.
+      </div>
+    </div>
   </div>
 
   <script src="assets/js/config.js"></script>
@@ -66,13 +92,13 @@
 
       if (!name || !email || !password) {
         msgEl.textContent = "Semua kolom wajib diisi.";
-        msgEl.style.color = "red";
+        msgEl.style.color = "var(--danger)";
         return;
       }
 
       if (password.length < 6) {
         msgEl.textContent = "Password minimal 6 karakter.";
-        msgEl.style.color = "red";
+        msgEl.style.color = "var(--danger)";
         return;
       }
 
@@ -81,7 +107,6 @@
       msgEl.textContent = "";
 
       try {
-        // 1. SignUp Supabase
         const { data: authData, error: authError } = await supabaseClient.auth.signUp({
           email: email,
           password: password,
@@ -91,18 +116,17 @@
 
         const userId = authData.user.id;
 
-        // 2. Buat Profil di Tabel Profiles (Status default: Menunggu)
         const { error: profError } = await supabaseClient.from('profiles').insert({
           id: userId,
           full_name: name,
-          email: email, // Optional since it's in auth, but helpful for admin list
+          email: email,
           status: 'Menunggu'
         });
 
         if (profError) throw profError;
 
         msgEl.textContent = "Pendaftaran Berhasil! Mengalihkan...";
-        msgEl.style.color = "green";
+        msgEl.style.color = "#16a34a";
 
         setTimeout(() => {
           window.location.href = "pending.html";
@@ -110,15 +134,18 @@
 
       } catch (e) {
         msgEl.textContent = "Gagal: " + e.message;
-        msgEl.style.color = "red";
+        msgEl.style.color = "var(--danger)";
         btnEl.disabled = false;
         btnEl.textContent = "Daftar Sekarang";
       }
     }
 
-    btnEl.addEventListener("click", doRegister);
+    [nameEl, emailEl, passEl].forEach(el => {
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doRegister();
+      });
+    });
   </script>
-
 </body>
 
 </html>

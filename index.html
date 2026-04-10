@@ -302,6 +302,18 @@
       </div>
     </div>
 
+    <!-- Custom Confirm Modal -->
+    <div id="customConfirm" class="modal-overlay" style="display:none;">
+      <div class="modal-card text-center">
+        <h3 class="mt-0 text-base font-bold" id="confirmTitle">Peringatan</h3>
+        <p id="confirmMsg" class="text-sm text-muted mb-5"></p>
+        <div class="flex justify-center gap-3">
+          <button id="confirmBtnNo" class="btn-secondary">Batal</button>
+          <button id="confirmBtnYes" class="btn-primary">Ya, Keluar</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script src="assets/js/config.js"></script>
@@ -524,6 +536,30 @@
         const notMonitored = attendedLM.filter(id => !monitoredLMCount.includes(id));
         document.getElementById('statMonLastMonth').textContent = notMonitored.length;
 
+        // NEW: Fetch weights and attendance maps for weighted calculation
+        const { data: setRows } = await supabaseClient.from('settings').select('key, value');
+        const weightRow = setRows?.find(r => r.key === 'monitoring_weight_absensi');
+        const weightAbs = weightRow ? parseFloat(weightRow.value) : 30;
+
+        const { data: lmPresDetails } = await supabaseClient
+          .from('attendance_details')
+          .select('member_id, presence, attendance_header(date)')
+          .gte('attendance_header.date', lmFirst)
+          .lte('attendance_header.date', lmLast);
+
+        const lmAttendanceMap = {};
+        const lmTotalSessionsMap = {};
+        if (lmPresDetails) {
+          lmPresDetails.forEach(r => {
+            const h = r.attendance_header;
+            if (!h) return;
+            lmTotalSessionsMap[r.member_id] = (lmTotalSessionsMap[r.member_id] || 0) + 1;
+            if (r.presence === 'Hadir') {
+              lmAttendanceMap[r.member_id] = (lmAttendanceMap[r.member_id] || 0) + 1;
+            }
+          });
+        }
+
         // 2. Monitoring Stats (Pilar & Top Monitoring) - MENGGUNAKAN BULAN LALU (Last Month)
         const { data: monRows } = await supabaseClient
           .from('monitoring_atlet')
@@ -532,24 +568,43 @@
           .eq('tahun', lmTahun);
 
         if (monRows && monRows.length > 0) {
-          let sumTotal = 0, sumB1 = 0, sumB2 = 0, sumB3 = 0, sumB4 = 0;
+          let sumWeighted = 0, sumB1 = 0, sumB2 = 0, sumB3 = 0, sumB4 = 0;
+
           monRows.forEach(r => {
-            sumTotal += r.rata_rata_total || 0;
-            sumB1 += r.data_b1?.rata_rata || 0;
-            sumB2 += r.data_b2?.rata_rata || 0;
-            sumB3 += r.data_b3?.rata_rata || 0;
-            sumB4 += r.data_b4?.rata_rata || 0;
+            // Safety Guard: Detect legacy unnormalized data
+            let pAvg = r.rata_rata_total || 0;
+            if (pAvg > 5) pAvg = pAvg / 20; // Correct historical anomalies
+
+            const techScore = pAvg * 20;
+
+            // Calculate Attendance Pct for that specific member in that month
+            const hadir = lmAttendanceMap[r.member_id] || 0;
+            const total = lmTotalSessionsMap[r.member_id] || 0;
+            const absPct = total > 0 ? (hadir / total) * 100 : 0;
+
+            // Composite Calculation
+            const weightedScore = (techScore * (1 - weightAbs / 100)) + (absPct * (weightAbs / 100));
+            sumWeighted += weightedScore;
+
+            sumB1 += r.data_b1?.rata_rata || pAvg; // fallback to pAvg if detail missing
+            sumB2 += r.data_b2?.rata_rata || pAvg;
+            sumB3 += r.data_b3?.rata_rata || pAvg;
+            sumB4 += r.data_b4?.rata_rata || pAvg;
+
+            // Re-assign corrected score for leaderboard use
+            r._calculated_score = weightedScore;
           });
+
           const count = monRows.length;
-          document.getElementById('statMonitoring').textContent = (sumTotal / count).toFixed(2);
+          document.getElementById('statMonitoring').textContent = (sumWeighted / count).toFixed(1);
           updatePillar('b1', (sumB1 / count).toFixed(1));
           updatePillar('b2', (sumB2 / count).toFixed(1));
           updatePillar('b3', (sumB3 / count).toFixed(1));
           updatePillar('b4', (sumB4 / count).toFixed(1));
 
-          // Top Monitoring Leaderboard
+          // Top Monitoring Leaderboard (Using Weighted Score)
           const topMon = monRows
-            .map(r => ({ name: memberMap[r.member_id] || 'Anon', score: r.rata_rata_total }))
+            .map(r => ({ name: memberMap[r.member_id] || 'Anon', score: r._calculated_score.toFixed(1) }))
             .sort((a, b) => b.score - a.score)
             .slice(0, 3);
           renderLeaderboard('listTopMonitoring', topMon, 'skor');
@@ -585,7 +640,22 @@
       document.getElementById(`pilar-${id}-fill`).style.width = pct + '%';
     }
 
+    function asyncConfirm(msg, title = "Peringatan") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("customConfirm");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMsg").textContent = msg;
+        modal.style.display = 'flex';
+
+        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
+        document.getElementById("confirmBtnNo").onclick = () => { modal.style.display = 'none'; resolve(false); };
+      });
+    }
+
     async function logout() {
+      const confirm = await asyncConfirm("Apakah Anda yakin ingin keluar dari aplikasi?", "Konfirmasi Keluar");
+      if (!confirm) return;
+
       await supabaseClient.auth.signOut();
       localStorage.removeItem('gabku_session');
       localStorage.removeItem('gabku_user_meta');

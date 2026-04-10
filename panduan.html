@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="assets/css/app.css">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     .guide-section {
       animation: fadeInUp 0.3s ease;
@@ -278,12 +279,12 @@
     <header class="app-header">
       <div class="header-bar">
         <div class="header-left">
-          <button class="icon-back" onclick="window.location.href='index.html'" aria-label="Kembali">
+          <a class="icon-back" href="index.html" id="backBtn">
             <svg viewBox="0 0 24 24" width="22" height="22">
               <path fill="currentColor"
                 d="M15.5 19a1 1 0 0 1-.7-.29l-6-6a1 1 0 0 1 0-1.42l6-6a1 1 0 1 1 1.4 1.42L11.62 12l4.58 4.58A1 1 0 0 1 15.5 19z" />
             </svg>
-          </button>
+          </a>
           <div class="header-text">
             <div class="app-name">Panduan Monitoring</div>
             <div class="app-subtitle">Petunjuk pengisian form</div>
@@ -1421,15 +1422,59 @@
       </section>
 
     </main>
+
+    <!-- BOTTOM NAVIGATION (Conditional) -->
+    <nav id="bottomNav" class="bottom-nav"></nav>
   </div>
 
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
   <script src="assets/js/auth.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       if (typeof requireLogin === 'function') {
         await requireLogin();
       }
+      initNavigation();
     });
+
+    function initNavigation() {
+      const userMeta = JSON.parse(localStorage.getItem('gabku_user_meta') || '{}');
+      const role = (userMeta.role || 'atlet').toLowerCase();
+      const backBtn = document.getElementById('backBtn');
+      const bottomNav = document.getElementById('bottomNav');
+      const main = document.querySelector('.app-main');
+
+      if (role === 'atlet' || role === 'athlete') {
+        // Show Bottom Nav, Hide Back Button
+        backBtn.style.display = 'none';
+        bottomNav.style.display = 'flex';
+        main.style.paddingBottom = '100px';
+
+        bottomNav.innerHTML = `
+          <a href="dashboard-atlet.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Beranda</span>
+          </a>
+          <a href="panduan.html" class="active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            <span>Panduan</span>
+          </a>
+          <a href="profil.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Profil</span>
+          </a>
+        `;
+      } else {
+        // Show Back Button, Hide Bottom Nav
+        backBtn.style.display = 'flex';
+        if (role === 'admin' || role === 'pelatih') {
+          backBtn.href = "index.html";
+        }
+        bottomNav.style.display = 'none';
+        main.style.paddingBottom = '0';
+      }
+    }
 
     function toggleSection(element) {
       const section = element.parentElement;

@@ -229,6 +229,22 @@
           <span class="badge badge-primary" id="countPill" style="display:none;"></span>
         </div>
         <div id="list" class="mt-3 flex-col gap-2"></div>
+
+        <!-- Toggle Arsip di bawah list aktif -->
+        <div id="toggleInactiveBtn"
+          class="section-card admin-only mt-4 flex justify-center items-center text-muted font-bold shadow-sm"
+          style="padding:16px; background:#f8fafc; cursor:pointer; border:1.5px solid #e2e8f0; border-radius:12px; transition:all 0.2s; box-shadow:0 4px 12px rgba(0, 0, 0, 0.05);">
+          <span class="text-xs">📦 Lihat Arsip Kegiatan</span>
+        </div>
+      </section>
+
+      <!-- Section Kegiatan Nonaktif (Hidden by default) -->
+      <section class="section-card" id="inactiveSection" style="display:none; background:#f1f5f9;">
+        <div class="row-between">
+          <div class="section-title m-0">Arsip Kegiatan</div>
+          <button class="btn-ghost text-muted p-0" id="closeInactiveBtn" style="font-size:20px;">&times;</button>
+        </div>
+        <div id="listInactive" class="mt-3 flex-col gap-2"></div>
       </section>
 
       <!-- Custom Modals -->
@@ -473,36 +489,71 @@
       msgEl.textContent = "";
     };
 
+    // Toggle Arsip behavior
+    document.getElementById("toggleInactiveBtn").onclick = () => {
+      document.getElementById("toggleInactiveBtn").style.display = "none";
+      document.getElementById("inactiveSection").style.display = "block";
+    };
+    document.getElementById("closeInactiveBtn").onclick = () => {
+      document.getElementById("inactiveSection").style.display = "none";
+      document.getElementById("toggleInactiveBtn").style.display = "flex";
+    };
+
     async function load() {
       listEl.innerHTML = "<p class='muted'>Memuat...</p>";
+      const InactiveListEl = document.getElementById("listInactive");
+      InactiveListEl.innerHTML = "<p class='muted'>Memuat...</p>";
       countPill.style.display = "none";
+
       try {
-        const { data, error } = await supabaseClient.from('activities').select('*').eq('is_active', true).order('name');
+        const { data, error } = await supabaseClient.from('activities').select('*').order('name');
         if (error) throw error;
 
         activitiesCache = data || [];
+        const activeActivities = activitiesCache.filter(a => a.is_active);
+        const inactiveActivities = activitiesCache.filter(a => !a.is_active);
 
-        if (!activitiesCache.length) return listEl.innerHTML = "<p class='muted'>Belum ada kegiatan.</p>";
-
-        countPill.textContent = activitiesCache.length + " item";
-        countPill.style.display = "inline-flex";
-
-        listEl.innerHTML = activitiesCache.map(r => `
-          <div class="list-item">
-            <div class="list-content ml-0">
-              <div class="list-title mb-1">${escapeHtml(r.name)}</div>
-              ${r.category === 'Latihan' ? `<span class="badge badge-success mb-1">Latihan</span>` : `<span class="badge badge-neutral mb-1">Kegiatan Lain</span>`}
-              ${r.location ? `<div class="text-xs text-muted mt-1">📍 ${escapeHtml(r.location)}</div>` : ''}
-              ${r.start_date ? `<div class="text-xs text-muted mt-1">🗓️ ${r.start_date} s/d ${r.end_date || '?'}</div>` : ''}
-              ${r.default_participants && r.default_participants.length ? `<div class="text-xs text-muted mt-1">👥 ${r.default_participants.length} peserta default</div>` : ''}
+        // Render Active
+        if (!activeActivities.length) {
+          listEl.innerHTML = "<p class='muted'>Belum ada kegiatan aktif.</p>";
+        } else {
+          countPill.textContent = activeActivities.length + " item";
+          countPill.style.display = "inline-flex";
+          listEl.innerHTML = activeActivities.map(r => `
+            <div class="list-item">
+              <div class="list-content ml-0">
+                <div class="list-title mb-1">${escapeHtml(r.name)}</div>
+                ${r.category === 'Latihan' ? `<span class="badge badge-success mb-1">Latihan</span>` : `<span class="badge badge-neutral mb-1">Kegiatan Lain</span>`}
+                ${r.location ? `<div class="text-xs text-muted mt-1">📍 ${escapeHtml(r.location)}</div>` : ''}
+              </div>
+              <div class="flex gap-2">
+                <button class="btn-outline admin-only" style="padding:4px 10px; font-size:11px;" onclick="editActivity('${r.id}')">Edit</button>
+                <button class="btn-secondary admin-only" style="padding:4px 10px; font-size:11px; background:#f1f5f9; color:#475569;" onclick="toggleActivityStatus('${r.id}', false, '${escapeHtml(r.name)}')">Nonaktifkan</button>
+              </div>
             </div>
-            <div class="flex gap-2">
-              <button class="btn-secondary admin-only" style="padding:6px 12px; height:auto; width:auto; font-size:12px; border-radius:6px;" onclick="editActivity('${r.id}')">Edit</button>
-              <button class="btn-delete admin-only" style="padding:6px 12px; height:auto; width:auto; font-size:12px; border-radius:6px;" onclick="deleteActivity('${r.id}', '${escapeHtml(r.name)}')">Hapus</button>
+          `).join("");
+        }
+
+        // Render Inactive
+        if (!inactiveActivities.length) {
+          InactiveListEl.innerHTML = "<p class='muted'>Arsip kosong.</p>";
+        } else {
+          InactiveListEl.innerHTML = inactiveActivities.map(r => `
+            <div class="list-item" style="background:#fff;">
+              <div class="list-content ml-0">
+                <div class="list-title mb-1 text-muted">${escapeHtml(r.name)}</div>
+                <span class="badge badge-neutral mb-1">Nonaktif</span>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn-secondary admin-only" style="padding:4px 10px; font-size:11px; background:#dcfce7; color:#166534; border-color:#bbf7d0;" onclick="toggleActivityStatus('${r.id}', true, '${escapeHtml(r.name)}')">Aktifkan</button>
+                <button class="btn-delete admin-only" style="padding:4px 10px; font-size:11px;" onclick="deleteActivity('${r.id}', '${escapeHtml(r.name)}')">Hapus</button>
+              </div>
             </div>
-          </div>
-        `).join("");
-      } catch (e) { listEl.innerHTML = `<p class='msg text-center'>Gagal load: ${e.message}</p>`; }
+          `).join("");
+        }
+      } catch (e) {
+        listEl.innerHTML = `<p class='msg text-center'>Gagal load: ${e.message}</p>`;
+      }
     }
 
     const handleRadioSel = (groupId, inputId) => {
@@ -650,13 +701,25 @@
 
     // FUNGSI HAPUS (Soft Delete)
     window.deleteActivity = async (id, currentName) => {
-      const proceed = await asyncConfirm(`Hapus kegiatan "${currentName}"?`);
+      const proceed = await asyncConfirm(`Hapus permanent kegiatan "${currentName}"?`);
       if (!proceed) return;
       try {
-        const { error } = await supabaseClient.from('activities').update({ is_active: false }).eq('id', id);
+        const { error } = await supabaseClient.from('activities').delete().eq('id', id);
         if (error) throw error;
         load();
       } catch (e) { await asyncAlert("Gagal hapus: " + e.message); }
+    };
+
+    window.toggleActivityStatus = async (id, newStatus, name) => {
+      const action = newStatus ? "Mengaktifkan kembali" : "Menonaktifkan";
+      const proceed = await asyncConfirm(`${action} kegiatan "${name}"?`, "Konfirmasi Status");
+      if (!proceed) return;
+
+      try {
+        const { error } = await supabaseClient.from('activities').update({ is_active: newStatus }).eq('id', id);
+        if (error) throw error;
+        load();
+      } catch (e) { await asyncAlert("Gagal update status: " + e.message); }
     };
 
     document.getElementById("refreshBtn").onclick = load;

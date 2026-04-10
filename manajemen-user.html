@@ -209,7 +209,7 @@
 
         <div class="mb-4">
           <label class="text-xs font-bold text-muted uppercase">Role</label>
-          <select class="field mt-1" id="editRole" onchange="toggleMemberSelect('editRole', 'memberBox')">
+          <select class="field mt-1" id="editRole">
             <option value="atlet">Atlet</option>
             <option value="pelatih">Pelatih</option>
             <option value="admin">Admin</option>
@@ -217,9 +217,9 @@
         </div>
 
         <div id="memberBox" class="mb-5">
-          <label class="text-xs font-bold text-muted uppercase">Link ke Data Anggota</label>
+          <label class="text-xs font-bold text-muted uppercase">Link ke Data Anggota (Wajib)</label>
           <select class="field mt-1" id="editMemberId">
-            <option value="">-- Pilih Nama Atlet --</option>
+            <option value="">-- Pilih Profil Anggota --</option>
           </select>
         </div>
 
@@ -342,7 +342,7 @@
           <div class="pending-form">
             <div>
               <label class="text-[10px] font-bold text-muted uppercase">Setel Role</label>
-              <select class="field mt-1" id="role-${u.id}" onchange="toggleMemberSelect('role-${u.id}', 'mbox-${u.id}')">
+              <select class="field mt-1" id="role-${u.id}">
                 <option value="atlet">Atlet</option>
                 <option value="pelatih">Pelatih</option>
                 <option value="admin">Admin</option>
@@ -350,9 +350,9 @@
             </div>
 
             <div id="mbox-${u.id}">
-              <label class="text-[10px] font-bold text-muted uppercase">Link ke Data Anggota</label>
+              <label class="text-[10px] font-bold text-muted uppercase">Link ke Data Anggota (Wajib)</label>
               <select class="field mt-1" id="member-${u.id}">
-                <option value="">-- Pilih Nama Atlet --</option>
+                <option value="">-- Pilih Profil Anggota --</option>
                 ${_allMembers.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
               </select>
             </div>
@@ -411,17 +411,23 @@
       const role = document.getElementById(`role-${userId}`).value;
       const mId = document.getElementById(`member-${userId}`).value;
 
-      if (role === 'atlet' && !mId) return asyncAlert("Silakan pilih data anggota.", "Data Kurang");
+      if (!mId) return asyncAlert("Silakan pilih data anggota.", "Data Kurang");
+
+      const member = _allMembers.find(m => m.id === mId);
+      const newName = member ? member.name : null;
 
       const proceed = await asyncConfirm("Setujui akun ini?", "Konfirmasi");
       if (!proceed) return;
 
       try {
-        const { error } = await supabaseClient.from('profiles').update({
+        const payload = {
           role: role,
-          member_id: role === 'atlet' ? mId : null,
+          member_id: mId,
           status: 'Aktif'
-        }).eq('id', userId);
+        };
+        if (newName) payload.full_name = newName;
+
+        const { error } = await supabaseClient.from('profiles').update(payload).eq('id', userId);
 
         if (error) throw error;
         await loadAllData();
@@ -458,23 +464,25 @@
       document.getElementById('editEmail').textContent = u.email;
       document.getElementById('editRole').value = u.role || 'atlet';
       document.getElementById('editMemberId').value = u.member_id || '';
-      toggleMemberSelect('editRole', 'memberBox');
       document.getElementById('editModal').classList.add('show');
     };
     window.closeEditModal = () => document.getElementById('editModal').classList.remove('show');
-
-    window.toggleMemberSelect = (roleId, boxId) => {
-      const role = document.getElementById(roleId).value;
-      document.getElementById(boxId).style.display = (role === 'atlet') ? 'block' : 'none';
-    };
 
     window.saveAkses = async () => {
       const userId = document.getElementById('editUserId').value;
       const role = document.getElementById('editRole').value;
       const mId = document.getElementById('editMemberId').value;
-      if (role === 'atlet' && !mId) return asyncAlert("Data Kurang.");
+
+      if (!mId) return asyncAlert("Data link anggota wajib diisi.", "Peringatan");
+
+      const member = _allMembers.find(m => m.id === mId);
+      const newName = member ? member.name : null;
+
       try {
-        const { error } = await supabaseClient.from('profiles').update({ role, member_id: role === 'atlet' ? mId : null }).eq('id', userId);
+        const payload = { role, member_id: mId };
+        if (newName) payload.full_name = newName;
+
+        const { error } = await supabaseClient.from('profiles').update(payload).eq('id', userId);
         if (error) throw error;
         closeEditModal();
         await loadAllData();

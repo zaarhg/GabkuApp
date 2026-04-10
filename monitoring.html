@@ -1624,29 +1624,8 @@
         ((data_b1.rata_rata + data_b2.rata_rata + data_b3.rata_rata + data_b4.rata_rata) / 4).toFixed(2)
       );
 
-      // Fetch current month attendance for Score 100 saving
-      let rata_rata_total = pAvg;
-      try {
-        const dStart = `${tahun}-${String(bulan).padStart(2, '0')}-01`;
-        const dEnd = `${tahun}-${String(bulan).padStart(2, '0')}-31`;
-        const { data: prs } = await supabaseClient.from('attendance_detail')
-          .select('presence, attendance_header(date)')
-          .eq('member_id', _currentMember.id)
-          .gte('attendance_header.date', dStart)
-          .lte('attendance_header.date', dEnd);
-
-        if (prs && prs.length > 0) {
-          const total = prs.length;
-          const hadir = prs.filter(r => r.presence === 'Hadir').length;
-          const pct = (hadir / total) * 100;
-          const wAbs = _monWeightAbsensi / 100;
-          const wPil = 1 - wAbs;
-          rata_rata_total = parseFloat(((pAvg * 20 * wPil) + (pct * wAbs)).toFixed(1));
-        } else {
-          // If no attendance, just scale 0-5 pAvg to 0-100 pAvg? No, follow formula (pct=0)
-          rata_rata_total = parseFloat((pAvg * 20 * (1 - _monWeightAbsensi / 100)).toFixed(1));
-        }
-      } catch (_) { }
+      // Simpan rata_rata_total sebagai murni rata-rata pilar (skala 1-5)
+      const rata_rata_total = pAvg;
 
       const payload = {
         member_id: _currentMember.id, activity_id, bulan, tahun,

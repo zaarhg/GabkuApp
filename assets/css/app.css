@@ -1713,9 +1713,127 @@ input[type="file"]::file-selector-button:hover {
     gap: 20px;
   }
 }
+
 .menu-divider {
   height: 1px;
   background: var(--border-light);
   margin: 12px 0;
   border: none;
+}
+
+/* Premium Login Additions */
+.login-page-body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-wrapper {
+  width: 100%;
+  max-width: 440px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: loginFadeIn 0.8s ease;
+}
+
+@keyframes loginFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+  color: var(--text-main);
+}
+
+.login-logo-circle {
+  width: 80px;
+  height: 80px;
+  background: white;
+  border-radius: 50%;
+  padding: 15px;
+  margin: 0 auto 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.login-brand {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  margin-bottom: 5px;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* Glassmorphism Card Override */
+.login-card-premium {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 24px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  margin: 0 auto;
+}
+
+@supports (backdrop-filter: blur(10px)) {
+  .login-card-premium {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+.login-input-group {
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.login-input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.login-input-group .field {
+  padding-left: 44px !important;
+  height: 52px;
+  font-size: 14px;
+  border-radius: 12px;
+}
+
+.login-footer {
+  margin-top: 30px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.login-footer a {
+  color: var(--brand-600);
+  text-decoration: none;
+  font-weight: 800;
+  border-bottom: 1px solid var(--brand-100);
 }

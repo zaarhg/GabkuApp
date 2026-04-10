@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="id">
+<html lang="id" class="login-page-body">
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gabku App – Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Login - Gabku App</title>
 
   <link rel="stylesheet" href="assets/css/app.css" />
   <link rel="manifest" href="manifest.webmanifest">
@@ -14,38 +14,60 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
-<body>
+<body class="login-page-body">
 
-  <div class="app">
-    <main class="app-main login-clean">
-      <img src="assets/img/logo.png" alt="Gabku" class="login-logo" />
-      <div class="login-title">Gabku App</div>
+  <div class="login-wrapper">
+    <div class="login-header">
+      <div class="login-logo-circle">
+        <img src="assets/img/logo.png" alt="Gabku" style="width:100%; height:100%; object-fit:contain;" />
+      </div>
+      <div class="login-brand">Gabku App</div>
+      <div class="login-subtitle">Dashboard Monitoring Tim</div>
+    </div>
 
-      <section class="section-card login-card">
-        <label class="field-label" for="email">Email</label>
-        <input id="email" type="email" class="field" placeholder="nama@email.com" autocomplete="email" />
+    <form class="login-card-premium" onsubmit="return false;">
+      <div class="login-input-group">
+        <div class="login-input-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+        </div>
+        <input id="email" type="email" class="field" placeholder="Email Anda" autocomplete="email" />
+      </div>
 
-        <label class="field-label" for="password">Password</label>
-        <input id="password" type="password" class="field" placeholder="Masukkan password..."
-          autocomplete="current-password" />
+      <div class="login-input-group">
+        <div class="login-input-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </div>
+        <input id="password" type="password" class="field" placeholder="Kata Sandi" autocomplete="current-password" />
+      </div>
 
-        <button id="btn" class="btn-primary btn-wide" type="button">
-          Masuk
-        </button>
+      <button id="btn" class="btn-primary btn-auth" type="button" onclick="doLogin()">
+        Masuk
+      </button>
 
-        <p id="msg" class="tool-msg text-center mt-3 font-bold"></p>
+      <p id="msg" class="tool-msg text-center mt-4 font-bold"></p>
 
-        <p class="login-help">
-          Belum punya akun? <a href="daftar.html" style="color: var(--brand-600); font-weight: 800;">Daftar di
-            sini</a><br>
-          Atau gunakan email dan password yang telah didaftarkan.
-        </p>
-      </section>
+      <div class="text-center mt-5">
+        <a href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20lupa%20kata%20sandi%20Gabku%20App"
+          target="_blank" style="font-size: 13px; color: var(--brand-600); font-weight: 700; text-decoration: none;">
+          Lupa Kata Sandi?
+        </a>
+      </div>
+    </form>
 
-      <p class="login-desc">
-        <em>dibuat oleh AZ dengan 🤍 dan secangkir ☕ hangat.</em>
-      </p>
-    </main>
+    <div class="login-footer">
+      Belum punya akun? <a href="daftar.html">Daftar Sekarang</a>
+      <div style="margin-top: 15px; opacity: 0.7; font-style: italic; font-size: 11px;">
+        dibuat oleh AZ dengan 🤍 dan secangkir ☕ hangat.
+      </div>
+    </div>
   </div>
 
   <script src="assets/js/config.js"></script>
@@ -63,6 +85,7 @@
 
       if (!email || !password) {
         msgEl.textContent = "Email dan password wajib diisi.";
+        msgEl.style.color = "var(--danger)";
         return;
       }
 
@@ -71,35 +94,28 @@
       msgEl.textContent = "";
 
       try {
-        // Logika login Supabase
         const { data, error } = await supabaseClient.auth.signInWithPassword({
           email: email,
           password: password,
         });
 
         if (error) throw error;
-
-        // Jika berhasil, Supabase otomatis menyimpan sesi di LocalStorage
         window.location.href = "index.html";
       } catch (e) {
         msgEl.textContent = "Gagal login: " + e.message;
+        msgEl.style.color = "var(--danger)";
       } finally {
         btnEl.disabled = false;
         btnEl.textContent = "Masuk";
       }
     }
 
-    btnEl.addEventListener("click", doLogin);
-
-    // Menjalankan login saat tekan Enter
     [emailEl, passEl].forEach(el => {
       el.addEventListener("keydown", (e) => {
         if (e.key === "Enter") doLogin();
       });
     });
   </script>
-
-
 </body>
 
 </html>

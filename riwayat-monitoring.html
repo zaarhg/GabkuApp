@@ -445,6 +445,81 @@
       border-bottom-color: #fef08a;
     }
 
+    /* Meta Grid Summary */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .meta-card {
+      background: #ffffff;
+      border: 1.5px solid #f1f5f9;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease;
+    }
+
+    .meta-card:hover {
+      border-color: #e2e8f0;
+      background: #f8fafc;
+    }
+
+    .meta-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1590df;
+      flex-shrink: 0;
+    }
+
+    .meta-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .meta-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .meta-value {
+      font-size: 14px;
+      font-weight: 800;
+      color: #1e293b;
+      line-height: 1.2;
+    }
+
+    .meta-value.accent {
+      color: #1590df;
+    }
+
+    .meta-timestamp {
+      background: #f8fafc;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 10px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      border: 1px dashed #e2e8f0;
+    }
+
     /* Force centering the second column (Nilai) */
     .detail-table th:nth-child(2),
     .detail-table td:nth-child(2) {
@@ -1414,14 +1489,19 @@
           item.total_sesi = (totalSessionsMap[mid] && totalSessionsMap[mid][key]) || 0;
 
           // Perhitungan Akumulasi (Scale 0-100)
-          const pillarAvg = item.rata_rata_total || 0; // nilai tersimpan di DB (0-5)
-          const attendancePct = item.total_sesi > 0 ? (item.hadir_count / item.total_sesi) * 100 : 0;
+          let pAvg = item.rata_rata_total || 0;
 
+          // Safety Check: Jika pAvg > 5, artinya data sudah ter-normalisasi (skala 100)
+          // akibat bug penyimpanan sebelumnya. Kita normalisasi balik atau gunakan langsung.
+          let pilarNormalized = pAvg * 20;
+          if (pAvg > 5) {
+            pilarNormalized = pAvg; // Gunakan langsung karena sudah skala 100
+            item.rata_rata_total = parseFloat((pAvg / 20).toFixed(2)); // Koreksi tampilan badge
+          }
+
+          const attendancePct = item.total_sesi > 0 ? (item.hadir_count / item.total_sesi) * 100 : 0;
           const weightPilar = 1 - (_monWeightAbsensi / 100);
           const weightAbsensi = _monWeightAbsensi / 100;
-
-          // Normalisasi pilar (0-5 -> 0-100)
-          const pilarNormalized = pillarAvg * 20;
 
           item.skor_performa_total = parseFloat(((pilarNormalized * weightPilar) + (attendancePct * weightAbsensi)).toFixed(1));
         });
@@ -1736,10 +1816,6 @@
       const namaStr = encodeURIComponent(namaAtlet);
       const savedUrl = _pdfLoad(item.id);
 
-      const pilarGrid = ['b1', 'b2', 'b3', 'b4'].map(k => {
-        const rr = (item[`data_${k}`] || {}).rata_rata ?? '—';
-        return `<div class="pilar-box"><div class="pilar-label">${PILAR_LABEL[k]}</div><div class="pilar-score">${rr}</div></div>`;
-      }).join('');
 
       let detailHtml = '';
       ['b1', 'b2', 'b3', 'b4'].forEach(k => {
@@ -1771,20 +1847,52 @@
 
       const catBox = item.catatan_pelatih
         ? `<div class="note-box"><strong>💬 Catatan Pelatih:</strong>${escHtml(item.catatan_pelatih)}</div>` : '';
-      const sysTag = item.sistem_utama
-        ? `<div class="text-[11px] text-muted mt-2">Sistem: <strong class="text-main">${escHtml(item.sistem_utama)}</strong></div>` : '';
-
-      const vo2maxTag = item.vo2max
-        ? `<div class="text-[11px] text-muted mt-0.5">VO₂max: <strong class="text-main">${item.vo2max}</strong></div>` : '';
-
-      const attendanceTag = `<div class="text-[11px] text-muted mt-0.5">Kehadiran: <strong class="text-main">${item.hadir_count || 0} / ${item.total_sesi || 0} Sesi</strong></div>`;
-
       const totalPoints = (item.hadir_count || 0) * _pointMultiplier;
-      const pointTag = `<div class="text-[11px] text-muted mt-0.5">Point: <strong class="text-main">${totalPoints.toLocaleString('id-ID')}</strong></div>`;
-      const skorTag = `<div class="text-[11px] text-muted mt-0.5">Nilai: <strong class="text-main">${compositeScore}</strong></div>`;
-
       const createdDate = item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-      const timestampTag = `<div class="text-[10px] text-muted mt-0.5" style="opacity:0.8;">Dibuat: ${createdDate}</div>`;
+
+      const itemGrid = `
+        <div class="meta-grid">
+          <div class="meta-card">
+            <div class="meta-icon"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path fill="currentColor" d="M12 6a1 1 0 0 0-1 1v4H7a1 1 0 0 0 0 2h5a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1z"/></svg></div>
+            <div class="meta-info">
+              <div class="meta-label">Sistem</div>
+              <div class="meta-value">${escHtml(item.sistem_utama || '—')}</div>
+            </div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-icon"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V8h14zm-7-7h5v5h-5z"/></svg></div>
+            <div class="meta-info">
+              <div class="meta-label">Kehadiran</div>
+              <div class="meta-value">${item.hadir_count || 0} / ${item.total_sesi || 0} <span class="text-[10px] font-normal opacity-60">Sesi</span></div>
+            </div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-icon" style="color:#eab308; background:#fefce8;"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2z"/></svg></div>
+            <div class="meta-info">
+              <div class="meta-label">Point</div>
+              <div class="meta-value accent">${totalPoints.toLocaleString('id-ID')}</div>
+            </div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-icon" style="color:#ef4444; background:#fef2f2;"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+            <div class="meta-info">
+              <div class="meta-label">VO₂max</div>
+              <div class="meta-value">${item.vo2max || '—'}</div>
+            </div>
+          </div>
+          <div class="meta-card" style="grid-column: span 2; background: #f0fdf4; border-color: #bbf7d0;">
+            <div class="meta-icon" style="color:#16a34a; background:#fff;"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2l3.09 6.26L22 9.27l-5 4.87l1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87l6.91-1.01L12 2z"/></svg></div>
+            <div class="meta-info">
+              <div class="meta-label">Nilai Akumulasi</div>
+              <div class="meta-value">${compositeScore}</div>
+            </div>
+          </div>
+        </div>
+        <div class="meta-timestamp">
+          <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.1.8-1.2-4.5-2.7V7z"/></svg>
+          Dibuat pada: ${createdDate}
+        </div>
+      `;
 
       return `
         <div class="mon-card" id="card-${item.id}">
@@ -1798,13 +1906,7 @@
             <span class="chevron">▼</span>
           </div>
           <div class="mon-card-body">
-            ${sysTag}
-            ${vo2maxTag}
-            ${attendanceTag}
-            ${pointTag}
-            ${skorTag}
-            ${timestampTag}
-            <div class="pilar-grid">${pilarGrid}</div>
+            ${itemGrid}
             ${detailHtml}
             ${catBox}
             <div class="pdf-actions">

@@ -10,7 +10,52 @@
   <meta name="theme-color" content="#1590df">
   <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .role-checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
 
+    .role-checkbox-item {
+      flex: 1 1 calc(50% - 8px);
+      min-width: 100px;
+      position: relative;
+    }
+
+    .role-checkbox-item input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+    }
+
+    .role-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 8px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      height: 100%;
+    }
+
+    .role-checkbox-item input:checked+.role-label {
+      background: #eff6ff;
+      border-color: #1590df;
+      color: #1590df;
+      box-shadow: 0 4px 10px rgba(21, 144, 223, 0.1);
+    }
+  </style>
 </head>
 
 <body>
@@ -59,14 +104,25 @@
         </div>
         <input type="hidden" id="gender" value="Laki-laki" />
 
-        <label class="field-label" for="role">Role / Jabatan</label>
-        <select id="role" class="field">
-          <option value="">— pilih —</option>
-          <option>Atlet</option>
-          <option>Pelatih</option>
-          <option>Official</option>
-          <option>Pengurus</option>
-        </select>
+        <label class="field-label" for="role">Role / Jabatan (Bisa pilih lebih dari satu)</label>
+        <div class="role-checkbox-group" id="roleGroup">
+          <div class="role-checkbox-item">
+            <input type="checkbox" id="role_atlet" value="Atlet" onchange="togglePengurusField()">
+            <label class="role-label" for="role_atlet">Atlet</label>
+          </div>
+          <div class="role-checkbox-item">
+            <input type="checkbox" id="role_pelatih" value="Pelatih" onchange="togglePengurusField()">
+            <label class="role-label" for="role_pelatih">Pelatih</label>
+          </div>
+          <div class="role-checkbox-item">
+            <input type="checkbox" id="role_official" value="Official" onchange="togglePengurusField()">
+            <label class="role-label" for="role_official">Official</label>
+          </div>
+          <div class="role-checkbox-item">
+            <input type="checkbox" id="role_pengurus" value="Pengurus" onchange="togglePengurusField()">
+            <label class="role-label" for="role_pengurus">Pengurus</label>
+          </div>
+        </div>
 
         <div id="pengurusWrap" class="mt-3" style="display:none;">
           <label class="field-label" for="pengurusStatus">Status Kepengurusan</label>
@@ -116,13 +172,24 @@
         <input type="hidden" id="editGender" value="" />
 
         <label class="field-label mt-3" for="editRole">Role / Jabatan</label>
-        <select id="editRole" class="field mb-3">
-          <option value="">— pilih —</option>
-          <option>Atlet</option>
-          <option>Pelatih</option>
-          <option>Official</option>
-          <option>Pengurus</option>
-        </select>
+        <div class="role-checkbox-group" id="editRoleGroup">
+          <div class="role-checkbox-item">
+            <input type="checkbox" id="edit_role_atlet" value="Atlet" onchange="toggleEditPengurusField()">
+            <label class="role-label" for="edit_role_atlet">Atlet</label>
+          </div>
+          <div class="role-checkbox-item">
+            <input type="checkbox" id="edit_role_pelatih" value="Pelatih" onchange="toggleEditPengurusField()">
+            <label class="role-label" for="edit_role_pelatih">Pelatih</label>
+          </div>
+          <div class="role-checkbox-item">
+            <input type="checkbox" id="edit_role_official" value="Official" onchange="toggleEditPengurusField()">
+            <label class="role-label" for="edit_role_official">Official</label>
+          </div>
+          <div class="role-checkbox-item">
+            <input type="checkbox" id="edit_role_pengurus" value="Pengurus" onchange="toggleEditPengurusField()">
+            <label class="role-label" for="edit_role_pengurus">Pengurus</label>
+          </div>
+        </div>
 
         <div id="editPengurusWrap" class="mt-3" style="display:none;">
           <label class="field-label" for="editPengurusStatus">Status Kepengurusan</label>
@@ -235,12 +302,14 @@
       `).join("");
     }
 
-    document.getElementById("role").onchange = (e) => {
-      document.getElementById("pengurusWrap").style.display = e.target.value === 'Pengurus' ? 'block' : 'none';
-    };
-    document.getElementById("editRole").onchange = (e) => {
-      document.getElementById("editPengurusWrap").style.display = e.target.value === 'Pengurus' ? 'block' : 'none';
-    };
+    function togglePengurusField() {
+      const isPengurus = document.getElementById('role_pengurus').checked;
+      document.getElementById("pengurusWrap").style.display = isPengurus ? 'block' : 'none';
+    }
+    function toggleEditPengurusField() {
+      const isPengurus = document.getElementById('edit_role_pengurus').checked;
+      document.getElementById("editPengurusWrap").style.display = isPengurus ? 'block' : 'none';
+    }
 
     const handleGenderSel = (groupId, inputId) => {
       document.querySelectorAll(`#${groupId} .radio-btn`).forEach(btn => {
@@ -287,7 +356,12 @@
 
     document.getElementById("addBtn").onclick = async () => {
       const name = document.getElementById("name").value.trim();
-      const role = document.getElementById("role").value.trim();
+
+      // Collect multi-roles
+      const roles = [];
+      document.querySelectorAll('#roleGroup input[type="checkbox"]:checked').forEach(cb => roles.push(cb.value));
+      const role = roles.join(', ');
+
       const gend = document.getElementById("gender").value;
       const bdate = document.getElementById("birthDate").value;
       const ph = document.getElementById("phone").value.trim();
@@ -295,7 +369,7 @@
 
       msgEl.textContent = "";
       if (!name || !role) return msgEl.textContent = "Data Nama & Role wajib diisi.";
-      if (role === 'Pengurus' && !pst) return msgEl.textContent = "Status pengurus wajib diisi.";
+      if (roles.includes('Pengurus') && !pst) return msgEl.textContent = "Status pengurus wajib diisi.";
 
       try {
         msgEl.textContent = "Menyimpan...";
@@ -303,13 +377,16 @@
         const payload = { id, name, role, gender: gend };
         if (bdate) payload.birth_date = bdate;
         if (ph) payload.phone = ph;
-        if (role === 'Pengurus') payload.pengurus_status = pst;
+        if (roles.includes('Pengurus')) payload.pengurus_status = pst;
 
         const { error } = await supabaseClient.from('members').insert([payload]);
         if (error) throw error;
         msgEl.textContent = "Berhasil!";
-        document.getElementById("name").value = ''; document.getElementById("role").value = '';
-        document.getElementById("birthDate").value = ''; document.getElementById("phone").value = '';
+        document.getElementById("name").value = '';
+        document.querySelectorAll('#roleGroup input[type="checkbox"]').forEach(cb => cb.checked = false);
+        togglePengurusField();
+        document.getElementById("birthDate").value = '';
+        document.getElementById("phone").value = '';
         document.getElementById("pengurusStatus").value = '';
 
         document.getElementById("addMemberForm").style.display = "none";
@@ -370,10 +447,15 @@
 
       document.getElementById('editId').value = id;
       document.getElementById('editName').value = decodeHtml(m.name);
-      document.getElementById('editRole').value = decodeHtml(m.role);
 
-      document.getElementById("editPengurusWrap").style.display = m.role === 'Pengurus' ? 'block' : 'none';
-      if (m.role === 'Pengurus' && m.pengurus_status) {
+      // Setup multi-roles checkboxes
+      const roles = (m.role || '').split(',').map(r => r.trim());
+      document.querySelectorAll('#editRoleGroup input[type="checkbox"]').forEach(cb => {
+        cb.checked = roles.includes(cb.value);
+      });
+      toggleEditPengurusField();
+
+      if (roles.includes('Pengurus') && m.pengurus_status) {
         document.getElementById('editPengurusStatus').value = decodeHtml(m.pengurus_status);
       } else {
         document.getElementById('editPengurusStatus').value = '';
@@ -401,7 +483,7 @@
       document.getElementById('editModal').style.display = 'none';
       document.getElementById('editId').value = '';
       document.getElementById('editName').value = '';
-      document.getElementById('editRole').value = '';
+      document.querySelectorAll('#editRoleGroup input[type="checkbox"]').forEach(cb => cb.checked = false);
       document.getElementById('editPengurusStatus').value = '';
       document.getElementById('editBirthDate').value = '';
       document.getElementById('editPhone').value = '';
@@ -410,14 +492,19 @@
     window.saveEdit = async () => {
       const id = document.getElementById('editId').value;
       const newName = document.getElementById('editName').value.trim();
-      const newRole = document.getElementById('editRole').value.trim();
+
+      // Collect multi-roles
+      const roles = [];
+      document.querySelectorAll('#editRoleGroup input[type="checkbox"]:checked').forEach(cb => roles.push(cb.value));
+      const newRole = roles.join(', ');
+
       const gend = document.getElementById("editGender").value;
       const bdate = document.getElementById("editBirthDate").value;
       const ph = document.getElementById("editPhone").value.trim();
       const pst = document.getElementById("editPengurusStatus").value;
 
       if (!newName || !newRole) return alert("Data (Nama & Role) tidak boleh kosong!");
-      if (newRole === 'Pengurus' && !pst) return alert("Status pengurus wajib diisi.");
+      if (roles.includes('Pengurus') && !pst) return alert("Status pengurus wajib diisi.");
 
       try {
         const btn = document.querySelector('#editModal .btn-primary');
@@ -431,7 +518,7 @@
           gender: gend,
           birth_date: bdate || null,
           phone: ph || null,
-          pengurus_status: newRole === 'Pengurus' ? pst : null
+          pengurus_status: roles.includes('Pengurus') ? pst : null
         };
 
         const { error } = await supabaseClient.from('members').update(payload).eq('id', id);

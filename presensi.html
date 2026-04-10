@@ -484,7 +484,9 @@
     }
 
     async function init() {
-      const today = new Date().toISOString().slice(0, 10);
+      // Set default to local today's date (ISO string uses UTC which can be wrong for local timezone)
+      const now = new Date();
+      const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
       dateEl.value = today;
       dateEl.max = today;
       try {
@@ -702,10 +704,11 @@
       if (!activitySel.value) return msgEl.textContent = "Mohon pilih Kegiatan.";
       if (!dateEl.value) return msgEl.textContent = "Tanggal wajib diisi.";
 
-      const selectedDate = new Date(dateEl.value);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (selectedDate > today) return msgEl.textContent = "Tidak bisa membuat presensi untuk tanggal besok atau seterusnya.";
+      const selectedDateStr = dateEl.value;
+      const now = new Date();
+      const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+
+      if (selectedDateStr > todayStr) return msgEl.textContent = "Tidak bisa membuat presensi untuk tanggal besok atau seterusnya.";
       if (timeSel.value === 'Lainnya' && (!document.getElementById("timeStartManual").value || !document.getElementById("timeEndManual").value)) return msgEl.textContent = "Waktu kegiatan manual belum lengkap.";
       if (!timeSel.value) return msgEl.textContent = "Waktu kegiatan belum dipilih.";
       if (locSel.value === 'Lainnya' && !document.getElementById("locationManual").value.trim()) return msgEl.textContent = "Lokasi manual belum diisi.";
