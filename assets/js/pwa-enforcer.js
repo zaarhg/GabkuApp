@@ -87,11 +87,78 @@
       });
     }
 
-    // In case beforeinstallprompt already fired before DOMContentLoaded
     if (!isIOS && deferredPrompt && btn) {
       btn.style.display = 'block';
       const waitText = document.getElementById('pwa-waiting-text');
       if (waitText) waitText.style.display = 'none';
     }
   }
+
+  // --- PAGE TRANSITIONS (NATIVE FEEL) ---
+  document.addEventListener('DOMContentLoaded', () => {
+    const links = document.querySelectorAll('a[href]:not([target="_blank"]):not([href^="tel:"]):not([href^="mailto:"]):not([href^="#"]):not([onclick])');
+    links.forEach(link => {
+      link.addEventListener('click', function (e) {
+        // Prevent default routing
+        e.preventDefault();
+        const href = this.getAttribute('href');
+
+        // Fade out the body
+        document.body.classList.add('page-is-leaving');
+
+        // Navigate after animation
+        setTimeout(() => {
+          window.location.href = href;
+        }, 200); // slightly faster than CSS for safety
+      });
+    });
+  });
+
+  // Restore visibility if user uses the Back button (BFCache)
+  window.addEventListener('pageshow', (e) => {
+    document.body.classList.remove('page-is-leaving');
+  });
+
+  // --- SMART OFFLINE DETECTION ---
+  function initOfflineDetection() {
+    const banner = document.createElement('div');
+    banner.id = 'offline-banner';
+    banner.innerHTML = `
+      <div style="font-size:16px;" id="offline-icon">🔴</div>
+      <span id="offline-text">Koneksi Terputus. Mode Offline.</span>
+    `;
+    document.body.appendChild(banner);
+
+    function updateOnlineStatus() {
+      if (!navigator.onLine) {
+        banner.classList.remove('online');
+        banner.classList.add('show');
+        document.getElementById('offline-icon').textContent = '🔴';
+        document.getElementById('offline-text').textContent = 'Koneksi Terputus. Data gagal ke server.';
+      } else {
+        // Signal returned
+        banner.classList.add('online');
+        document.getElementById('offline-icon').textContent = '🟢';
+        document.getElementById('offline-text').textContent = 'Terhubung Kembali!';
+        setTimeout(() => {
+          banner.classList.remove('show');
+        }, 3000);
+      }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    // Initial check
+    if (!navigator.onLine) {
+      setTimeout(updateOnlineStatus, 500);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initOfflineDetection);
+  } else {
+    initOfflineDetection();
+  }
+
 })();

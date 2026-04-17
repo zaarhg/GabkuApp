@@ -10,7 +10,7 @@
   --brand-indigo: #2D3494;
   --brand-azure: #1590DF;
   --brand-gradient: linear-gradient(135deg, var(--brand-indigo) 0%, var(--brand-azure) 100%);
-  
+
   --brand-50: #eff6ff;
   --brand-100: #dbeafe;
   --brand-500: var(--brand-azure);
@@ -391,7 +391,8 @@ button {
   border: 1.5px solid var(--brand-100);
 }
 
-.btn-secondary:active, .btn-secondary.active {
+.btn-secondary:active,
+.btn-secondary.active {
   background: var(--brand-100);
   transform: scale(0.97);
 }
@@ -1480,7 +1481,7 @@ input[type="file"]::file-selector-button:hover {
   margin-top: 8px;
 }
 
- /* Featured Card (Dashboard Primary) */
+/* Featured Card (Dashboard Primary) */
 .featured-card {
   background: var(--brand-gradient);
   color: white;
@@ -1975,10 +1976,21 @@ input[type="file"]::file-selector-button:hover {
   transition: transform 0.2s;
 }
 
-.info-box.hadir { border-top: 4px solid var(--success); }
-.info-box.izin  { border-top: 4px solid var(--warning); }
-.info-box.sakit { border-top: 4px solid #f97316; }
-.info-box.alpa  { border-top: 4px solid var(--danger); }
+.info-box.hadir {
+  border-top: 4px solid var(--success);
+}
+
+.info-box.izin {
+  border-top: 4px solid var(--warning);
+}
+
+.info-box.sakit {
+  border-top: 4px solid #f97316;
+}
+
+.info-box.alpa {
+  border-top: 4px solid var(--danger);
+}
 
 .info-val {
   font-size: 20px;
@@ -2026,10 +2038,18 @@ input[type="file"]::file-selector-button:hover {
 
 /* Presence Status Colors */
 :root {
-  --hadir-bg: #dcfce7; --hadir-text: #166534; --hadir-border: #bbf7d0;
-  --izin-bg: #fef9c3; --izin-text: #854d0e; --izin-border: #fde047;
-  --sakit-bg: #ffedd5; --sakit-text: #9a3412; --sakit-border: #fed7aa;
-  --alpa-bg: #fee2e2; --alpa-text: #991b1b; --alpa-border: #fca5a5;
+  --hadir-bg: #dcfce7;
+  --hadir-text: #166534;
+  --hadir-border: #bbf7d0;
+  --izin-bg: #fef9c3;
+  --izin-text: #854d0e;
+  --izin-border: #fde047;
+  --sakit-bg: #ffedd5;
+  --sakit-text: #9a3412;
+  --sakit-border: #fed7aa;
+  --alpa-bg: #fee2e2;
+  --alpa-text: #991b1b;
+  --alpa-border: #fca5a5;
 }
 
 /* Participant Card */
@@ -2086,17 +2106,47 @@ input[type="file"]::file-selector-button:hover {
   transition: all 0.2s;
 }
 
-.status-select.hadir { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
-.status-select.izin  { background: #fef9c3; color: #a16207; border-color: #fde047; }
-.status-select.sakit { background: #ffedd5; color: #c2410c; border-color: #fed7aa; }
-.status-select.alpa  { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+.status-select.hadir {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.status-select.izin {
+  background: #fef9c3;
+  color: #a16207;
+  border-color: #fde047;
+}
+
+.status-select.sakit {
+  background: #ffedd5;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+
+.status-select.alpa {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
 
 /* Pulse Animation for Progress Spinner */
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 @keyframes slideInUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Progress Overlay Redesign */
@@ -2108,7 +2158,7 @@ input[type="file"]::file-selector-button:hover {
   background: white;
   box-shadow: var(--shadow-xl);
   text-align: center;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .progress-spinner {
@@ -2153,7 +2203,11 @@ input[type="file"]::file-selector-button:hover {
 }
 
 .role-checkbox-item input {
-  position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0;
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
 }
 
 .role-label {
@@ -2173,7 +2227,7 @@ input[type="file"]::file-selector-button:hover {
   height: 100%;
 }
 
-.role-checkbox-item input:checked + .role-label {
+.role-checkbox-item input:checked+.role-label {
   background: var(--brand-50);
   border-color: var(--brand-indigo);
   color: var(--brand-indigo);
@@ -2193,18 +2247,21 @@ input[type="file"]::file-selector-button:hover {
   justify-content: center;
   padding: 20px;
 }
+
 .pwa-enforcer-card {
   background: white;
   padding: 30px 24px;
   border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   text-align: center;
   max-width: 360px;
   width: 100%;
 }
+
 .pwa-icon {
   margin-bottom: 20px;
 }
+
 .pwa-title {
   margin-top: 0;
   margin-bottom: 12px;
@@ -2212,12 +2269,14 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 800;
   color: var(--text-main);
 }
+
 .pwa-text {
   font-size: 14px;
   color: var(--text-muted);
   margin-bottom: 24px;
   line-height: 1.5;
 }
+
 .pwa-steps {
   background: #f8fafc;
   padding: 16px;
@@ -2227,4 +2286,86 @@ input[type="file"]::file-selector-button:hover {
   color: var(--text-main);
   border: 1px solid var(--border-light);
 }
-.pwa-steps p { margin: 8px 0; }
+
+.pwa-steps p {
+  margin: 8px 0;
+}
+
+/* =========================================
+   NATIVE APP ILLUSION (PWA OPTIMIZATION)
+   ========================================= */
+html,
+body {
+  /* Prevent iOS bounce/rubber-banding to feel solid */
+  overscroll-behavior-y: none;
+}
+
+body {
+  /* Prevent text highlighting */
+  -webkit-user-select: none;
+  user-select: none;
+
+  /* Prevent long-press context menu & tap highlighting */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+
+  /* Eliminate the 300ms click delay */
+  touch-action: manipulation;
+}
+
+/* Allow text selection only on input fields */
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: auto;
+  user-select: auto;
+  -webkit-touch-callout: default;
+}
+
+/* Prevent image dragging (save image dialog) */
+img {
+  -webkit-user-drag: none;
+}
+
+/* =========================================
+   PAGE TRANSITIONS & OFFLINE BANNER
+   ========================================= */
+body {
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+  opacity: 1;
+}
+
+body.page-is-leaving {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+#offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--danger);
+  color: white;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px;
+  z-index: 10001;
+  /* Above PWA enforcer */
+  transform: translateY(-100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+#offline-banner.show {
+  transform: translateY(0);
+}
+
+#offline-banner.online {
+  background: var(--success);
+}
