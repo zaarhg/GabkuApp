@@ -7,205 +7,10 @@
   <title>Gabku App – Rekap Presensi</title>
   <link rel="stylesheet" href="assets/css/app.css" />
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1590df">
+  <meta name="theme-color" content="#2D3494">
   <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    /* Member Picker Modal */
-    #memberPickerModal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.55);
-      z-index: 9800;
-      justify-content: center;
-      align-items: center;
-    }
-
-    #memberPickerModal.show {
-      display: flex;
-    }
-
-    .picker-box {
-      background: #fff;
-      border-radius: 16px;
-      padding: 20px;
-      width: 92%;
-      max-width: 400px;
-      max-height: 80vh;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    }
-
-    .picker-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #1e293b;
-    }
-
-    #rekapPickerSearch {
-      border-radius: 8px;
-      border: 1.5px solid #e2e8f0;
-      padding: 9px 12px;
-      font-size: 13px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    #rekapPickerSearch:focus {
-      outline: none;
-      border-color: #1590df;
-    }
-
-    .picker-list {
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    .picker-item {
-      display: flex;
-      align-items: center;
-      padding: 10px 8px;
-      border-radius: 8px;
-      cursor: pointer;
-      gap: 10px;
-      border-bottom: 1px solid #f1f5f9;
-      transition: background 0.15s;
-    }
-
-    .picker-item:hover {
-      background: #f0f9ff;
-    }
-
-    .picker-item.selected {
-      background: #eff6ff;
-    }
-
-    .picker-item-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: #1e293b;
-    }
-
-    .picker-item-role {
-      font-size: 11px;
-      color: #64748b;
-    }
-
-    .picker-check {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      border: 2px solid #cbd5e1;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .picker-item.selected .picker-check {
-      background: #1590df;
-      border-color: #1590df;
-      color: #fff;
-      font-size: 12px;
-    }
-
-    .picker-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .segmented {
-      display: flex;
-      background: #f1f5f9;
-      padding: 4px;
-      border-radius: 12px;
-      width: 100%;
-      gap: 2px;
-    }
-
-    .seg-btn {
-      flex: 1;
-      background: transparent;
-      color: #64748b;
-      border: none;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      padding: 10px 4px;
-      font-size: 12px;
-      white-space: nowrap;
-      transition: background 0.2s, color 0.2s;
-    }
-
-    .seg-btn.active {
-      background: #1590df;
-      color: #fff;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-bottom: 15px;
-    }
-
-    .info-box {
-      background: #fff;
-      border-radius: 10px;
-      padding: 10px 4px;
-      text-align: center;
-      border: 1px solid rgba(15, 23, 42, 0.1);
-      box-shadow: 0 2px 8px rgba(2, 8, 23, 0.04);
-    }
-
-    .info-box.hadir {
-      border-top: 3px solid #16a34a;
-    }
-
-    .info-box.izin {
-      border-top: 3px solid #ca8a04;
-    }
-
-    .info-box.sakit {
-      border-top: 3px solid #f97316;
-    }
-
-    .info-box.alpa {
-      border-top: 3px solid #dc2626;
-    }
-
-    .info-val {
-      font-size: 18px;
-      font-weight: 800;
-      margin-bottom: 2px;
-      color: #111827;
-    }
-
-    .info-label {
-      font-size: 10px;
-      color: #6b7280;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .stat-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      background: #e0f2fe;
-      color: #0369a1;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 12px;
-      margin-bottom: 8px;
-      margin-right: 6px;
-    }
-  </style>
 </head>
 
 <body>
@@ -580,6 +385,26 @@
         if (error) throw error;
         let data = fetchRaw;
 
+        // A2. Ambil statistik cepat (H, I, S, A) untuk tiap sesi
+        const headerIds = data.map(h => h.id);
+        const statsMap = {};
+        if (headerIds.length > 0) {
+          const { data: details } = await supabaseClient.from('attendance_detail')
+            .select('attendance_id, presence')
+            .in('attendance_id', headerIds);
+
+          if (details) {
+            details.forEach(d => {
+              if (!statsMap[d.attendance_id]) statsMap[d.attendance_id] = { H: 0, I: 0, S: 0, A: 0 };
+              const s = statsMap[d.attendance_id];
+              if (d.presence === 'Hadir') s.H++;
+              else if (d.presence === 'Izin') s.I++;
+              else if (d.presence === 'Sakit') s.S++;
+              else if (d.presence === 'Alpa') s.A++;
+            });
+          }
+        }
+
         if (actFilter) {
           if (actFilter === '[CAT]Latihan') {
             data = data.filter(d => latihanNames.includes(d.activity_name_snapshot));
@@ -618,47 +443,87 @@
         }
 
         out.innerHTML = recapHtml + `<div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">` + data.map((h, i) => `
-          <div class="flex justify-between items-center p-4 ${i === data.length - 1 ? '' : 'border-b border-gray-200'}">
-            <div class="flex-1 pr-3">
-              <div class="font-bold text-base text-main">${escapeHtml(h.activity_name_snapshot)}</div>
-              <div class="text-xs text-muted mt-1">📅 ${h.date}</div>
-              ${h.location_snapshot ? `<div class="text-xs text-muted">📍 ${escapeHtml(h.location_snapshot)}</div>` : ''}
+          <div class="session-row">
+            <div class="session-info">
+              <div class="font-extrabold text-base text-main">${escapeHtml(h.activity_name_snapshot)}</div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs text-muted">📅 ${h.date}</span>
+                ${h.location_snapshot ? `<span class="text-[10px] text-muted opacity-60">•</span><span class="text-xs text-muted">📍 ${escapeHtml(h.location_snapshot)}</span>` : ''}
+              </div>
             </div>
-            <div class="flex gap-2">
+            <div class="session-actions-group">
               ${h.pdf_file_id
-            ? `<a href="https://drive.google.com/file/d/${h.pdf_file_id}/view" target="_blank" class="btn-primary no-underline rounded-lg inline-flex items-center justify-center" style="padding:6px 12px; height:32px; width:auto; font-size:12px;">Buka PDF</a>
-               <button onclick="sharePDF('${escapeHtml(h.activity_name_snapshot)}', '${h.date}', '${h.pdf_file_id}')" class="btn-secondary rounded-lg flex items-center justify-center m-0" style="padding:6px 12px; height:32px; width:auto; font-size:12px;">
-                 <svg viewBox="0 0 24 24" width="14" height="14" style="margin-right: 4px;"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92 0-1.61-1.31-2.92-2.92-2.92z"/></svg> Bagikan
+            ? `<a href="https://drive.google.com/file/d/${h.pdf_file_id}/view" target="_blank" class="btn-primary btn-icon" title="Buka PDF">
+                 <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+               </a>
+               <button onclick="sharePDF('${escapeHtml(h.activity_name_snapshot)}', '${h.date}', '${h.pdf_file_id}', 'Hadir: ${statsMap[h.id]?.H || 0}, Izin: ${statsMap[h.id]?.I || 0}, Sakit: ${statsMap[h.id]?.S || 0}, Alpa: ${statsMap[h.id]?.A || 0}')" class="btn-secondary btn-icon" title="Bagikan">
+                 <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92 0-1.61-1.31-2.92-2.92-2.92z"/></svg>
                </button>`
-            : `<span class="text-xs text-muted bg-gray-100 py-1.5 px-2.5 rounded-lg font-bold">Tanpa PDF</span>`}
+            : `<div class="btn-outline btn-icon opacity-50 cursor-not-allowed" title="Tanpa PDF">
+                 <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/></svg>
+               </div>`}
+              
+              <a href="presensi.html?edit=${h.id}" class="admin-only btn-secondary btn-icon" title="Edit Riwayat">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>
+              <button onclick="deleteSession('${h.id}', '${escapeHtml(h.activity_name_snapshot)}', '${h.date}')" class="admin-only btn-danger btn-icon" title="Hapus Riwayat">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              </button>
             </div>
           </div>
         `).join('') + `</div>`;
       } catch (e) { out.innerHTML = `<p class='msg'>Error: ${e.message}</p>`; }
     };
 
-    window.sharePDF = async (activityName, date, fileId) => {
+    window.sharePDF = async (activityName, date, fileId, stats) => {
       const url = `https://drive.google.com/file/d/${fileId}/view`;
-      const text = `Berikut adalah rekap presensi kegiatan *${activityName}* pada tanggal ${date}.`;
+      const text = `Rekap presensi *${activityName}* (${date})\n${stats}\n\nLink: ${url}`;
 
       if (navigator.share) {
         try {
           await navigator.share({
             title: `Presensi ${activityName}`,
-            text: text,
-            url: url
+            text: text
+            // Hilangkan properti url di sini untuk menghindari link double di beberapa browser
           });
         } catch (e) {
           console.log('User cancelled share atau error:', e);
         }
       } else {
         try {
-          await navigator.clipboard.writeText(`${text}\n\nLink: ${url}`);
-          asyncAlert("Link PDF telah disalin ke clipboard! Silakan paste/tempel pesan di chat tujuan Anda.");
+          await navigator.clipboard.writeText(text);
+          asyncAlert("Link PDF & Statistik telah disalin ke clipboard! Silakan paste/tempel pesan di chat tujuan Anda.");
         } catch (e) {
           asyncAlert("Gagal menyalin link: " + e.message);
         }
       }
+    };
+
+    window.deleteSession = async (id, activityName, date) => {
+      const modal = document.getElementById("customConfirm");
+      document.getElementById("confirmTitle").textContent = "Hapus Riwayat Presensi";
+      document.getElementById("confirmMsg").innerHTML = `Apakah Anda yakin ingin menghapus data presensi <b>${activityName}</b> tanggal <b>${date}</b> secara permanen?<br><br><small class='text-muted'>Tindakan ini tidak dapat dibatalkan.</small>`;
+      document.getElementById("confirmBtnNo").style.display = 'block';
+      modal.style.display = 'flex';
+
+      document.getElementById("confirmBtnYes").onclick = async () => {
+        modal.style.display = 'none';
+        try {
+          // 1. Hapus Detail dulu (menghindari error foreign key jika tidak cascade)
+          const { error: errD } = await supabaseClient.from('attendance_detail').delete().eq('attendance_id', id);
+          if (errD) throw errD;
+
+          // 2. Hapus Header
+          const { error: errH } = await supabaseClient.from('attendance_header').delete().eq('id', id);
+          if (errH) throw errH;
+
+          await asyncAlert("Data presensi berhasil dihapus.", "Berhasil");
+          document.getElementById('loadSessionBtn').click(); // Refresh list
+        } catch (e) {
+          await asyncAlert("Gagal menghapus data: " + e.message, "Error");
+        }
+      };
+      document.getElementById("confirmBtnNo").onclick = () => { modal.style.display = 'none'; };
     };
 
     const autoSession = () => { if (sessionLoaded) document.getElementById('loadSessionBtn').click(); };

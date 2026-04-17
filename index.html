@@ -7,7 +7,7 @@
   <title>Gabku App</title>
   <link rel="stylesheet" href="assets/css/app.css" />
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1590df">
+  <meta name="theme-color" content="#2D3494">
   <link rel="icon" type="image/png" href="assets/img/favicon-50.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -58,14 +58,14 @@
       </div>
     </header>
 
-    <main class="app-main" style="padding-bottom: 100px;">
+    <main class="app-main pb-24">
 
       <div class="dash-header">
         <div class="dash-welcome">
           <div class="welcome-title m-0" id="welcomeUser">Selamat datang 👋</div>
           <div class="welcome-desc">Ringkasan performa tim saat ini.</div>
         </div>
-        <div id="todayDate" class="dash-date">...</div>
+        <div id="todayDate" class="stats-badge-pill">...</div>
       </div>
 
 
@@ -95,16 +95,15 @@
           <div class="kpi-label">Skor Monitoring</div>
           <div id="statMonitoring" class="kpi-val">...</div>
         </div>
-        <!-- CARD 3: Jumlah Latihan (Target vs Actual) -->
         <div id="cardSessions" class="kpi-card">
           <div class="kpi-label">Latihan Bulan Ini</div>
-          <div id="statSessions" class="kpi-val" style="display: flex; align-items: baseline; gap: 4px;">0 <small
-              id="targetSessionsText" style="font-size: 12px; opacity: 0.6; font-weight: 600;">(dari target 0)</small>
+          <div id="statSessions" class="kpi-val flex items-baseline gap-1">0 <small id="targetSessionsText"
+              class="text-xs opacity-60 font-semibold">(dari target 0)</small>
           </div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Monitoring</div>
-          <div style="display: flex; align-items: baseline; gap: 4px;">
+          <div class="flex items-baseline gap-1">
             <div id="statMonLastMonth" class="kpi-val">0</div>
             <div class="text-xs text-muted">Belum Dimonitoring</div>
           </div>
@@ -112,9 +111,8 @@
       </div>
 
       <!-- KEGIATAN TERAKHIR (NEW) -->
-      <section id="lastActivityCard" class="section-card"
-        style="display: none; border-left: 4px solid var(--brand-500);">
-        <div class="section-title m-0 mb-3" style="font-size: 13px; color: var(--text-muted);">Kegiatan Terakhir</div>
+      <section id="lastActivityCard" class="section-card card-accent-left" style="display: none;">
+        <div class="section-title m-0 mb-3 text-xs text-muted">Kegiatan Terakhir</div>
         <div class="flex-col gap-1">
           <div id="lastActName" class="text-base font-extrabold text-main">...</div>
           <div class="flex items-center gap-2 text-xs text-muted">
