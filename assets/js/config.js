@@ -14,3 +14,12 @@ const APP_CONFIG = {
   defaultTitle: true,
   toastDuration: 3000
 };
+
+// =====================================
+// AUTO-LOAD PWA ENFORCER
+// =====================================
+(function () {
+  const script = document.createElement('script');
+  script.src = 'assets/js/pwa-enforcer.js';
+  document.head.appendChild(script);
+})();

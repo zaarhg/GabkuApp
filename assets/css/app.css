@@ -2179,3 +2179,52 @@ input[type="file"]::file-selector-button:hover {
   color: var(--brand-indigo);
   box-shadow: var(--shadow-sm);
 }
+
+/* =========================================
+   PWA ENFORCER OVERLAY
+   ========================================= */
+#pwa-enforcer-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: #f8fafc;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.pwa-enforcer-card {
+  background: white;
+  padding: 30px 24px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  text-align: center;
+  max-width: 360px;
+  width: 100%;
+}
+.pwa-icon {
+  margin-bottom: 20px;
+}
+.pwa-title {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.pwa-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.pwa-steps {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+}
+.pwa-steps p { margin: 8px 0; }
