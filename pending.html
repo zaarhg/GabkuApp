@@ -52,70 +52,10 @@
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/utils.js"></script>
   <script src="assets/js/auth.js"></script>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const { data } = await supabaseClient.auth.getSession();
-      if (!data.session) {
-        window.location.href = "login.html";
-        return;
-      }
-
-      // Cek status terbaru
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('status')
-        .eq('id', data.session.user.id)
-        .maybeSingle();
-
-      if (profile && (profile.status === 'Aktif' || profile.status === 'approved')) {
-        window.location.href = "index.html";
-      }
-
-      // --- FETCH DYNAMIC WA NUMBER ---
-      try {
-        const { data: settings } = await supabaseClient
-          .from('app_settings')
-          .select('setting_value')
-          .eq('setting_key', 'admin_wa_number')
-          .maybeSingle();
-
-        if (settings && settings.setting_value) {
-          let num = settings.setting_value.replace(/[^0-9]/g, '');
-          if (num.startsWith('0')) num = '62' + num.slice(1);
-          const btn = document.getElementById('waButton');
-          const text = encodeURIComponent("Halo Admin, saya sudah mendaftar di Gabku App. Mohon bantuannya untuk aktivasi akun saya. Terima kasih!");
-          btn.href = `https://wa.me/${num}?text=${text}`;
-        }
-      } catch (e) {
-        console.error("Gagal ambil nomor WA:", e);
-      }
-    });
-
-    function asyncConfirm(msg, title = "Peringatan") {
-      return new Promise((resolve) => {
-        const modal = document.getElementById("customConfirm");
-        document.getElementById("confirmTitle").textContent = title;
-        document.getElementById("confirmMsg").textContent = msg;
-        document.getElementById("confirmBtnNo").style.display = 'block';
-        modal.style.display = 'flex';
-        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
-        document.getElementById("confirmBtnNo").onclick = () => { modal.style.display = 'none'; resolve(false); };
-      });
-    }
-
-    function asyncAlert(msg, title = "Informasi") {
-      return new Promise((resolve) => {
-        const modal = document.getElementById("customConfirm");
-        document.getElementById("confirmTitle").textContent = title;
-        document.getElementById("confirmMsg").textContent = msg;
-        document.getElementById("confirmBtnNo").style.display = 'none';
-        modal.style.display = 'flex';
-        document.getElementById("confirmBtnYes").onclick = () => { modal.style.display = 'none'; resolve(true); };
-      });
-    }
-  </script>
+  <script src="assets/js/pending.js"></script>
 
   <!-- Custom Confirm Modal -->
   <div id="customConfirm" class="modal-overlay" style="display:none;">

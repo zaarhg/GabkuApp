@@ -16,10 +16,18 @@ const APP_CONFIG = {
 };
 
 // =====================================
-// AUTO-LOAD PWA ENFORCER
+// AUTO-LOAD PWA ENFORCER & SERVICE WORKER
 // =====================================
 (function () {
   const script = document.createElement('script');
   script.src = 'assets/js/pwa-enforcer.js';
   document.head.appendChild(script);
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch((err) => {
+        console.warn('SW registration failed:', err);
+      });
+    });
+  }
 })();

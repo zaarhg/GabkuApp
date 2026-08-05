@@ -3,8 +3,13 @@
     return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   }
 
-  // Bypass parameter for debugging
-  if (window.location.search.includes('bypass_pwa=1')) return;
+  // Bypass parameter for debugging, localhost, or saved session
+  if (window.location.search.includes('bypass_pwa=1')) {
+    localStorage.setItem('bypass_pwa', '1');
+  }
+
+  const isLocalhost = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+  if (isLocalhost || localStorage.getItem('bypass_pwa') === '1') return;
 
   let deferredPrompt;
 
