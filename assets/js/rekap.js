@@ -325,50 +325,93 @@ document.getElementById('loadSessionBtn').onclick = async () => {
        `;
     }
 
+    let sessionsCacheMap = {};
+    data.forEach(h => {
+      sessionsCacheMap[h.id] = { ...h, stats: statsMap[h.id] || { H: 0, I: 0, S: 0, A: 0 } };
+    });
+    window.sessionsCacheMap = sessionsCacheMap;
+
     out.innerHTML = recapHtml + `<div class="session-card-container">` + data.map((h) => {
-      const stats = statsMap[h.id];
+      const stats = statsMap[h.id] || { H: 0, I: 0, S: 0, A: 0 };
       return `
-      <div class="session-card-item">
+      <div class="session-card-item clickable" onclick="openSessionPdfModal('${h.id}')">
         <div class="session-card-header">
           <div class="session-card-title">${escapeHtml(h.activity_name_snapshot)}</div>
-          <div class="session-card-actions">
-            ${h.pdf_file_id
-          ? `<a href="https://drive.google.com/file/d/${h.pdf_file_id}/view" target="_blank" class="session-action-btn pdf" title="Buka PDF">
-               <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-             </a>
-             <button onclick="sharePDF('${escapeHtml(h.activity_name_snapshot)}', '${h.date}', '${h.pdf_file_id}', 'Hadir: ${stats?.H || 0}, Izin: ${stats?.I || 0}, Sakit: ${stats?.S || 0}, Alpa: ${stats?.A || 0}')" class="session-action-btn share" title="Bagikan">
-               <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92 0-1.61-1.31-2.92-2.92-2.92z"/></svg>
-             </button>`
-          : `<div class="session-action-btn disabled" title="Tanpa PDF">
-               <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/></svg>
-             </div>`}
-            
-            <a href="presensi.html?edit=${h.id}" class="admin-only session-action-btn edit" title="Edit Riwayat">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </a>
-            <button onclick="deleteSession('${h.id}', '${escapeHtml(h.activity_name_snapshot)}', '${h.date}')" class="admin-only session-action-btn delete" title="Hapus Riwayat">
-              <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-            </button>
-          </div>
+          <div class="session-card-arrow">›</div>
         </div>
 
         <div class="session-card-details">
           <span class="session-detail-pill date">📅 ${h.date}</span>
+          <span class="session-detail-pill stats-capsule">📊 H:${stats.H} | I:${stats.I} | S:${stats.S} | A:${stats.A}</span>
           ${h.location_snapshot ? `<span class="session-detail-pill location">📍 ${escapeHtml(h.location_snapshot)}</span>` : ''}
         </div>
-
-        ${stats ? `
-          <div class="session-card-stats">
-            <span class="stat-badge hadir">Hadir: ${stats.H}</span>
-            <span class="stat-badge izin">Izin: ${stats.I}</span>
-            <span class="stat-badge sakit">Sakit: ${stats.S}</span>
-            <span class="stat-badge alpa">Alpa: ${stats.A}</span>
-          </div>
-        ` : ''}
       </div>
     `;
     }).join('') + `</div>`;
   } catch (e) { out.innerHTML = `<p class='msg'>Error: ${e.message}</p>`; }
+};
+
+window.openSessionPdfModal = (id) => {
+  const h = window.sessionsCacheMap ? window.sessionsCacheMap[id] : null;
+  if (!h) return;
+
+  const modal = document.getElementById('pdfPreviewModal');
+  const title = document.getElementById('pdfModalTitle');
+  const sub = document.getElementById('pdfModalSub');
+  const body = document.getElementById('pdfModalBody');
+  const actions = document.getElementById('pdfModalActions');
+
+  if (title) title.textContent = h.activity_name_snapshot || 'Detail Presensi';
+  if (sub) sub.innerHTML = `📅 ${h.date}`;
+
+  const statsStr = `Hadir: ${h.stats?.H || 0}, Izin: ${h.stats?.I || 0}, Sakit: ${h.stats?.S || 0}, Alpa: ${h.stats?.A || 0}`;
+
+  if (body) {
+    if (h.pdf_file_id) {
+      body.innerHTML = `<iframe class="pdf-modal-iframe" src="https://drive.google.com/file/d/${h.pdf_file_id}/preview" allow="autoplay"></iframe>`;
+    } else {
+      body.innerHTML = `
+        <div class="pdf-modal-empty">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#94a3b8" stroke-width="1.5" style="margin-bottom:12px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          <div class="font-extrabold text-base text-main">Dokumen PDF Belum Tersedia</div>
+          <div class="text-xs text-muted mt-1">Sesi ini disimpan tanpa file PDF.</div>
+          <div class="mt-3 text-xs font-bold text-main bg-white py-1.5 px-3 rounded-lg border border-gray-200">${statsStr}</div>
+        </div>
+      `;
+    }
+  }
+
+  if (actions) {
+    actions.innerHTML = `
+      ${h.pdf_file_id ? `
+        <a href="https://drive.google.com/file/d/${h.pdf_file_id}/view" target="_blank" class="pdf-btn pdf-btn-main" style="flex:1;">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> Buka PDF
+        </a>
+        <button onclick="sharePDF('${escapeHtml(h.activity_name_snapshot)}', '${h.date}', '${h.pdf_file_id}', '${statsStr}')" class="pdf-btn pdf-btn-secondary pdf-btn-icon" title="Bagikan Sesi">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92 0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+        </button>
+      ` : `
+        <div class="pdf-btn pdf-btn-disabled" style="flex:1;">Tanpa PDF</div>
+      `}
+      <a href="presensi.html?edit=${h.id}" class="admin-only pdf-btn pdf-btn-secondary pdf-btn-icon" title="Edit Presensi">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </a>
+      <button onclick="closePdfPreviewModal(); deleteSession('${h.id}', '${escapeHtml(h.activity_name_snapshot)}', '${h.date}')" class="admin-only pdf-btn pdf-btn-danger pdf-btn-icon" title="Hapus Presensi">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    `;
+  }
+
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closePdfPreviewModal = () => {
+  const modal = document.getElementById('pdfPreviewModal');
+  if (modal) {
+    modal.style.display = 'none';
+    const body = document.getElementById('pdfModalBody');
+    if (body) body.innerHTML = '';
+  }
 };
 
 window.sharePDF = async (activityName, date, fileId, stats) => {
