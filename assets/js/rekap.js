@@ -19,6 +19,11 @@ function escapeHtml(s) {
 }
 
 function getDateRange(val, startId, endId) {
+  if (val === 'current') {
+    const d = new Date();
+    const start = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+    return { start, end: '2099-12-31' };
+  }
   if (val === 'last3') {
     const d = new Date(); d.setMonth(d.getMonth() - 2);
     return { start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`, end: '2099-12-31' };
@@ -31,9 +36,12 @@ function getDateRange(val, startId, endId) {
     const d = new Date(); d.setMonth(d.getMonth() - 11);
     return { start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`, end: '2099-12-31' };
   }
+  if (val === 'all') {
+    return { start: '2000-01-01', end: '2099-12-31' };
+  }
   if (val === 'custom') {
-    const s = document.getElementById(startId).value;
-    const e = document.getElementById(endId).value;
+    const s = document.getElementById(startId)?.value;
+    const e = document.getElementById(endId)?.value;
     return { start: s || '2000-01-01', end: e || '2099-12-31' };
   }
   return { start: `${val}-01`, end: `${val}-31` };
@@ -169,60 +177,199 @@ let sessionLoaded = true;
 let monthlyLoaded = true;
 let memberLoaded = true;
 
+let _periodOptions = [
+  { val: 'current', label: 'Bulan Ini' },
+  { val: 'last3', label: '3 Bulan Terakhir' },
+  { val: 'last6', label: '6 Bulan Terakhir' },
+  { val: 'last12', label: '1 Tahun Terakhir' },
+  { val: 'all', label: 'Semua Periode' },
+  { val: 'custom', label: 'Custom (Tanggal)' }
+];
+
+let _activityOptions = [
+  { val: '', label: 'Semua Kegiatan (Gabung)' },
+  { val: '[CAT]Latihan', label: 'Kategori: Latihan' },
+  { val: '[CAT]Pertandingan', label: 'Kategori: Pertandingan' },
+  { val: '[CAT]Lainnya', label: 'Kategori: Lainnya' }
+];
+
 async function init() {
   const { data: mems } = await supabaseClient.from('members').select('id, name, role').order('name');
   if (mems) membersCache = mems;
 
-  const { data: headers, error } = await supabaseClient.from('attendance_header').select('date').order('date', { ascending: false });
-
-  const uniqueMonths = new Set();
-  if (headers) {
-    headers.forEach(h => {
-      if (h.date) uniqueMonths.add(h.date.slice(0, 7));
-    });
-  }
-
-  const months = [
-    `<option value="last3">3 Bulan Terakhir</option>`,
-    `<option value="last6">6 Bulan Terakhir</option>`,
-    `<option value="last12">1 Tahun Terakhir</option>`
+  _periodOptions = [
+    { val: 'current', label: 'Bulan Ini' },
+    { val: 'last3', label: '3 Bulan Terakhir' },
+    { val: 'last6', label: '6 Bulan Terakhir' },
+    { val: 'last12', label: '1 Tahun Terakhir' },
+    { val: 'all', label: 'Semua Periode' },
+    { val: 'custom', label: 'Custom (Tanggal)' }
   ];
-
-  if (uniqueMonths.size === 0) {
-    const d = new Date();
-    const val = d.toISOString().slice(0, 7);
-    const label = d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-    months.push(`<option value="${val}">${label}</option>`);
-  } else {
-    uniqueMonths.forEach(val => {
-      const [yyyy, mm] = val.split('-');
-      const d = new Date(yyyy, parseInt(mm) - 1, 1);
-      const label = d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-      months.push(`<option value="${val}">${label}</option>`);
-    });
-  }
-  months.push(`<option value="custom">Custom (Tanggal)</option>`);
-  monthSel.innerHTML = memberMonthSel.innerHTML = sessionMonthSel.innerHTML = months.join('');
 
   const { data: acts } = await supabaseClient.from('activities').select('name, category').eq('is_active', true).order('name');
   if (acts) {
     latihanNames = acts.filter(a => a.category === 'Latihan').map(a => a.name);
     pertandinganNames = acts.filter(a => a.category === 'Pertandingan').map(a => a.name);
     const uniqueActs = [...new Set(acts.map(a => a.name))];
-    const actOpts = `
-      <option value="">Semua Kegiatan (Gabung)</option>
-      <option value="[CAT]Latihan">--- Kategori: Latihan ---</option>
-      <option value="[CAT]Pertandingan">--- Kategori: Pertandingan ---</option>
-      <option value="[CAT]Lainnya">--- Kategori: Lainnya ---</option>
-      <optgroup label="Spesifik Kegiatan Tunggal:">
-        ${uniqueActs.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`)}
-      </optgroup>
-    `;
-    document.getElementById('sessionActivitySel').innerHTML = actOpts;
-    document.getElementById('monthlyActivitySel').innerHTML = actOpts;
-    document.getElementById('memberActivitySel').innerHTML = actOpts;
+    _activityOptions = [
+      { val: '', label: 'Semua Kegiatan (Gabung)' },
+      { val: '[CAT]Latihan', label: 'Kategori: Latihan' },
+      { val: '[CAT]Pertandingan', label: 'Kategori: Pertandingan' },
+      { val: '[CAT]Lainnya', label: 'Kategori: Lainnya' }
+    ];
+    uniqueActs.forEach(a => {
+      _activityOptions.push({ val: a, label: a });
+    });
   }
 }
+
+/* ── Period Picker Modal Logic ── */
+let _currentPeriodTarget = 'session';
+let _tempSelectedPeriod = 'last3';
+
+function openRekapPeriodPicker(target) {
+  _currentPeriodTarget = target;
+  const inputId = target === 'session' ? 'sessionMonthSel' : target === 'monthly' ? 'monthSel' : 'memberMonthSel';
+  const curVal = document.getElementById(inputId)?.value || 'last3';
+  _tempSelectedPeriod = curVal;
+
+  renderRekapPeriodList();
+
+  const customWrap = document.getElementById('rekapCustomDateWrap');
+  if (customWrap) customWrap.style.display = (curVal === 'custom') ? 'flex' : 'none';
+
+  const startId = target === 'session' ? 'sessionStartD' : target === 'monthly' ? 'monthlyStartD' : 'memberStartD';
+  const endId = target === 'session' ? 'sessionEndD' : target === 'monthly' ? 'monthlyEndD' : 'memberEndD';
+  const curS = document.getElementById(startId)?.value || '';
+  const curE = document.getElementById(endId)?.value || '';
+  if (document.getElementById('rekapCustomStartD')) document.getElementById('rekapCustomStartD').value = curS;
+  if (document.getElementById('rekapCustomEndD')) document.getElementById('rekapCustomEndD').value = curE;
+
+  const modal = document.getElementById('rekapPeriodModal');
+  if (modal) modal.style.display = 'flex';
+}
+window.openRekapPeriodPicker = openRekapPeriodPicker;
+
+function closeRekapPeriodPicker() {
+  const modal = document.getElementById('rekapPeriodModal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeRekapPeriodPicker = closeRekapPeriodPicker;
+
+function selectRekapPeriodOption(val) {
+  _tempSelectedPeriod = val;
+  renderRekapPeriodList();
+  const customWrap = document.getElementById('rekapCustomDateWrap');
+  if (customWrap) customWrap.style.display = (val === 'custom') ? 'flex' : 'none';
+}
+window.selectRekapPeriodOption = selectRekapPeriodOption;
+
+function renderRekapPeriodList() {
+  const listEl = document.getElementById('rekapPeriodList');
+  if (!listEl) return;
+
+  listEl.innerHTML = _periodOptions.map(opt => {
+    const isSel = opt.val === _tempSelectedPeriod;
+    return `
+      <div class="picker-item${isSel ? ' selected' : ''}" onclick="selectRekapPeriodOption('${opt.val}')" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; background:${isSel ? '#eff6ff' : '#f8fafc'}; border:1.5px solid ${isSel ? '#3b82f6' : 'transparent'};">
+        <div class="picker-check" style="width:18px; height:18px; border-radius:50%; border:2px solid ${isSel ? '#3b82f6' : '#cbd5e1'}; background:${isSel ? '#3b82f6' : '#fff'}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800;">${isSel ? '✓' : ''}</div>
+        <div style="font-size:13px; font-weight:${isSel ? '700' : '500'}; color:#1e293b;">${escapeHtml(opt.label)}</div>
+      </div>`;
+  }).join('');
+}
+
+function confirmRekapPeriodPicker() {
+  const target = _currentPeriodTarget;
+  const inputId = target === 'session' ? 'sessionMonthSel' : target === 'monthly' ? 'monthSel' : 'memberMonthSel';
+  const textId = target === 'session' ? 'sessionPeriodText' : target === 'monthly' ? 'monthlyPeriodText' : 'memberPeriodText';
+  const startId = target === 'session' ? 'sessionStartD' : target === 'monthly' ? 'monthlyStartD' : 'memberStartD';
+  const endId = target === 'session' ? 'sessionEndD' : target === 'monthly' ? 'monthlyEndD' : 'memberEndD';
+
+  const hiddenInput = document.getElementById(inputId);
+  if (hiddenInput) hiddenInput.value = _tempSelectedPeriod;
+
+  const opt = _periodOptions.find(o => o.val === _tempSelectedPeriod);
+  let labelText = opt ? opt.label : 'Pilih Periode';
+
+  if (_tempSelectedPeriod === 'custom') {
+    const s = document.getElementById('rekapCustomStartD')?.value || '';
+    const e = document.getElementById('rekapCustomEndD')?.value || '';
+    if (document.getElementById(startId)) document.getElementById(startId).value = s;
+    if (document.getElementById(endId)) document.getElementById(endId).value = e;
+    labelText = (s && e) ? `Kustom (${s} - ${e})` : 'Kustom (Tanggal)';
+  }
+
+  const textEl = document.getElementById(textId);
+  if (textEl) textEl.textContent = labelText;
+
+  closeRekapPeriodPicker();
+}
+window.confirmRekapPeriodPicker = confirmRekapPeriodPicker;
+
+/* ── Activity Picker Modal Logic ── */
+let _currentActivityTarget = 'session';
+
+function openRekapActivityPicker(target) {
+  _currentActivityTarget = target;
+  const inputId = target === 'session' ? 'sessionActivitySel' : target === 'monthly' ? 'monthlyActivitySel' : 'memberActivitySel';
+  const curVal = document.getElementById(inputId)?.value || '';
+
+  document.getElementById('rekapActPickerSearch').value = '';
+  filterRekapActivityPicker('', curVal);
+
+  const modal = document.getElementById('rekapActivityModal');
+  if (modal) modal.style.display = 'flex';
+}
+window.openRekapActivityPicker = openRekapActivityPicker;
+
+function closeRekapActivityPicker() {
+  const modal = document.getElementById('rekapActivityModal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeRekapActivityPicker = closeRekapActivityPicker;
+
+function filterRekapActivityPicker(q, activeVal) {
+  const target = _currentActivityTarget;
+  const inputId = target === 'session' ? 'sessionActivitySel' : target === 'monthly' ? 'monthlyActivitySel' : 'memberActivitySel';
+  const curVal = activeVal !== undefined ? activeVal : (document.getElementById(inputId)?.value || '');
+
+  const filtered = q.trim()
+    ? _activityOptions.filter(o => o.label.toLowerCase().includes(q.toLowerCase()))
+    : _activityOptions;
+
+  const listEl = document.getElementById('rekapActivityList');
+  if (!listEl) return;
+
+  if (!filtered.length) {
+    listEl.innerHTML = "<p class='muted text-center py-4' style='font-size:13px;'>Tidak ada kegiatan ditemukan.</p>";
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(opt => {
+    const isSel = opt.val === curVal;
+    return `
+      <div class="picker-item${isSel ? ' selected' : ''}" onclick="selectRekapActivityOption('${escapeHtml(opt.val)}','${escapeHtml(opt.label)}')" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; background:${isSel ? '#eff6ff' : '#f8fafc'}; border:1.5px solid ${isSel ? '#3b82f6' : 'transparent'};">
+        <div class="picker-check" style="width:18px; height:18px; border-radius:50%; border:2px solid ${isSel ? '#3b82f6' : '#cbd5e1'}; background:${isSel ? '#3b82f6' : '#fff'}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800;">${isSel ? '✓' : ''}</div>
+        <div style="font-size:13px; font-weight:${isSel ? '700' : '500'}; color:#1e293b;">${escapeHtml(opt.label)}</div>
+      </div>`;
+  }).join('');
+}
+window.filterRekapActivityPicker = filterRekapActivityPicker;
+
+function selectRekapActivityOption(val, label) {
+  const target = _currentActivityTarget;
+  const inputId = target === 'session' ? 'sessionActivitySel' : target === 'monthly' ? 'monthlyActivitySel' : 'memberActivitySel';
+  const textId = target === 'session' ? 'sessionActivityText' : target === 'monthly' ? 'monthlyActivityText' : 'memberActivityText';
+
+  const hiddenInput = document.getElementById(inputId);
+  if (hiddenInput) hiddenInput.value = val;
+
+  const textEl = document.getElementById(textId);
+  if (textEl) textEl.textContent = label;
+
+  closeRekapActivityPicker();
+}
+window.selectRekapActivityOption = selectRekapActivityOption;
 
 // --- TAB LOGIC ---
 document.getElementById('tabMonthly').onclick = () => switchTab('monthly');
@@ -402,17 +549,33 @@ window.openSessionPdfModal = (id) => {
     `;
   }
 
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.display = 'flex';
+    document.body.classList.add('modal-open');
+  }
 };
 
 window.closePdfPreviewModal = () => {
   const modal = document.getElementById('pdfPreviewModal');
   if (modal) {
     modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
     const body = document.getElementById('pdfModalBody');
     if (body) body.innerHTML = '';
   }
 };
+
+// Prevent pinch-zoom bleed on modal backdrop
+document.addEventListener('DOMContentLoaded', () => {
+  const pdfModalEl = document.getElementById('pdfPreviewModal');
+  if (pdfModalEl) {
+    pdfModalEl.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches.length > 1 && !e.target.closest('#pdfModalBody')) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+  }
+});
 
 window.sharePDF = async (activityName, date, fileId, stats) => {
   const url = `https://drive.google.com/file/d/${fileId}/view`;
@@ -440,8 +603,10 @@ window.sharePDF = async (activityName, date, fileId, stats) => {
 window.deleteSession = async (id, activityName, date) => {
   const modal = document.getElementById("customConfirm");
   document.getElementById("confirmTitle").textContent = "Hapus Riwayat Presensi";
-  document.getElementById("confirmMsg").innerHTML = `Apakah Anda yakin ingin menghapus data presensi <b>${activityName}</b> tanggal <b>${date}</b> secara permanen?<br><br><small class='text-muted'>Tindakan ini tidak dapat dibatalkan.</small>`;
-  document.getElementById("confirmBtnNo").style.display = 'block';
+  const yesBtn = document.getElementById("confirmBtnYes");
+  const noBtn = document.getElementById("confirmBtnNo");
+  if (yesBtn) { yesBtn.className = 'btn-danger'; yesBtn.textContent = 'Ya, Hapus'; }
+  if (noBtn) { noBtn.className = 'btn-primary'; noBtn.textContent = 'Batal'; noBtn.style.display = 'block'; }
   modal.style.display = 'flex';
 
   document.getElementById("confirmBtnYes").onclick = async () => {
@@ -507,7 +672,7 @@ document.getElementById('loadMonthlyBtn').onclick = async () => {
 
     const recap = {};
     details.forEach(d => {
-      if (!recap[d.member_id]) recap[d.member_id] = { name: d.member_name_snapshot, role: d.member_role_snapshot, H: 0, I: 0, S: 0, A: 0, Total: 0 };
+      if (!recap[d.member_id]) recap[d.member_id] = { id: d.member_id, name: d.member_name_snapshot, role: d.member_role_snapshot, H: 0, I: 0, S: 0, A: 0, Total: 0 };
       const r = recap[d.member_id];
       if (d.presence === 'Hadir') r.H++;
       else if (d.presence === 'Izin') r.I++;
@@ -516,7 +681,9 @@ document.getElementById('loadMonthlyBtn').onclick = async () => {
       r.Total++;
     });
 
-    lastMonthlyData = Object.values(recap).sort((a, b) => a.name.localeCompare(b.name));
+    window.lastMonthlyData = Object.values(recap).sort((a, b) => a.name.localeCompare(b.name));
+    currentSortCol = 'name';
+    currentSortDir = 'asc';
 
     let recapHtml = '';
     if (actFilter === '[CAT]Pertandingan') {
@@ -545,8 +712,9 @@ document.getElementById('loadMonthlyBtn').onclick = async () => {
        `;
     }
 
+    window.lastMonthlySummaryHtml = recapHtml;
     out.innerHTML = recapHtml;
-    renderTable(lastMonthlyData, out);
+    renderTable(window.lastMonthlyData, out);
   } catch (e) { out.innerHTML = "Error: " + e.message; }
 };
 
@@ -556,20 +724,119 @@ document.getElementById('monthlyActivitySel').addEventListener('change', autoMon
 document.getElementById('monthlyStartD').addEventListener('change', autoMonthly);
 document.getElementById('monthlyEndD').addEventListener('change', autoMonthly);
 
+let currentSortCol = 'name';
+let currentSortDir = 'asc';
+
+window.switchToMemberTab = (memberId, memberName) => {
+  if (!memberId) return;
+
+  const tabMember = document.getElementById('tabMember');
+  if (tabMember) tabMember.click();
+
+  const monthSel = document.getElementById('monthSel');
+  const monthlyActivitySel = document.getElementById('monthlyActivitySel');
+  const monthlyStartD = document.getElementById('monthlyStartD');
+  const monthlyEndD = document.getElementById('monthlyEndD');
+
+  const memberMonthSel = document.getElementById('memberMonthSel');
+  const memberActivitySel = document.getElementById('memberActivitySel');
+  const memberStartD = document.getElementById('memberStartD');
+  const memberEndD = document.getElementById('memberEndD');
+
+  if (memberMonthSel && monthSel) memberMonthSel.value = monthSel.value;
+  if (memberActivitySel && monthlyActivitySel) memberActivitySel.value = monthlyActivitySel.value;
+  if (memberStartD && monthlyStartD) memberStartD.value = monthlyStartD.value;
+  if (memberEndD && monthlyEndD) memberEndD.value = monthlyEndD.value;
+
+  if (memberMonthSel && memberMonthSel.value === 'custom') {
+    document.getElementById('memberCustomDates')?.classList.remove('hidden');
+  } else {
+    document.getElementById('memberCustomDates')?.classList.add('hidden');
+  }
+
+  const memberSel = document.getElementById('memberSel');
+  if (memberSel) {
+    memberSel.value = memberId;
+  }
+
+  const memberSelText = document.getElementById('memberSelText');
+  if (memberSelText && memberName) {
+    memberSelText.textContent = memberName;
+    memberSelText.style.color = '#111827';
+  }
+
+  const loadMemberBtn = document.getElementById('loadMemberBtn');
+  if (loadMemberBtn) {
+    loadMemberBtn.click();
+  }
+};
+
+window.sortMonthlyTable = (col) => {
+  const dataList = window.lastMonthlyData;
+  if (!dataList || !dataList.length) return;
+
+  if (currentSortCol === col) {
+    currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSortCol = col;
+    currentSortDir = (col === 'name' ? 'asc' : 'desc');
+  }
+
+  const sortedData = [...dataList].sort((a, b) => {
+    let valA, valB;
+    if (col === 'name') {
+      valA = (a.name || '').toLowerCase();
+      valB = (b.name || '').toLowerCase();
+      return currentSortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    } else if (col === 'pct') {
+      valA = a.Total > 0 ? (a.H / a.Total) : 0;
+      valB = b.Total > 0 ? (b.H / b.Total) : 0;
+    } else {
+      valA = a[col] || 0;
+      valB = b[col] || 0;
+    }
+    return currentSortDir === 'asc' ? valA - valB : valB - valA;
+  });
+
+  const out = document.getElementById('monthlyOutput');
+  out.innerHTML = window.lastMonthlySummaryHtml || '';
+  renderTable(sortedData, out);
+};
+
 function renderTable(data, el) {
-  el.innerHTML += `
-    <div class="table-scroll overflow-x-auto"><table class="data-table w-full text-xs collapse border-spacing-0">
-      <thead><tr class="bg-gray-100 text-left">
-        <th class="p-2">Nama</th><th class="p-2 text-center">H</th><th class="p-2 text-center">I</th><th class="p-2 text-center">S</th><th class="p-2 text-center">A</th><th class="p-2 text-center">%</th>
-      </tr></thead>
+  const getSortIcon = (col) => {
+    if (currentSortCol !== col) return '<span style="opacity:0.3; font-size:10px; margin-left:2px; display:inline-block;">↕</span>';
+    return currentSortDir === 'asc'
+      ? '<span style="color:#0284c7; font-weight:800; font-size:11px; margin-left:2px; display:inline-block;">▲</span>'
+      : '<span style="color:#0284c7; font-weight:800; font-size:11px; margin-left:2px; display:inline-block;">▼</span>';
+  };
+
+  const tableContainer = document.createElement('div');
+  tableContainer.className = 'table-scroll overflow-x-auto mt-2';
+  tableContainer.innerHTML = `
+    <table class="data-table w-full text-xs collapse border-spacing-0">
+      <thead>
+        <tr class="bg-gray-100 text-left" style="user-select:none;">
+          <th class="p-2 cursor-pointer hover:bg-gray-200" onclick="sortMonthlyTable('name')" title="Urutkan nama" style="white-space:nowrap; border-bottom: 2px solid #cbd5e1;">Nama ${getSortIcon('name')}</th>
+          <th class="p-2 text-center cursor-pointer hover:bg-gray-200" onclick="sortMonthlyTable('H')" title="Urutkan Hadir" style="white-space:nowrap; border-bottom: 2px solid #cbd5e1;">H ${getSortIcon('H')}</th>
+          <th class="p-2 text-center cursor-pointer hover:bg-gray-200" onclick="sortMonthlyTable('I')" title="Urutkan Izin" style="white-space:nowrap; border-bottom: 2px solid #cbd5e1;">I ${getSortIcon('I')}</th>
+          <th class="p-2 text-center cursor-pointer hover:bg-gray-200" onclick="sortMonthlyTable('S')" title="Urutkan Sakit" style="white-space:nowrap; border-bottom: 2px solid #cbd5e1;">S ${getSortIcon('S')}</th>
+          <th class="p-2 text-center cursor-pointer hover:bg-gray-200" onclick="sortMonthlyTable('A')" title="Urutkan Alpa" style="white-space:nowrap; border-bottom: 2px solid #cbd5e1;">A ${getSortIcon('A')}</th>
+          <th class="p-2 text-center cursor-pointer hover:bg-gray-200" onclick="sortMonthlyTable('pct')" title="Urutkan Persentase" style="white-space:nowrap; border-bottom: 2px solid #cbd5e1;">% ${getSortIcon('pct')}</th>
+        </tr>
+      </thead>
       <tbody>${data.map(r => `
-        <tr class="border-b border-gray-200">
+        <tr onclick="switchToMemberTab('${r.id}', '${escapeHtml(r.name).replace(/'/g, "\\'")}')" class="border-b border-gray-200 hover:bg-sky-50 cursor-pointer transition-colors" title="Klik untuk lihat detail rekap ${escapeHtml(r.name)}">
           <td class="p-2"><b>${escapeHtml(r.name)}</b><br><small class="text-muted">${escapeHtml(r.role)}</small></td>
-          <td class="p-2 text-center">${r.H}</td><td class="p-2 text-center">${r.I}</td><td class="p-2 text-center">${r.S}</td><td class="p-2 text-center">${r.A}</td>
-          <td class="p-2 text-center font-bold">${Math.round((r.H / r.Total) * 100)}%</td>
+          <td class="p-2 text-center font-semibold">${r.H}</td>
+          <td class="p-2 text-center font-semibold">${r.I}</td>
+          <td class="p-2 text-center font-semibold">${r.S}</td>
+          <td class="p-2 text-center font-semibold">${r.A}</td>
+          <td class="p-2 text-center font-bold text-main">${Math.round((r.H / (r.Total || 1)) * 100)}%</td>
         </tr>`).join('')}
       </tbody>
-    </table></div>`;
+    </table>`;
+  el.appendChild(tableContainer);
 }
 
 let memberChartInstance = null;
@@ -591,7 +858,7 @@ document.getElementById('loadMemberBtn').onclick = async () => {
 
   try {
     const { data: fetchRaw } = await supabaseClient.from('attendance_detail')
-      .select('presence, attendance_header(date, activity_name_snapshot, pdf_file_id)')
+      .select('presence, attendance_header(id, date, activity_name_snapshot, pdf_file_id, location_snapshot)')
       .eq('member_id', memId)
       .gte('attendance_header.date', start)
       .lte('attendance_header.date', end)
@@ -611,6 +878,23 @@ document.getElementById('loadMemberBtn').onclick = async () => {
     }
 
     if (!history.length) return out.innerHTML = "<p class='muted'>Belum ada riwayat kehadiran.</p>";
+
+    window.sessionsCacheMap = window.sessionsCacheMap || {};
+    history.forEach(item => {
+      const head = item.attendance_header;
+      if (head && head.id) {
+        if (!window.sessionsCacheMap[head.id]) {
+          window.sessionsCacheMap[head.id] = {
+            id: head.id,
+            activity_name_snapshot: head.activity_name_snapshot,
+            date: head.date,
+            location_snapshot: head.location_snapshot,
+            pdf_file_id: head.pdf_file_id,
+            stats: null
+          };
+        }
+      }
+    });
 
     let H = 0, I = 0, S = 0, A = 0;
     let countLatihan = 0;
@@ -659,24 +943,25 @@ document.getElementById('loadMemberBtn').onclick = async () => {
         <canvas id="memberChartCanvas" height="180"></canvas>
       </div>
 
-      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        ${history.map((h, i) => `
-          <div class="flex justify-between items-center py-4 px-4 ${i === history.length - 1 ? '' : 'border-b border-gray-200'}">
-            <div class="flex-1 pr-3">
-              <div class="font-bold text-base text-main">${escapeHtml(h.attendance_header.activity_name_snapshot)}</div>
-              <div class="text-xs text-muted mt-1.5 flex items-center gap-1.5">
-                <span>📅 ${h.attendance_header.date}</span>
+      <div class="flex flex-col gap-2.5 mt-4">
+        ${history.map(item => {
+          const head = item.attendance_header;
+          const badgeClass = item.presence === 'Hadir' ? 'presence-badge-hadir' :
+                             item.presence === 'Izin' ? 'presence-badge-izin' :
+                             item.presence === 'Sakit' ? 'presence-badge-sakit' : 'presence-badge-alpa';
+          return `
+            <div onclick="openSessionPdfModal('${head.id}')" class="member-activity-card">
+              <div class="member-activity-info">
+                <div class="member-activity-title">${escapeHtml(head.activity_name_snapshot)}</div>
+                <div class="member-activity-date">📅 ${head.date}</div>
+              </div>
+              <div class="member-activity-right">
+                <span class="presence-badge ${badgeClass}">${item.presence}</span>
+                <span class="member-activity-arrow">›</span>
               </div>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="text-xs font-bold py-1.5 px-3 rounded-lg ${h.presence === 'Hadir' ? 'text-success bg-green-50 border border-green-100' :
-        h.presence === 'Izin' ? 'text-warning bg-yellow-50 border border-yellow-100' :
-          h.presence === 'Sakit' ? 'text-orange-600 bg-orange-50 border border-orange-100' :
-            'text-danger bg-red-50 border border-red-100'
-      }">${h.presence}</span>
-              ${h.attendance_header.pdf_file_id ? `<a href="https://drive.google.com/file/d/${h.attendance_header.pdf_file_id}/view" target="_blank" title="Lihat PDF" class="text-primary hover:text-primary-dark transition-colors"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></a>` : ''}
-            </div>
-          </div>`).join('')}
+          `;
+        }).join('')}
       </div>`;
 
     out.innerHTML = html;

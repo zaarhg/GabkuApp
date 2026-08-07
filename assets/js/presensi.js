@@ -27,6 +27,7 @@ let activitiesCache = [];
 let membersCache = [];
 let participants = [];
 let photoB64 = [];
+let previousLocValue = '';
 
 window.toggleManualInput = (type) => {
   if (type === 'time') {
@@ -59,10 +60,20 @@ window.checkFormReady = () => {
   const tStart = document.getElementById("timeStartManual");
   const tEnd = document.getElementById("timeEndManual");
   const lMan = document.getElementById("locationManual");
+  const subInp = document.getElementById("activitySubName");
+  const subWrap = document.getElementById("subNameWrap");
 
-  [dateEl, timeSel, tStart, tEnd, locSel, lMan].forEach(removeErr);
+  const isSubNameVisible = subWrap && subWrap.style.display !== 'none';
+  if (isSubNameVisible && !subInp.value.trim()) ready = false;
 
-  if (activitySel.value) {
+  [activitySel, subInp, dateEl, timeSel, tStart, tEnd, locSel, lMan].forEach(removeErr);
+
+  if (!activitySel.value) {
+    setErr(activitySel);
+  } else {
+    if (isSubNameVisible && !subInp.value.trim()) {
+      setErr(subInp);
+    }
     if (!dateEl.value) setErr(dateEl);
     if (timeSel.value === 'Lainnya') {
       if (!tStart.value) setErr(tStart);
@@ -214,7 +225,19 @@ async function init() {
       if (inp && inp.tagName === 'INPUT') inp.addEventListener('input', checkFormReady);
     });
 
-    locSel.addEventListener('change', () => {
+    locSel.addEventListener('change', async () => {
+      const selId = activitySel.value;
+      const act = activitiesCache.find(a => a.id === selId);
+      if (act && act.location && locSel.value !== act.location) {
+        const proceed = await checkTemplateWarning("mengubah lokasi kegiatan dari template", "location");
+        if (!proceed) {
+          locSel.value = previousLocValue || act.location;
+          toggleManualInput('location');
+          checkFormReady();
+          return;
+        }
+      }
+      previousLocValue = locSel.value;
       toggleManualInput('location');
       checkFormReady();
     });
@@ -353,10 +376,12 @@ activitySel.addEventListener('change', () => {
       toggleManualInput('location');
       document.getElementById("locationManual").value = act.location;
     }
+    previousLocValue = locSel.value;
   } else {
     locSel.value = "";
     toggleManualInput('location');
     document.getElementById("locationManual").value = "";
+    previousLocValue = "";
   }
 
   if (act.default_participants && act.default_participants.length > 0) {
@@ -403,10 +428,10 @@ function renderParticipants() {
           <option value="Sakit" ${p.presence === 'Sakit' ? 'selected' : ''}>Sakit</option>
           <option value="Alpa" ${p.presence === 'Alpa' ? 'selected' : ''}>Alpa</option>
         </select>
-        <button class="btn-secondary flex items-center justify-center m-0" 
-          style="width:34px; height:34px; padding:0; border-radius: 8px; background: var(--brand-50); color: var(--brand-indigo);" 
-          onclick="removeParticipant(${i})" title="Hapus peserta">
-          <span class="text-xl">&times;</span>
+        <button class="flex items-center justify-center m-0 transition-colors hover:bg-red-100" 
+          style="width:34px; height:34px; padding:0; border-radius: 8px; background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; cursor: pointer;" 
+          onclick="removeParticipant(${i})" title="Keluarkan dari sesi">
+          <span class="text-xl font-bold">&times;</span>
         </button>
       </div>
     </div>`;

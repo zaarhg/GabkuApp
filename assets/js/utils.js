@@ -87,7 +87,7 @@ window.formatDateIndo = formatDateIndo;
  * @param {string} title 
  * @returns {Promise<boolean>}
  */
-function customConfirm(message, title = 'Konfirmasi') {
+function customConfirm(message, title = 'Konfirmasi', options = {}) {
   return new Promise((resolve) => {
     // Check if HTML has existing #customConfirm modal structure
     const htmlModal = document.getElementById("customConfirm");
@@ -96,10 +96,35 @@ function customConfirm(message, title = 'Konfirmasi') {
     const confirmBtnYes = document.getElementById("confirmBtnYes");
     const confirmBtnNo = document.getElementById("confirmBtnNo");
 
+    let isDanger = options.isDanger || false;
+    let yesText = options.yesText || 'Ya, Lanjutkan';
+    let noText = options.noText || 'Batal';
+
+    const lowerMsg = (message || '').toLowerCase();
+    const lowerTitle = (title || '').toLowerCase();
+
+    if (lowerMsg.includes('hapus') || lowerTitle.includes('hapus') || lowerMsg.includes('keluar') || lowerTitle.includes('keluar')) {
+      isDanger = true;
+      if (!options.yesText) {
+        if (lowerMsg.includes('hapus') || lowerTitle.includes('hapus')) {
+          yesText = 'Ya, Hapus';
+        } else if (lowerMsg.includes('keluar') || lowerTitle.includes('keluar')) {
+          yesText = 'Ya, Keluar';
+        }
+      }
+    }
+
     if (htmlModal && confirmTitle && confirmMsg && confirmBtnYes && confirmBtnNo) {
       confirmTitle.textContent = title;
       confirmMsg.textContent = message;
       confirmBtnNo.style.display = 'block';
+
+      confirmBtnYes.className = 'btn-danger';
+      confirmBtnYes.textContent = yesText;
+
+      confirmBtnNo.className = 'btn-primary';
+      confirmBtnNo.textContent = noText;
+
       htmlModal.style.display = 'flex';
       htmlModal.classList.add('show');
 
@@ -123,8 +148,8 @@ function customConfirm(message, title = 'Konfirmasi') {
           <h3 id="customConfirmDynTitle" style="margin:0 0 10px; font-size:16px; font-weight:700; color:#1e293b;">${escHtml(title)}</h3>
           <p id="customConfirmDynMessage" style="margin:0 0 20px; font-size:14px; color:#475569; line-height:1.5;">${escHtml(message)}</p>
           <div style="display:flex; gap:10px; justify-content:center;">
-            <button id="customConfirmDynCancelBtn" style="flex:1; padding:10px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:8px; font-weight:600; cursor:pointer; color:#64748b;">Batal</button>
-            <button id="customConfirmDynOkBtn" style="flex:1; padding:10px; border:none; background:#dc2626; border-radius:8px; font-weight:600; cursor:pointer; color:#fff;">Ya, Lanjutkan</button>
+            <button id="customConfirmDynCancelBtn" style="flex:1; padding:10px; border:none; background:#198cda; border-radius:8px; font-weight:600; cursor:pointer; color:#fff;">${escHtml(noText)}</button>
+            <button id="customConfirmDynOkBtn" style="flex:1; padding:10px; border:1px solid #fecaca; background:#fef2f2; border-radius:8px; font-weight:600; cursor:pointer; color:#dc2626;">${escHtml(yesText)}</button>
           </div>
         </div>
       `;
@@ -132,6 +157,16 @@ function customConfirm(message, title = 'Konfirmasi') {
     } else {
       document.getElementById('customConfirmDynTitle').textContent = title;
       document.getElementById('customConfirmDynMessage').textContent = message;
+      const cancelDynBtn = document.getElementById('customConfirmDynCancelBtn');
+      cancelDynBtn.textContent = noText;
+      cancelDynBtn.style.background = '#198cda';
+      cancelDynBtn.style.color = '#fff';
+
+      const okDynBtn = document.getElementById('customConfirmDynOkBtn');
+      okDynBtn.textContent = yesText;
+      okDynBtn.style.background = '#fef2f2';
+      okDynBtn.style.color = '#dc2626';
+      okDynBtn.style.border = '1px solid #fecaca';
     }
 
     modal.style.display = 'flex';

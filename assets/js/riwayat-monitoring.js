@@ -91,6 +91,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (e.target === atletModal) closeAtletPicker();
     });
   }
+  const eventModal = document.getElementById('eventPickerModal');
+  if (eventModal) {
+    eventModal.addEventListener('click', e => {
+      if (e.target === eventModal) closeEventPicker();
+    });
+  }
+  const periodModal = document.getElementById('periodPickerModal');
+  if (periodModal) {
+    periodModal.addEventListener('click', e => {
+      if (e.target === periodModal) closePeriodPicker();
+    });
+  }
 });
 
 /* ── Event Picker Modal ── */
@@ -292,6 +304,97 @@ function removeAtlet(id) {
 }
 window.removeAtlet = removeAtlet;
 
+/* ── Period Picker Modal Handler ── */
+let _tempPeriodOpt = 'last3';
+
+function openPeriodPicker() {
+  const modal = document.getElementById('periodPickerModal');
+  if (!modal) return;
+  const selItem = modal.querySelector('.picker-item.selected');
+  if (selItem) {
+    _tempPeriodOpt = selItem.getAttribute('data-val') || 'last3';
+  }
+  modal.classList.add('show');
+}
+window.openPeriodPicker = openPeriodPicker;
+
+function closePeriodPicker() {
+  const modal = document.getElementById('periodPickerModal');
+  if (modal) modal.classList.remove('show');
+}
+window.closePeriodPicker = closePeriodPicker;
+
+function selectPeriodOption(val, el) {
+  _tempPeriodOpt = val;
+  const list = document.getElementById('periodPickerList');
+  if (list) {
+    list.querySelectorAll('.picker-item').forEach(item => {
+      item.classList.remove('selected');
+      const chk = item.querySelector('.picker-check');
+      if (chk) chk.textContent = '';
+    });
+  }
+  if (el) {
+    el.classList.add('selected');
+    const chk = el.querySelector('.picker-check');
+    if (chk) chk.textContent = '✓';
+  }
+  const customWrap = document.getElementById('customPeriodWrap');
+  if (customWrap) {
+    customWrap.style.display = (val === 'custom') ? 'flex' : 'none';
+  }
+}
+window.selectPeriodOption = selectPeriodOption;
+
+function confirmPeriodPicker() {
+  const mode = _tempPeriodOpt || 'last3';
+  const now = new Date();
+  const curM = now.getMonth() + 1;
+  const curY = now.getFullYear();
+
+  const startB = document.getElementById('startBulan');
+  const startT = document.getElementById('startTahun');
+  const endB = document.getElementById('endBulan');
+  const endT = document.getElementById('endTahun');
+  const labelEl = document.getElementById('periodSelText');
+
+  if (!startB || !startT || !endB || !endT) return;
+
+  if (mode === 'curMonth') {
+    startB.value = curM; startT.value = curY;
+    endB.value = curM; endT.value = curY;
+    if (labelEl) labelEl.textContent = 'Bulan Ini';
+  } else if (mode === 'last3') {
+    let sm = curM - 2; let sy = curY;
+    if (sm <= 0) { sm += 12; sy -= 1; }
+    startB.value = sm; startT.value = sy;
+    endB.value = curM; endT.value = curY;
+    if (labelEl) labelEl.textContent = '3 Bulan Terakhir';
+  } else if (mode === 'last6') {
+    let sm = curM - 5; let sy = curY;
+    if (sm <= 0) { sm += 12; sy -= 1; }
+    startB.value = sm; startT.value = sy;
+    endB.value = curM; endT.value = curY;
+    if (labelEl) labelEl.textContent = '6 Bulan Terakhir';
+  } else if (mode === 'last12') {
+    let sm = curM; let sy = curY - 1;
+    startB.value = sm; startT.value = sy;
+    endB.value = curM; endT.value = curY;
+    if (labelEl) labelEl.textContent = '1 Tahun Terakhir';
+  } else if (mode === 'all') {
+    startB.value = 1; startT.value = 2024;
+    endB.value = 12; endT.value = curY;
+    if (labelEl) labelEl.textContent = 'Semua Periode';
+  } else if (mode === 'custom') {
+    const smName = NB[parseInt(startB.value)] || '';
+    const emName = NB[parseInt(endB.value)] || '';
+    if (labelEl) labelEl.textContent = `Kustom (${smName} ${startT.value} - ${emName} ${endT.value})`;
+  }
+
+  closePeriodPicker();
+}
+window.confirmPeriodPicker = confirmPeriodPicker;
+
 /* ── Load Riwayat ── */
 async function loadRiwayat() {
   const container = document.getElementById('listContainer');
@@ -423,7 +526,25 @@ async function loadRiwayat() {
     });
 
     _lastData = filtered;
+    const infoCount = document.getElementById('infoDataCount');
+    if (infoCount) infoCount.textContent = filtered.length;
     if (pill) pill.textContent = filtered.length + ' data';
+
+    // Reset sub-charts
+    _activePilarKey = null;
+    _activeFisikKey = null;
+    if (pilarArea) pilarArea.classList.remove('open');
+    const btnP = document.getElementById('btnFsPilar');
+    if (btnP) btnP.style.display = 'none';
+
+    if (fisikArea) fisikArea.classList.remove('open');
+    const btnF = document.getElementById('btnFsFisik');
+    if (btnF) btnF.style.display = 'none';
+
+    document.querySelectorAll('.pilar-tab-row .pilar-tab-btn').forEach(b => {
+      b.classList.remove('active', 'active-hadir', 'active-vo2max');
+    });
+
     renderChart(filtered);
     renderList(filtered, container);
 
@@ -490,11 +611,13 @@ function renderChart(data) {
 
 function togglePilarChart(key, btnEl) {
   const area = document.getElementById('pilarChartArea');
+  const fsBtn = document.getElementById('btnFsPilar');
   const allBtns = document.querySelector('.pilar-tab-row').querySelectorAll('.pilar-tab-btn');
 
   if (_activePilarKey === key) {
     _activePilarKey = null;
     if (area) area.classList.remove('open');
+    if (fsBtn) fsBtn.style.display = 'none';
     allBtns.forEach(b => b.classList.remove('active'));
     if (_pilarChartInst) { _pilarChartInst.destroy(); _pilarChartInst = null; }
     return;
@@ -504,27 +627,33 @@ function togglePilarChart(key, btnEl) {
   allBtns.forEach(b => b.classList.remove('active'));
   btnEl.classList.add('active');
   if (area) area.classList.add('open');
+  if (fsBtn) fsBtn.style.display = 'inline-flex';
   renderPilarChart(key, _lastData);
 }
 window.togglePilarChart = togglePilarChart;
 
 function toggleFisikChart(key, btnEl) {
   const area = document.getElementById('fisikChartArea');
+  const fsBtn = document.getElementById('btnFsFisik');
   const container = btnEl.closest('.pilar-tab-row');
   const allBtns = container.querySelectorAll('.pilar-tab-btn');
 
   if (_activeFisikKey === key) {
     _activeFisikKey = null;
     if (area) area.classList.remove('open');
-    allBtns.forEach(b => b.classList.remove('active'));
+    if (fsBtn) fsBtn.style.display = 'none';
+    allBtns.forEach(b => b.classList.remove('active', 'active-hadir', 'active-vo2max'));
     if (_fisikChartInst) { _fisikChartInst.destroy(); _fisikChartInst = null; }
     return;
   }
 
   _activeFisikKey = key;
-  allBtns.forEach(b => b.classList.remove('active'));
-  btnEl.classList.add('active');
+  allBtns.forEach(b => b.classList.remove('active', 'active-hadir', 'active-vo2max'));
+  if (key === 'hadir') btnEl.classList.add('active-hadir');
+  else if (key === 'vo2max') btnEl.classList.add('active-vo2max');
+
   if (area) area.classList.add('open');
+  if (fsBtn) fsBtn.style.display = 'inline-flex';
   renderFisikChart(key, _lastData);
 }
 window.toggleFisikChart = toggleFisikChart;

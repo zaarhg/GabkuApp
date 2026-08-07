@@ -76,28 +76,58 @@
     .btn-add-atlet {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      background: #f8fafc;
-      border: 1.5px dashed #cbd5e1;
+      gap: 6px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
       border-radius: 8px;
       padding: 8px 14px;
       font-size: 13px;
       font-weight: 600;
-      color: #64748b;
+      color: #334155;
       cursor: pointer;
       transition: all 0.2s;
       width: fit-content;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
 
     .btn-add-atlet:hover {
-      background: #eff6ff;
-      border-color: #93c5fd;
-      color: #1590df;
+      background: #f8fafc;
+      border-color: #198cda;
+      color: #198cda;
     }
+
+    /* ── Soft Blue Filter Trigger Buttons ── */
+    .btn-filter-trigger {
+      width: 100%;
+      min-height: 44px;
+      background: #f0f7ff;
+      border: 1px solid #bae6fd;
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #0369a1;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(25, 140, 218, 0.04);
+    }
+
+    .btn-filter-trigger:hover {
+      background: #e0f2fe;
+      border-color: #7dd3fc;
+      color: #0284c7;
+      box-shadow: 0 2px 6px rgba(25, 140, 218, 0.1);
+    }
+
+
 
     /* ── Picker modal ── */
     #atletPickerModal,
-    #eventPickerModal {
+    #eventPickerModal,
+    #periodPickerModal {
       display: none;
       position: fixed;
       inset: 0;
@@ -108,7 +138,8 @@
     }
 
     #atletPickerModal.show,
-    #eventPickerModal.show {
+    #eventPickerModal.show,
+    #periodPickerModal.show {
       display: flex;
     }
 
@@ -221,7 +252,7 @@
     }
 
     .picker-ok {
-      background: #1590df;
+      background: #198cda;
       color: #fff;
     }
 
@@ -585,9 +616,9 @@
 
     .btn-share-pdf {
       flex: 1;
-      background: #fef9c3;
-      color: #854d0e;
-      border: 1px solid #fef08a;
+      background: #f1f5f9;
+      color: #94a3b8;
+      border: 1px solid #e2e8f0;
       border-radius: 8px;
       padding: 9px;
       font-size: 12px;
@@ -840,6 +871,21 @@
       background: #e2e8f0;
     }
 
+    /* ── Active Tab Colors for Kehadiran & VO2max ── */
+    .pilar-tab-btn.active-hadir {
+      background: #eff6ff !important;
+      color: #198cda !important;
+      border-color: #bfdbfe !important;
+      font-weight: 700;
+    }
+
+    .pilar-tab-btn.active-vo2max {
+      background: #f0fdf4 !important;
+      color: #10b981 !important;
+      border-color: #a7f3d0 !important;
+      font-weight: 700;
+    }
+
     .chart-header-flex {
       display: flex;
       justify-content: space-between;
@@ -891,86 +937,47 @@
 
       <!-- ── FILTER ── -->
       <section class="section-card mt-0">
-        <div class="section-title m-0 mb-3">Filter Data</div>
+        <div class="section-title" style="margin-top:0; margin-bottom:16px;">Filter Data Monitoring</div>
 
+        <!-- 1. Event / Kegiatan -->
         <label class="field-label">Event / Kegiatan (Opsional)</label>
-        <div class="atlet-picker">
-          <div class="atlet-chips" id="eventChips"></div>
-          <button class="btn-add-atlet" onclick="openEventPicker()">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-            </svg>
-            Pilih Event
-          </button>
-        </div>
+        <button type="button" class="btn-filter-trigger mb-2" onclick="openEventPicker()">
+          <span class="text-slate-600">Pilih Event / Kegiatan...</span>
+          <span class="text-xs text-sky-600">▼</span>
+        </button>
+        <div id="eventChips" class="atlet-chips mb-3"></div>
 
-        <!-- 2. Atlet (multi-chip) -->
-        <label class="field-label mt-3">Atlet (Opsional)</label>
-        <div class="atlet-picker">
-          <div class="atlet-chips" id="atletChips"></div>
-          <button class="btn-add-atlet" onclick="openAtletPicker()">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-            </svg>
-            Pilih Atlet
-          </button>
-        </div>
+        <!-- 2. Atlet -->
+        <label class="field-label">Atlet (Opsional)</label>
+        <button type="button" class="btn-filter-trigger mb-2" onclick="openAtletPicker()">
+          <span class="text-slate-600">Pilih Atlet...</span>
+          <span class="text-xs text-sky-600">▼</span>
+        </button>
+        <div id="atletChips" class="atlet-chips mb-3"></div>
 
-        <!-- 3. Waktu Mulai -->
-        <label class="field-label mt-3">Waktu Mulai</label>
-        <div class="period-row">
-          <select id="startBulan" class="field">
-            <option value="1">Januari</option>
-            <option value="2">Februari</option>
-            <option value="3">Maret</option>
-            <option value="4">April</option>
-            <option value="5">Mei</option>
-            <option value="6">Juni</option>
-            <option value="7">Juli</option>
-            <option value="8">Agustus</option>
-            <option value="9">September</option>
-            <option value="10">Oktober</option>
-            <option value="11">November</option>
-            <option value="12">Desember</option>
-          </select>
-          <select id="startTahun" class="field"></select>
-        </div>
+        <!-- 3. Periode Waktu -->
+        <label class="field-label">Periode Waktu</label>
+        <button type="button" class="btn-filter-trigger mb-3" onclick="openPeriodPicker()">
+          <span id="periodSelText" class="font-semibold text-sky-700">3 Bulan Terakhir</span>
+          <span class="text-xs text-sky-600">▼</span>
+        </button>
 
-        <!-- 4. Waktu Selesai -->
-        <label class="field-label mt-3">Waktu Selesai</label>
-        <div class="period-row">
-          <select id="endBulan" class="field">
-            <option value="1">Januari</option>
-            <option value="2">Februari</option>
-            <option value="3">Maret</option>
-            <option value="4">April</option>
-            <option value="5">Mei</option>
-            <option value="6">Juni</option>
-            <option value="7">Juli</option>
-            <option value="8">Agustus</option>
-            <option value="9">September</option>
-            <option value="10">Oktober</option>
-            <option value="11">November</option>
-            <option value="12">Desember</option>
-          </select>
-          <select id="endTahun" class="field"></select>
-        </div>
-
-        <button class="btn-primary w-full mt-4" onclick="loadRiwayat()">
+        <button class="btn-primary w-full" style="margin-top: 20px;" onclick="loadRiwayat()">
           Lihat Monitoring
         </button>
       </section>
 
       <!-- ── HASIL ── -->
       <div id="hasilSection" style="display:none;">
+        <!-- Kartu Informasi Ringkasan Data -->
+        <div class="section-card bg-sky-50/70 border border-sky-100 flex items-center justify-center p-3.5 mb-3 text-center">
+          <div class="text-sm font-bold text-slate-700">Ditemukan <span id="infoDataCount" class="text-sky-600 font-extrabold">0</span> Data Monitoring</div>
+        </div>
+
         <section class="section-card">
           <div class="chart-header-flex">
-            <div class="section-title m-0 flex items-center">
-              Tren Perkembangan <span
-                class="count-pill flex items-center justify-center bg-blue-50 text-main text-xs font-bold py-0.5 px-2.5 rounded-full ml-2"
-                id="countPill"></span>
-            </div>
-            <button class="btn-fs" onclick="openFs('trend')">⛶ Layar Penuh</button>
+            <div class="section-title m-0">Tren Perkembangan</div>
+            <button id="btnFsTrend" class="btn-fs" onclick="openFs('trend')">⛶ Layar Penuh</button>
           </div>
           <div class="chart-wrap">
             <div class="chart-inner" id="trendChartInner">
@@ -981,9 +988,8 @@
           <!-- Pilar tab charts (Teknis & Mental) -->
           <div class="mt-4 pt-3 border-t border-slate-100">
             <div class="chart-header-flex">
-              <div class="text-[11px] font-bold text-muted uppercase tracking-wider">Tren Per Pilar Teknis & Mental
-              </div>
-              <button class="btn-fs" onclick="openFs('pilar')">⛶ Layar Penuh</button>
+              <div class="text-[11px] font-bold text-muted uppercase tracking-wider">Tren Per Pilar Teknis & Mental</div>
+              <button id="btnFsPilar" class="btn-fs" style="display:none;" onclick="openFs('pilar')">⛶ Layar Penuh</button>
             </div>
             <div class="pilar-tab-row">
               <button class="pilar-tab-btn b1" onclick="togglePilarChart('b1',this)">🃏 B1<br>Bidding</button>
@@ -1000,16 +1006,15 @@
             </div>
           </div>
 
-          <!-- Fisik & Kehadiran tab charts (BARU) -->
+          <!-- Fisik & Kehadiran tab charts -->
           <div class="mt-4 pt-3 border-t border-slate-100">
             <div class="chart-header-flex">
               <div class="text-[11px] font-bold text-muted uppercase tracking-wider">Tren Fisik & Kehadiran</div>
-              <button class="btn-fs" onclick="openFs('fisik')">⛶ Layar Penuh</button>
+              <button id="btnFsFisik" class="btn-fs" style="display:none;" onclick="openFs('fisik')">⛶ Layar Penuh</button>
             </div>
             <div class="pilar-tab-row">
-              <button class="pilar-tab-btn hadir" onclick="toggleFisikChart('hadir',this)">📅<br>Kehadiran</button>
-              <button class="pilar-tab-btn b1" style="border-color:#10b981; color:#10b981; background:#f0fdf4;"
-                onclick="toggleFisikChart('vo2max',this)">🫁<br>VO₂max</button>
+              <button class="pilar-tab-btn" onclick="toggleFisikChart('hadir',this)">📅<br>Kehadiran</button>
+              <button class="pilar-tab-btn" onclick="toggleFisikChart('vo2max',this)">🫁<br>VO₂max</button>
             </div>
             <div class="pilar-chart-area" id="fisikChartArea">
               <div class="chart-wrap" style="padding-top:0; border:none; box-shadow:none;">
@@ -1021,7 +1026,7 @@
           </div>
         </section>
         <section class="section-card">
-          <div class="section-title m-0 mb-3">Detail Monitoring</div>
+          <div class="section-title" style="margin-top:0; margin-bottom:16px;">Detail Monitoring</div>
           <div id="listContainer"></div>
         </section>
       </div>
@@ -1051,6 +1056,88 @@
       <div class="picker-actions">
         <button class="picker-cancel" onclick="closeAtletPicker()">Batal</button>
         <button class="picker-ok" onclick="confirmAtletPicker()">Konfirmasi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Period Picker Modal -->
+  <div id="periodPickerModal">
+    <div class="picker-box">
+      <div class="picker-title">Pilih Periode Waktu</div>
+      <div class="picker-list" id="periodPickerList">
+        <div class="picker-item" data-val="curMonth" onclick="selectPeriodOption('curMonth', this)">
+          <div class="picker-check"></div>
+          <div class="picker-item-name">Bulan Ini</div>
+        </div>
+        <div class="picker-item selected" data-val="last3" onclick="selectPeriodOption('last3', this)">
+          <div class="picker-check">✓</div>
+          <div class="picker-item-name">3 Bulan Terakhir</div>
+        </div>
+        <div class="picker-item" data-val="last6" onclick="selectPeriodOption('last6', this)">
+          <div class="picker-check"></div>
+          <div class="picker-item-name">6 Bulan Terakhir</div>
+        </div>
+        <div class="picker-item" data-val="last12" onclick="selectPeriodOption('last12', this)">
+          <div class="picker-check"></div>
+          <div class="picker-item-name">1 Tahun Terakhir</div>
+        </div>
+        <div class="picker-item" data-val="all" onclick="selectPeriodOption('all', this)">
+          <div class="picker-check"></div>
+          <div class="picker-item-name">Semua Periode</div>
+        </div>
+        <div class="picker-item" data-val="custom" onclick="selectPeriodOption('custom', this)">
+          <div class="picker-check"></div>
+          <div class="picker-item-name">Kustom (Pilih Bulan & Tahun)</div>
+        </div>
+      </div>
+
+      <!-- Custom Date Range Sub-section inside modal -->
+      <div id="customPeriodWrap" style="display:none;" class="p-3 bg-slate-50 border border-slate-200 rounded-lg mb-3 flex-col gap-2">
+        <div>
+          <label for="startBulan" class="text-xs font-semibold text-muted block mb-1">Waktu Mulai</label>
+          <div class="flex gap-2">
+            <select id="startBulan" name="startBulan" class="field flex-1">
+              <option value="1">Januari</option>
+              <option value="2">Februari</option>
+              <option value="3">Maret</option>
+              <option value="4">April</option>
+              <option value="5">Mei</option>
+              <option value="6">Juni</option>
+              <option value="7">Juli</option>
+              <option value="8">Agustus</option>
+              <option value="9">September</option>
+              <option value="10">Oktober</option>
+              <option value="11">November</option>
+              <option value="12">Desember</option>
+            </select>
+            <select id="startTahun" name="startTahun" aria-label="Tahun Mulai" class="field flex-1"></select>
+          </div>
+        </div>
+        <div>
+          <label for="endBulan" class="text-xs font-semibold text-muted block mb-1">Waktu Selesai</label>
+          <div class="flex gap-2">
+            <select id="endBulan" name="endBulan" class="field flex-1">
+              <option value="1">Januari</option>
+              <option value="2">Februari</option>
+              <option value="3">Maret</option>
+              <option value="4">April</option>
+              <option value="5">Mei</option>
+              <option value="6">Juni</option>
+              <option value="7">Juli</option>
+              <option value="8">Agustus</option>
+              <option value="9">September</option>
+              <option value="10">Oktober</option>
+              <option value="11">November</option>
+              <option value="12">Desember</option>
+            </select>
+            <select id="endTahun" name="endTahun" aria-label="Tahun Selesai" class="field flex-1"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="picker-actions">
+        <button class="picker-cancel" onclick="closePeriodPicker()">Batal</button>
+        <button class="picker-ok" onclick="confirmPeriodPicker()">Konfirmasi</button>
       </div>
     </div>
   </div>

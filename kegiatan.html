@@ -56,59 +56,62 @@
         + Tambah Kegiatan Baru
       </button>
 
-      <section class="section-card mt-0" id="addActivityForm" style="display:none;">
-        <div class="row-between">
-          <div class="section-title m-0">Tambah Kegiatan</div>
-          <button class="btn-ghost text-xl p-0" id="cancelAddActivityBtn">&times;</button>
-        </div>
-
-        <label class="field-label mt-3" for="activityName">Nama kegiatan</label>
-        <input id="activityName" type="text" class="field mb-3" placeholder="Contoh: Latihan rutin / Rapat" />
-
-        <label class="field-label">Kategori Kegiatan</label>
-        <div class="radio-group mb-3" id="activityCategoryGroup">
-          <div class="radio-btn active" data-val="Latihan">Latihan</div>
-          <div class="radio-btn" data-val="Pertandingan">Pertandingan</div>
-          <div class="radio-btn" data-val="Kegiatan Lain">Lainnya</div>
-        </div>
-        <input type="hidden" id="activityCategory" value="Latihan" />
-
-        <div id="activityRequireSubWrap" class="custom-toggle-btn"
-          onclick="toggleSubNameCheckbox('activityRequireSubWrap', 'activityRequireSub')">
-          <input type="checkbox" id="activityRequireSub" style="display:none;" />
-          <span class="toggle-icon text-sm" style="line-height:1;">⬜</span>
-          <span class="text-xs font-bold">Minta Detail / Sub-Nama Sesi saat Presensi (misal: Kejurda 2026)</span>
-        </div>
-
-        <label class="field-label mt-3" for="activityLocation">Tempat Default (Opsional)</label>
-        <select id="activityLocSel" class="field mb-2"
-          onchange="document.getElementById('activityLocation').style.display = this.value === 'Lainnya' ? 'block' : 'none';"></select>
-        <input id="activityLocation" type="text" class="field mb-3" style="display:none;"
-          placeholder="Ketik tempat manual..." />
-
-        <label class="field-label mt-3">Rentang Tanggal (Opsional)</label>
-        <div class="flex gap-2 mb-3">
-          <div class="flex-1">
-            <label class="text-xs text-muted mb-1 block">Mulai</label>
-            <input id="activityStartD" type="date" class="field" />
+      <!-- Modal Tambah Kegiatan -->
+      <div id="addActivityModal" class="modal-overlay" style="display:none;">
+        <div class="modal-card">
+          <div class="row-between">
+            <div class="section-title m-0">Tambah Kegiatan Baru</div>
           </div>
-          <div class="flex-1">
-            <label class="text-xs text-muted mb-1 block">Sampai</label>
-            <input id="activityEndD" type="date" class="field" />
+
+          <label class="field-label mt-3" for="activityName">Nama kegiatan</label>
+          <input id="activityName" type="text" class="field mb-3" placeholder="Contoh: Latihan rutin / Rapat" />
+
+          <label class="field-label">Kategori Kegiatan</label>
+          <div class="radio-group mb-3" id="activityCategoryGroup">
+            <div class="radio-btn active" data-val="Latihan">Latihan</div>
+            <div class="radio-btn" data-val="Pertandingan">Pertandingan</div>
+            <div class="radio-btn" data-val="Kegiatan Lain">Lainnya</div>
           </div>
-        </div>
+          <input type="hidden" id="activityCategory" value="Latihan" />
 
-        <div class="row-between mt-3 mb-2">
-          <label class="field-label m-0">List Peserta Default</label>
-          <button class="btn-secondary btn-sm" id="addPartBtn" type="button">Tambah Peserta</button>
-        </div>
-        <div id="addPartList" class="flex-col gap-2 mb-4"></div>
+          <div id="activityRequireSubWrap" class="custom-toggle-btn mb-3"
+            onclick="toggleSubNameCheckbox('activityRequireSubWrap', 'activityRequireSub')">
+            <input type="checkbox" id="activityRequireSub" style="display:none;" />
+            <span class="toggle-icon text-sm" style="line-height:1;">⬜</span>
+            <span class="text-xs font-bold">Minta Detail / Sub-Nama Sesi saat Presensi (misal: Kejurda 2026)</span>
+          </div>
 
-        <div class="mt-4">
-          <button id="addBtn" class="btn-primary" type="button" style="width:100%;">Simpan Kegiatan</button>
+          <label class="field-label" for="activityLocation">Tempat Default (Opsional)</label>
+          <select id="activityLocSel" class="field mb-2"
+            onchange="document.getElementById('activityLocation').style.display = this.value === 'Lainnya' ? 'block' : 'none';"></select>
+          <input id="activityLocation" type="text" class="field mb-3" style="display:none;"
+            placeholder="Ketik tempat manual..." />
+
+          <label class="field-label mt-3">Rentang Tanggal (Opsional)</label>
+          <div class="flex gap-2 mb-3">
+            <div class="flex-1">
+              <label class="text-xs text-muted mb-1 block">Mulai</label>
+              <input id="activityStartD" type="date" class="field" />
+            </div>
+            <div class="flex-1">
+              <label class="text-xs text-muted mb-1 block">Sampai</label>
+              <input id="activityEndD" type="date" class="field" />
+            </div>
+          </div>
+
+          <div class="row-between mt-3 mb-2">
+            <label class="field-label m-0">List Peserta Default</label>
+            <button class="btn-secondary btn-sm" id="addPartBtn" type="button">Tambah Peserta</button>
+          </div>
+          <div id="addPartList" class="flex-col gap-2 mb-4"></div>
+
+          <div class="flex justify-end gap-3 mt-4">
+            <button class="btn-secondary" id="cancelAddActivityBtn" type="button">Batal</button>
+            <button id="addBtn" class="btn-primary" type="button">Simpan Kegiatan</button>
+          </div>
+          <p id="msg" class="tool-msg text-center mt-3"></p>
         </div>
-        <p id="msg" class="tool-msg text-center mt-3"></p>
-      </section>
+      </div>
 
       <section class="section-card">
         <div class="row-between">
@@ -138,8 +141,8 @@
           <h3 class="mt-0 text-base font-bold" id="confirmTitle">Peringatan</h3>
           <p id="confirmMsg" class="text-sm text-muted mb-5"></p>
           <div class="flex justify-center gap-3">
-            <button id="confirmBtnNo" class="btn-secondary">Batal</button>
-            <button id="confirmBtnYes" class="btn-primary">Ya, Lanjutkan</button>
+            <button id="confirmBtnNo" class="btn-primary">Batal</button>
+            <button id="confirmBtnYes" class="btn-danger">Ya, Lanjutkan</button>
           </div>
         </div>
       </div>

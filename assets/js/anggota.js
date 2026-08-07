@@ -25,19 +25,20 @@ function render(items) {
   countPill.textContent = items.length + " Orang";
   countPill.style.display = "inline-flex";
 
-  listEl.innerHTML = `<div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">` + items.map(m => `
-    <div class="session-row">
-      <div class="session-info" onclick="viewMemberDetail('${m.id}')" style="cursor:pointer;">
-        <div class="font-extrabold text-base text-main">${escapeHtml(m.name)}</div>
-        <div class="text-xs text-muted mt-1">
-          ${escapeHtml(m.role)} ${m.pengurus_status ? ` • <span class="font-bold text-indigo-600">${escapeHtml(m.pengurus_status)}</span>` : ''}
+  listEl.innerHTML = `<div>` + items.map(m => `
+    <div class="member-card-item">
+      <div class="session-info flex-1 pr-3 cursor-pointer" onclick="viewMemberDetail('${m.id}')">
+        <div class="font-bold text-sm text-main">${escapeHtml(m.name)}</div>
+        <div class="text-xs text-muted mt-1 flex items-center gap-1.5 flex-wrap">
+          <span>${escapeHtml(m.role)}</span>
+          ${m.pengurus_status ? `<span class="bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold px-2 py-0.5 rounded text-[11px]">${escapeHtml(m.pengurus_status)}</span>` : ''}
         </div>
       </div>
-      <div class="session-actions-group admin-only">
-        <button class="btn-secondary btn-icon" title="Edit Anggota" onclick="editMember('${m.id}')">
+      <div class="session-actions-group flex items-center gap-2 admin-only">
+        <button class="btn-secondary btn-icon p-2.5 rounded-lg flex items-center justify-center text-gray-600 hover:text-sky-600" title="Edit Anggota" onclick="editMember('${m.id}')">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
-        <button class="btn-danger btn-icon" title="Hapus Anggota" onclick="deleteMember('${m.id}', '${escapeHtml(m.name)}')">
+        <button class="btn-danger btn-icon p-2.5 rounded-lg flex items-center justify-center text-red-600 hover:text-red-700" title="Hapus Anggota" onclick="deleteMember('${m.id}', '${escapeHtml(m.name)}')">
           <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
         </button>
       </div>
@@ -70,15 +71,21 @@ handleGenderSel('genderGroup', 'gender');
 handleGenderSel('editGenderGroup', 'editGender');
 
 document.getElementById("toggleAddMemberBtn").onclick = () => {
-  document.getElementById("toggleAddMemberBtn").style.display = "none";
-  document.getElementById("addMemberForm").style.display = "block";
+  document.getElementById("addMemberModal").style.display = "flex";
   document.getElementById("name").focus();
 };
-document.getElementById("cancelAddMemberBtn").onclick = () => {
-  document.getElementById("addMemberForm").style.display = "none";
-  document.getElementById("toggleAddMemberBtn").style.display = "flex";
+
+const closeAddModal = () => {
+  document.getElementById("addMemberModal").style.display = "none";
   msgEl.textContent = "";
 };
+
+const cancelSecBtn = document.getElementById("cancelAddMemberBtnSec");
+if (cancelSecBtn) cancelSecBtn.onclick = closeAddModal;
+
+document.getElementById('addMemberModal').addEventListener('click', function (e) {
+  if (e.target === this) closeAddModal();
+});
 
 async function load() {
   listEl.innerHTML = "<p class='muted'>Memuat...</p>";
@@ -133,8 +140,7 @@ document.getElementById("addBtn").onclick = async () => {
     document.getElementById("phone").value = '';
     document.getElementById("pengurusStatus").value = '';
 
-    document.getElementById("addMemberForm").style.display = "none";
-    document.getElementById("toggleAddMemberBtn").style.display = "flex";
+    closeAddModal();
     await load();
   } catch (e) { msgEl.textContent = "Gagal: " + e.message; }
 };

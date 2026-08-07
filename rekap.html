@@ -37,7 +37,7 @@
 
     <main class="app-main">
       <section class="section-card mt-0">
-        <div class="section-title">Mode Rekap</div>
+        <div class="section-title" style="margin-top:0; margin-bottom:12px;">Mode Rekap</div>
         <div class="segmented">
           <button id="tabSession" class="seg-btn active">Sesi & PDF</button>
           <button id="tabMonthly" class="seg-btn">Bulanan</button>
@@ -47,19 +47,22 @@
 
       <section class="section-card" id="panelSession">
         <label class="field-label">Pilih Periode</label>
-        <select id="sessionMonthSel" class="field"
-          onchange="document.getElementById('sessionDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
-        <div id="sessionDateWrap" class="flex gap-2 mt-2" style="display:none;">
-          <div class="flex-1"><label class="field-label">Mulai</label><input type="date" id="sessionStartD"
-              class="field" /></div>
-          <div class="flex-1"><label class="field-label">S/d</label><input type="date" id="sessionEndD" class="field" />
-          </div>
-        </div>
-        <label class="field-label" style="margin-top:10px;">Pilih Kegiatan</label>
-        <select id="sessionActivitySel" class="field">
-          <option value="">Semua Kegiatan</option>
-        </select>
-        <div class="row-actions mt-3">
+        <button type="button" id="sessionPeriodTrigger" class="field text-left bg-white text-main flex justify-between items-center" onclick="openRekapPeriodPicker('session')">
+          <span id="sessionPeriodText" class="font-semibold text-slate-800">3 Bulan Terakhir</span>
+          <span class="text-sky-600 text-xs">▼</span>
+        </button>
+        <input type="hidden" id="sessionMonthSel" value="last3" />
+        <input type="hidden" id="sessionStartD" value="" />
+        <input type="hidden" id="sessionEndD" value="" />
+
+        <label class="field-label" style="margin-top:12px;">Pilih Kegiatan</label>
+        <button type="button" id="sessionActivityTrigger" class="field text-left bg-white text-main flex justify-between items-center" onclick="openRekapActivityPicker('session')">
+          <span id="sessionActivityText" class="font-semibold text-slate-800">Semua Kegiatan (Gabung)</span>
+          <span class="text-sky-600 text-xs">▼</span>
+        </button>
+        <input type="hidden" id="sessionActivitySel" value="" />
+
+        <div class="row-actions mt-4">
           <button id="loadSessionBtn" class="btn-primary">Muat Riwayat Sesi</button>
         </div>
         <div id="sessionOutput" class="mt-4"></div>
@@ -67,46 +70,52 @@
 
       <section class="section-card" id="panelMonthly" style="display:none;">
         <label class="field-label">Pilih Periode</label>
-        <select id="monthSel" class="field"
-          onchange="document.getElementById('monthlyDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
-        <div id="monthlyDateWrap" class="flex gap-2 mt-2" style="display:none;">
-          <div class="flex-1"><label class="field-label">Mulai</label><input type="date" id="monthlyStartD"
-              class="field" /></div>
-          <div class="flex-1"><label class="field-label">S/d</label><input type="date" id="monthlyEndD" class="field" />
-          </div>
-        </div>
-        <label class="field-label" style="margin-top:10px;">Pilih Kegiatan</label>
-        <select id="monthlyActivitySel" class="field">
-          <option value="">Semua Kegiatan</option>
-        </select>
-        <div class="row-actions mt-3">
+        <button type="button" id="monthlyPeriodTrigger" class="field text-left bg-white text-main flex justify-between items-center" onclick="openRekapPeriodPicker('monthly')">
+          <span id="monthlyPeriodText" class="font-semibold text-slate-800">3 Bulan Terakhir</span>
+          <span class="text-sky-600 text-xs">▼</span>
+        </button>
+        <input type="hidden" id="monthSel" value="last3" />
+        <input type="hidden" id="monthlyStartD" value="" />
+        <input type="hidden" id="monthlyEndD" value="" />
+
+        <label class="field-label" style="margin-top:12px;">Pilih Kegiatan</label>
+        <button type="button" id="monthlyActivityTrigger" class="field text-left bg-white text-main flex justify-between items-center" onclick="openRekapActivityPicker('monthly')">
+          <span id="monthlyActivityText" class="font-semibold text-slate-800">Semua Kegiatan (Gabung)</span>
+          <span class="text-sky-600 text-xs">▼</span>
+        </button>
+        <input type="hidden" id="monthlyActivitySel" value="" />
+
+        <div class="row-actions mt-4">
           <button id="loadMonthlyBtn" class="btn-primary">Muat Rekap</button>
         </div>
         <div id="monthlyOutput" class="mt-4"></div>
       </section>
 
       <section class="section-card" id="panelMember" style="display:none;">
-        <label class="field-label">Pilih Anggota</label>
-        <button id="memberSelBtn" class="field text-left bg-white text-main flex justify-between items-center"
-          type="button">
+        <label for="memberSelBtn" class="field-label">Pilih Anggota</label>
+        <button id="memberSelBtn" class="field text-left bg-white text-main flex justify-between items-center" type="button">
           <span id="memberSelText">Pilih anggota...</span>
-          <span class="text-muted text-xs">▼</span>
+          <span class="text-sky-600 text-xs">▼</span>
         </button>
-        <input type="hidden" id="memberSel" value="" />
-        <label class="field-label">Pilih Periode</label>
-        <select id="memberMonthSel" class="field"
-          onchange="document.getElementById('memberDateWrap').style.display = this.value === 'custom' ? 'flex' : 'none'"></select>
-        <div id="memberDateWrap" class="flex gap-2 mt-2" style="display:none;">
-          <div class="flex-1"><label class="field-label">Mulai</label><input type="date" id="memberStartD"
-              class="field" /></div>
-          <div class="flex-1"><label class="field-label">S/d</label><input type="date" id="memberEndD" class="field" />
-          </div>
-        </div>
-        <label class="field-label" style="margin-top:10px;">Pilih Kegiatan</label>
-        <select id="memberActivitySel" class="field">
-          <option value="">Semua Kegiatan</option>
-        </select>
-        <div class="row-actions mt-3">
+        <input type="hidden" id="memberSel" name="memberSel" value="" />
+
+        <label class="field-label" style="margin-top:12px;">Pilih Periode</label>
+        <button type="button" id="memberPeriodTrigger" class="field text-left bg-white text-main flex justify-between items-center" onclick="openRekapPeriodPicker('member')">
+          <span id="memberPeriodText" class="font-semibold text-slate-800">3 Bulan Terakhir</span>
+          <span class="text-sky-600 text-xs">▼</span>
+        </button>
+        <input type="hidden" id="memberMonthSel" value="last3" />
+        <input type="hidden" id="memberStartD" value="" />
+        <input type="hidden" id="memberEndD" value="" />
+
+        <label class="field-label" style="margin-top:12px;">Pilih Kegiatan</label>
+        <button type="button" id="memberActivityTrigger" class="field text-left bg-white text-main flex justify-between items-center" onclick="openRekapActivityPicker('member')">
+          <span id="memberActivityText" class="font-semibold text-slate-800">Semua Kegiatan (Gabung)</span>
+          <span class="text-sky-600 text-xs">▼</span>
+        </button>
+        <input type="hidden" id="memberActivitySel" value="" />
+
+        <div class="row-actions mt-4">
           <button id="loadMemberBtn" class="btn-primary">Muat Rekap</button>
         </div>
         <div id="memberOutput" class="mt-4"></div>
@@ -118,8 +127,8 @@
           <h3 class="m-0 text-base font-bold" id="confirmTitle">Peringatan</h3>
           <p id="confirmMsg" class="text-sm text-muted mb-4 mt-2"></p>
           <div class="flex justify-center gap-2">
-            <button id="confirmBtnNo" class="btn-secondary py-2 px-4">Batal</button>
-            <button id="confirmBtnYes" class="btn-primary py-2 px-4">Ya, Lanjutkan</button>
+            <button id="confirmBtnNo" class="btn-primary py-2 px-4">Batal</button>
+            <button id="confirmBtnYes" class="btn-danger py-2 px-4">Ya, Lanjutkan</button>
           </div>
         </div>
       </div>
@@ -128,12 +137,46 @@
       <div id="memberPickerModal">
         <div class="picker-box">
           <div class="picker-title">Pilih Anggota</div>
-          <input id="rekapPickerSearch" placeholder="Cari nama anggota…" oninput="filterRekapPicker(this.value)">
+          <input id="rekapPickerSearch" name="rekapPickerSearch" aria-label="Cari nama anggota" placeholder="Cari nama anggota…" oninput="filterRekapPicker(this.value)">
           <div class="picker-list" id="rekapPickerList"></div>
           <div class="picker-actions mt-3 pt-3" style="border-top: 1px solid #e2e8f0;">
             <button class="btn-secondary"
               style="width: 100%; height: 44px; background: #fee2e2 !important; color: #dc2626 !important; border: 1px solid #fecaca !important; font-weight: 800; border-radius: 10px; cursor: pointer; display: block;"
               onclick="closeRekapPicker()">Batal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Period Picker Modal -->
+      <div id="rekapPeriodModal" class="modal-backdrop" style="position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:9999; padding:20px;" onclick="if(event.target===this) closeRekapPeriodPicker()">
+        <div class="picker-box" style="max-width:380px; width:100%; max-height:80vh; display:flex; flex-direction:column; gap:12px;">
+          <div class="picker-title" style="font-size:16px; font-weight:800; color:#1e293b;">Pilih Periode Waktu</div>
+          <div class="picker-list" id="rekapPeriodList" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:6px; max-height:280px;"></div>
+          
+          <!-- Custom Date Range Section -->
+          <div id="rekapCustomDateWrap" style="display:none; flex-direction:column; gap:8px; padding-top:10px; border-top:1px dashed #e2e8f0;">
+            <div style="font-size:12px; font-weight:700; color:#64748b;">Rentang Tanggal Kustom:</div>
+            <div class="flex gap-2">
+              <div class="flex-1"><label style="font-size:11px; font-weight:600; margin-bottom:2px; display:block;">Mulai</label><input type="date" id="rekapCustomStartD" class="field" style="padding:8px 10px; font-size:13px;" /></div>
+              <div class="flex-1"><label style="font-size:11px; font-weight:600; margin-bottom:2px; display:block;">S/d</label><input type="date" id="rekapCustomEndD" class="field" style="padding:8px 10px; font-size:13px;" /></div>
+            </div>
+          </div>
+
+          <div class="picker-actions mt-2 pt-2" style="display:flex; gap:8px; border-top:1px solid #e2e8f0;">
+            <button type="button" class="btn-secondary" style="flex:1; height:42px; border-radius:10px; font-weight:700; background:#f1f5f9; color:#475569; border:none; cursor:pointer;" onclick="closeRekapPeriodPicker()">Batal</button>
+            <button type="button" class="btn-primary" style="flex:1; height:42px; border-radius:10px; font-weight:700; background:#198cda; color:#fff; border:none; cursor:pointer;" onclick="confirmRekapPeriodPicker()">Terapkan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Picker Modal -->
+      <div id="rekapActivityModal" class="modal-backdrop" style="position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:9999; padding:20px;" onclick="if(event.target===this) closeRekapActivityPicker()">
+        <div class="picker-box" style="max-width:380px; width:100%; max-height:80vh; display:flex; flex-direction:column; gap:12px;">
+          <div class="picker-title" style="font-size:16px; font-weight:800; color:#1e293b;">Pilih Kegiatan</div>
+          <input id="rekapActPickerSearch" placeholder="Cari nama kegiatan..." style="border-radius:8px; border:1.5px solid #e2e8f0; padding:9px 12px; font-size:13px; width:100%; box-sizing:border-box;" oninput="filterRekapActivityPicker(this.value)">
+          <div class="picker-list" id="rekapActivityList" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:6px; max-height:300px;"></div>
+          <div class="picker-actions mt-2 pt-2" style="display:flex; gap:8px; border-top:1px solid #e2e8f0;">
+            <button type="button" class="btn-secondary" style="width:100%; height:42px; background:#fee2e2 !important; color:#dc2626 !important; border:1px solid #fecaca !important; border-radius:10px; font-weight:700; cursor:pointer;" onclick="closeRekapActivityPicker()">Batal</button>
           </div>
         </div>
       </div>

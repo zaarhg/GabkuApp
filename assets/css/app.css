@@ -1473,7 +1473,7 @@ input[type="file"]::file-selector-button:hover {
   color: var(--brand-600);
 }
 
-.btn-danger {
+.btn-danger-soft {
   background: #fee2e2;
   color: #dc2626;
   border: 1px solid #fecaca;
@@ -1485,8 +1485,8 @@ input[type="file"]::file-selector-button:hover {
   text-align: center;
 }
 
-.btn-danger:hover,
-.btn-danger:active {
+.btn-danger-soft:hover,
+.btn-danger-soft:active {
   background: #fca5a5;
   color: #991b1b;
 }
@@ -2100,19 +2100,47 @@ input[type="file"]::file-selector-button:hover {
 }
 
 .info-box.hadir {
-  border-top: 4px solid var(--success);
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+.info-box.hadir .info-val {
+  color: #15803d;
+}
+.info-box.hadir .info-label {
+  color: #166534;
 }
 
 .info-box.izin {
-  border-top: 4px solid var(--warning);
+  background: #fefce8;
+  border: 1px solid #fef08a;
+}
+.info-box.izin .info-val {
+  color: #a16207;
+}
+.info-box.izin .info-label {
+  color: #854d0e;
 }
 
 .info-box.sakit {
-  border-top: 4px solid #f97316;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+.info-box.sakit .info-val {
+  color: #c2410c;
+}
+.info-box.sakit .info-label {
+  color: #9a3412;
 }
 
 .info-box.alpa {
-  border-top: 4px solid var(--danger);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+.info-box.alpa .info-val {
+  color: #b91c1c;
+}
+.info-box.alpa .info-label {
+  color: #991b1b;
 }
 
 .info-val {
@@ -2295,10 +2323,17 @@ input[type="file"]::file-selector-button:hover {
   color: #0284c7;
 }
 
+/* Body lock when modal is open to prevent outer page scroll & pinch zoom */
+body.modal-open {
+  overflow: hidden !important;
+  touch-action: none !important;
+}
+
 /* PDF Preview Modal Styling */
 #pdfPreviewModal {
   z-index: 9900;
   padding: 12px;
+  touch-action: none;
 }
 
 .pdf-modal-card {
@@ -2321,6 +2356,7 @@ input[type="file"]::file-selector-button:hover {
   justify-content: space-between;
   align-items: center;
   background: #f8fafc;
+  touch-action: none;
 }
 
 .pdf-modal-title {
@@ -2358,6 +2394,7 @@ input[type="file"]::file-selector-button:hover {
   background: #f1f5f9;
   position: relative;
   overflow: hidden;
+  touch-action: pan-x pan-y;
 }
 
 .pdf-modal-iframe {
@@ -2386,6 +2423,7 @@ input[type="file"]::file-selector-button:hover {
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+  touch-action: none;
 }
 
 .pdf-btn {
@@ -2418,6 +2456,149 @@ input[type="file"]::file-selector-button:hover {
 }
 .pdf-btn-secondary:hover {
   background: #e2e8f0;
+}
+
+/* Member Activity Card Styling (Tab Anggota) */
+.member-activity-card {
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.member-activity-card:hover {
+  background: #f8fafc;
+  border-color: #0284c7;
+  transform: translateY(-1px);
+}
+
+.member-activity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  flex: 1;
+  padding-right: 12px;
+}
+
+.member-activity-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.member-activity-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.member-activity-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.presence-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 0;
+  min-width: 62px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-radius: 8px;
+  letter-spacing: 0.2px;
+}
+
+.presence-badge-hadir {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.presence-badge-izin {
+  background: #fefce8;
+  color: #854d0e;
+  border: 1px solid #fef08a;
+}
+
+.presence-badge-sakit {
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+}
+
+.presence-badge-alpa {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.member-activity-arrow {
+  font-size: 18px;
+  font-weight: 700;
+  color: #94a3b8;
+  line-height: 1;
+}
+
+.member-activity-card:hover .member-activity-arrow {
+  color: #0284c7;
+}
+
+/* Fallback & Helper for Member / Session Rows */
+select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.member-card-item {
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin-bottom: 12px;
+  transition: all 0.15s ease;
+}
+
+.member-card-item:last-child {
+  margin-bottom: 0;
+}
+
+.member-card-item:hover {
+  background: #f8fafc;
+  border-color: #0284c7;
+  transform: translateY(-1px);
+}
+
+.session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.session-info {
+  flex: 1;
+}
+
+.session-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .pdf-btn-danger {

@@ -138,16 +138,30 @@ function renderEditParts() {
 
 window.addEditParticipant = () => openMemberPicker(editParticipants, renderEditParts);
 
-document.getElementById("toggleAddActivityBtn").onclick = () => {
-  document.getElementById("toggleAddActivityBtn").style.display = "none";
-  document.getElementById("addActivityForm").style.display = "block";
-  document.getElementById("activityName").focus();
-};
-document.getElementById("cancelAddActivityBtn").onclick = () => {
-  document.getElementById("addActivityForm").style.display = "none";
-  document.getElementById("toggleAddActivityBtn").style.display = "flex";
+window.closeAddActivityModal = () => {
+  document.getElementById("addActivityModal").style.display = "none";
+  document.getElementById("activityName").value = "";
+  document.getElementById("activityLocation").value = "";
+  document.getElementById("activityLocSel").value = "";
+  document.getElementById("activityLocation").style.display = "none";
+  document.getElementById("activityCategory").value = "Latihan";
+  toggleSubNameCheckbox('activityRequireSubWrap', 'activityRequireSub', false);
+  document.getElementById("activityStartD").value = "";
+  document.getElementById("activityEndD").value = "";
+  addParticipants = [];
+  renderAddParts();
   msgEl.textContent = "";
 };
+
+document.getElementById("toggleAddActivityBtn").onclick = () => {
+  document.getElementById("addActivityModal").style.display = "flex";
+  document.getElementById("activityName").focus();
+};
+document.getElementById("cancelAddActivityBtn").onclick = closeAddActivityModal;
+
+document.getElementById("addActivityModal").addEventListener("click", (e) => {
+  if (e.target === document.getElementById("addActivityModal")) closeAddActivityModal();
+});
 
 // Toggle Arsip behavior
 document.getElementById("toggleInactiveBtn").onclick = () => {
@@ -187,8 +201,8 @@ async function load() {
             ${r.location ? `<div class="text-xs text-muted mt-1">📍 ${escapeHtml(r.location)}</div>` : ''}
           </div>
           <div class="flex gap-2 items-center">
-            <button class="btn-outline btn-sm admin-only" onclick="editActivity('${r.id}')">Edit</button>
-            <button class="btn-secondary btn-sm admin-only" onclick="toggleActivityStatus('${r.id}', false, '${escapeHtml(r.name)}')">Nonaktifkan</button>
+            <button class="btn-secondary btn-sm admin-only" onclick="editActivity('${r.id}')">Edit</button>
+            <button class="btn-delete btn-sm admin-only" onclick="toggleActivityStatus('${r.id}', false, '${escapeHtml(r.name)}')">Nonaktifkan</button>
           </div>
         </div>
       `).join("");
@@ -286,18 +300,7 @@ document.getElementById("addBtn").onclick = async () => {
     }
     if (error) throw error;
     msgEl.textContent = "Berhasil!";
-    document.getElementById("activityName").value = "";
-    document.getElementById("activityLocation").value = "";
-    document.getElementById("activityLocSel").value = "";
-    document.getElementById("activityLocation").style.display = "none";
-    document.getElementById("activityCategory").value = "Kegiatan Lain";
-    toggleSubNameCheckbox('activityRequireSubWrap', 'activityRequireSub', false);
-    document.getElementById("activityStartD").value = "";
-    document.getElementById("activityEndD").value = "";
-    addParticipants = [];
-    renderAddParts();
-    document.getElementById("addActivityForm").style.display = "none";
-    document.getElementById("toggleAddActivityBtn").style.display = "flex";
+    closeAddActivityModal();
     await load();
   } catch (e) {
     msgEl.textContent = "Gagal: " + e.message;
@@ -348,6 +351,10 @@ window.closeEditModal = () => {
   document.getElementById('editLocSel').value = '';
   editParticipants = [];
 };
+
+document.getElementById("editModal").addEventListener("click", (e) => {
+  if (e.target === document.getElementById("editModal")) closeEditModal();
+});
 
 window.saveEdit = async () => {
   const id = document.getElementById('editId').value;
